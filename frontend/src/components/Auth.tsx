@@ -40,7 +40,7 @@ const Auth: React.FC = () => {
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md space-y-4"
       >
-        <h2 className="text-2xl font-bold text-center text-gray-800">Login</h2>
+        <h2 className="text-2xl font-bold text-center text-gray-800">Authentication form </h2>
 
         <div>
           <label htmlFor="login" className="block text-sm font-medium text-gray-700">
