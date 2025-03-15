@@ -1,6 +1,8 @@
 import React, { useState } from "react"
 import axiosFetching from "../api/AxiosFetch";
 import { useMutation } from "@tanstack/react-query";
+import { Navigate } from "react-router";
+
 
 const Auth: React.FC = () => {
     const [login, setLogin] = useState<string>("");
@@ -15,7 +17,7 @@ const Auth: React.FC = () => {
         },
         onSuccess: () => {
             setError(null);
-            // БЛЯТЬ, ЗАБЫЛ REACT-ROUTER. СЮДА ВСТАВИТЬ navigate на главную страницу
+            Navigate({to: "/"})// СЮДА ВСТАВИТЬ Navigate на главную страницу
         },
         onError(err: any /*?*/){
             setError(err.response?.data?.massage || "An error massage");
