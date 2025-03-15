@@ -1,9 +1,7 @@
-import Auth from "./components/Auth"
+import Auth from './components/Auth';
 
 const App = () => {
-  return (
-    <Auth/>
-  )
-}
+	return <Auth />;
+};
 
-export default App
+export default App;
