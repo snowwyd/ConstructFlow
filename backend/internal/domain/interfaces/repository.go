@@ -1,4 +1,4 @@
-package app
+package interfaces
 
 import (
 	"backend/internal/domain"
@@ -7,12 +7,12 @@ import (
 
 // Для вызова методов слоя БД для работы с пользователями
 type UserRepository interface {
-	GetUserByID(ctx context.Context, userID int) (user domain.User, err error)
+	GetUserByID(ctx context.Context, userID uint) (user domain.User, err error)
 	GetUserByLogin(ctx context.Context, login string) (user domain.User, err error)
 
 	// Админские ручки для создания/изменения пользователей
-	SaveUser(ctx context.Context, login, password, role string) (userID int, err error)
-	UpdateUserRole(ctx context.Context, userID int, role string) (success bool, err error)
+	SaveUser(ctx context.Context, login string, passHash []byte, role string) (userID uint, err error)
+	UpdateUserRole(ctx context.Context, userID uint, role string) (success bool, err error)
 }
 
 // Для вызова методов слоя БД для работы с папками
