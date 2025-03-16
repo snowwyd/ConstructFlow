@@ -7,7 +7,7 @@ http_server:
   idle_timeout: 60s
 
 database:
-  host: "host.docker.internal"
+  host: "postgres"
   port: 5432
   user: "snowwy"
   password: "megaballsgaming"

@@ -1,0 +1,8 @@
+backend/.env
+backend/.dockerignore
+
+backend/tmp
+backend/wait-for-it.sh
+backend/Taskfile.yaml
+
+docs/openapi.yaml

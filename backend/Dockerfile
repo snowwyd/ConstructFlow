@@ -9,7 +9,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o app ./cmd/api/main.go
 
 
-FROM debian:buster-slim
+FROM debian:latest
 
 WORKDIR /root/
 
@@ -19,7 +19,6 @@ COPY configs/ configs
 
 COPY wait-for-it.sh /usr/local/bin/wait-for-it.sh
 RUN chmod +x /usr/local/bin/wait-for-it.sh
-
 
 EXPOSE 8080
 

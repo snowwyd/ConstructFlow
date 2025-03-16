@@ -24,10 +24,10 @@ func New(cfg *config.Config, logger *slog.Logger) (*App, error) {
 
 	userRepo := postgresrepo.NewUserRepository(db)
 
-	// TODO: Инициализация use cases
+	// Инициализация use cases
 	authUsecase := usecase.NewAuthUsecase(userRepo, cfg, logger)
 
-	// TODO: Инициализация контроллеров
+	// Инициализация контроллеров
 	authHandler := http.NewAuthHandler(authUsecase, cfg)
 
 	return &App{
