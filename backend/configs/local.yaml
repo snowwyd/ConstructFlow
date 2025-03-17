@@ -8,8 +8,6 @@ http_server:
 
 database:
   host: "host.docker.internal"
-  port: 5432
-  user: "snowwy"
-  password: "megaballsgaming"
+  port: 5433
   name: "constructflow"
   ssl_mode: "disable"

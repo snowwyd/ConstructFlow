@@ -62,6 +62,11 @@ func MustLoad() *Config {
 		log.Fatal("empty APP_SECRET")
 	}
 
+	cfg.Database.User = os.Getenv("DB_USER")
+	if cfg.Database.User == "" {
+		log.Fatal("empty DB_USER")
+	}
+
 	cfg.Database.Password = os.Getenv("DB_PASSWORD")
 	if cfg.Database.Password == "" {
 		log.Fatal("empty DB_PASSWORD")
