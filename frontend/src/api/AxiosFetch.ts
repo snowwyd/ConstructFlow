@@ -2,9 +2,12 @@
 // Важно. Определить ендпоинты получения JWT от сервера.
 // Важно. Создать папку для хранения констант типа url сервер
 import axios from 'axios';
+import config from '../constants/Configurations.json';
+
+const serverURL = config.apiKey;
 
 const axiosFetching = axios.create({
-	baseURL: 'https://danya-sdelat-servak-pomenyate.com',
+	baseURL: serverURL,
 	withCredentials: true,
 });
 
