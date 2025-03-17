@@ -16,12 +16,11 @@ func main() {
 
 	log := setupLogger()
 
-	// log.Info("config loaded successfully",
-	// 	slog.String("env", cfg.Env),
-	// 	slog.String("address", cfg.Address),
-	// 	slog.Any("http_server", cfg.HTTPServer),
-	// )
-	log.Info("config loaded successfully", slog.Any("config", cfg))
+	log.Info("config loaded successfully",
+		slog.String("env", cfg.Env),
+		slog.String("address", cfg.Address),
+		slog.Any("http_server", cfg.HTTPServer),
+	)
 
 	appInstance, err := app.New(cfg, log)
 	if err != nil {
@@ -30,7 +29,7 @@ func main() {
 	}
 
 	router := gin.Default()
-	router.Use(gin.Logger(), gin.Recovery())
+	router.Use(gin.Recovery(), http.CORSMiddleware())
 
 	setupRoutes(router, appInstance, cfg)
 
