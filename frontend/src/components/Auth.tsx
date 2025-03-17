@@ -1,7 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
 import React, { useState } from 'react';
-import { Navigate } from 'react-router';
 import axiosFetching from '../api/AxiosFetch';
+import config from '../constants/Configurations.json'
+
+const loginEndpoint = config.loginEndpoint;
+const JWTresponse = config.checkJWT;
 
 const Auth: React.FC = () => {
 	const [login, setLogin] = useState<string>('');
@@ -10,22 +13,35 @@ const Auth: React.FC = () => {
 
 	const { mutate, isPending } = useMutation({
 		mutationFn: async () => {
-			const response = await axiosFetching.post('login/endpoint', {
+			const response = await axiosFetching.post(loginEndpoint, {
 				login,
 				password,
-			}); // ВОЗМОЖНЯ УГРОЗА НО Я ХЗ. ПОПРАВИТЬ ЭНДПОИНТЫ
+			}); // ВОЗМОЖНЯ УГРОЗА НО Я ХЗ. 
 			return response.data;
 		},
-		onSuccess: () => {
-			setError(null);
-			Navigate({ to: '/' }); // СЮДА ВСТАВИТЬ Navigate на главную страницу
+		onSuccess: async (data) => {
+			const token = data.token;
+            try {
+                const validateResponse = await axiosFetching.get(JWTresponse, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                const userId = validateResponse.data.id;
+                console.log('User ID:', userId); 
+            } catch (validationError: any) {
+                setError(validationError.response?.data?.message || 'Token validation failed');
+            }
 		},
-		onError(err: any /*?*/) {
-			setError(err.response?.data?.massage || 'An error massage');
+		onError: (data) => {
+			console.log(data.message)
+			setError(data.message);
 		},
 	});
 
-	const handleSubmit = () => {
+
+	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
 		if (!login || !password) {
 			setError('Fill in correct data');
 			return;

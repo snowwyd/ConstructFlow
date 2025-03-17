@@ -9,7 +9,5 @@ http_server:
 database:
   host: "postgres"
   port: 5432
-  user: "snowwy"
-  password: "megaballsgaming"
   name: "constructflow"
   ssl_mode: "disable"

@@ -23,9 +23,10 @@ func New(cfg *config.Config, logger *slog.Logger) (*App, error) {
 	}
 
 	userRepo := postgresrepo.NewUserRepository(db)
+	roleRepo := postgresrepo.NewRoleRepository(db)
 
 	// Инициализация use cases
-	authUsecase := usecase.NewAuthUsecase(userRepo, cfg, logger)
+	authUsecase := usecase.NewAuthUsecase(userRepo, roleRepo, cfg, logger)
 
 	// Инициализация контроллеров
 	authHandler := http.NewAuthHandler(authUsecase, cfg)
