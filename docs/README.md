@@ -3,16 +3,17 @@
 ## Описание проекта
 Backend для системы управления файлами и папками с аутентификацией и авторизацией.  
 Реализованы следующие методы:
-- Авторизация (`/auth/login`)
-- Регистрация (`/auth/register`)
-- Получение данных текущего пользователя (`/auth/me`)
+- Авторизация (`/api/v1/auth/login`)
+- Регистрация (`/api/v1/auth/register`)
+- Получение данных текущего пользователя (`/api/v1/auth/me`)
+- Создание роли (`/api/v1/auth/role`)
 
 ---
 
 ## Требования
 - Docker и docker-compose
 - Go 1.20+ (для локальной разработки)
-- [go-task](https://taskfile.dev/) для выполнения задач (опционально)
+- [go-task](https://taskfile.dev/) для выполнения часто используемых команд (опционально)
 
 ---
 
@@ -39,7 +40,7 @@ curl -sL https://taskfile.dev/install.sh | sh
 docker-compose --build up -d # если отсутствует go-task
 task build 
 
-# Откатить контейнеры
+# Откатить контейнеры и очистить БД
 docker-compose down # если отсутствует go-task
 task composedown
 ```
@@ -72,6 +73,7 @@ CONFIG_PATH = configs/local.yaml
 **Ошибки:**
 - `400 Bad Request`: Некорректный формат запроса.
 - `401 Unauthorized`: Неверные логин или пароль.
+- `404 Not Found`: Пользователь не найден.
 - `500 Internal Server Error`: Ошибка сервера.
 
 ---
@@ -82,7 +84,7 @@ CONFIG_PATH = configs/local.yaml
 {
   "login": "new_user",
   "password": "secure_password",
-  "role": "user"
+  "role_id": 809
 }
 ```
 
@@ -95,6 +97,7 @@ CONFIG_PATH = configs/local.yaml
 
 **Ошибки:**
 - `400 Bad Request`: Некорректный формат запроса.
+- `404 Not Found`: Роль не найдена.
 - `409 Conflict`: Пользователь с таким логином уже существует.
 - `500 Internal Server Error`: Ошибка сервера.
 
@@ -118,6 +121,26 @@ Authorization: Bearer <JWT_TOKEN>
 **Ошибки:**
 - `401 Unauthorized`: Токен отсутствует или неверен.
 - `404 Not Found`: Пользователь не найден.
+- `500 Internal Server Error`: Ошибка сервера.
+
+### 4. Создание роли (`POST /api/v1/auth/role`)
+**Запрос:**
+```json
+{
+  "role_name": "new_role",
+}
+```
+
+**Ответ (201 Created):**
+```json
+{
+  "role_id": 123
+}
+```
+
+**Ошибки:**
+- `400 Bad Request`: Некорректный формат запроса.
+- `409 Conflict`: Роль с таким названием уже существует.
 - `500 Internal Server Error`: Ошибка сервера.
 
 ---
@@ -144,6 +167,13 @@ curl http://localhost:8080/auth/me \
 -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
+### Создание роли
+```bash
+curl -X POST http://localhost:8080/auth/role \
+-H "Content-Type: application/json" \
+-d '{"role_name": "new_role"}'
+```
+
 ---
 
 ## Структура ошибок
@@ -158,10 +188,14 @@ curl http://localhost:8080/auth/me \
 ```
 
 **Коды ошибок:**
+- `UNAUTHORIZED`: Пользователь не прошел аутентификацию.
+- `MISSING FIELDS`: Не указаны необходимые поля запроса.
 - `INVALID_REQUEST`: Некорректный формат запроса.
 - `INVALID_CREDENTIALS`: Неверные логин или пароль.
 - `USER_NOT_FOUND`: Пользователь не найден.
+- `ROLE_NOT_FOUND`: Роль не найдена.
 - `USER_ALREADY_EXISTS`: Пользователь уже существует.
+- `ROLE_ALREADY_EXISTS`: Роль уже существует.
 - `INTERNAL_ERROR`: Внутренняя ошибка сервера.
 
 ## Структура проекта

@@ -12,4 +12,4 @@ tasks:
   composedown:
     desc: "stops containers"
     cmds:
-      - docker-compose down
+      - docker-compose down -v
