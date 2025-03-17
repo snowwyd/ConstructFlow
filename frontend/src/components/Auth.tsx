@@ -1,12 +1,15 @@
 import { useMutation } from '@tanstack/react-query';
+import { AxiosError } from 'axios'; // Импортируем AxiosError
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router';
 import axiosFetching from '../api/AxiosFetch';
-import config from '../constants/Configurations.json'
+import config from '../constants/Configurations.json';
 
 const loginEndpoint = config.loginEndpoint;
 const JWTresponse = config.checkJWT;
 
 const Auth: React.FC = () => {
+	const navigate = useNavigate();
 	const [login, setLogin] = useState<string>('');
 	const [password, setPassword] = useState<string>('');
 	const [error, setError] = useState<string | null>(null);
@@ -16,37 +19,45 @@ const Auth: React.FC = () => {
 			const response = await axiosFetching.post(loginEndpoint, {
 				login,
 				password,
-			}); // ВОЗМОЖНЯ УГРОЗА НО Я ХЗ. 
+			});
 			return response.data;
 		},
-		onSuccess: async (data) => {
+		onSuccess: async (data: { token: string }) => {
+			// Добавляем явную типизацию для data
 			const token = data.token;
-            try {
-                const validateResponse = await axiosFetching.get(JWTresponse, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-                const userId = validateResponse.data.id;
-                console.log('User ID:', userId); 
-            } catch (validationError: any) {
-                setError(validationError.response?.data?.message || 'Token validation failed');
-            }
+			try {
+				const validateResponse = await axiosFetching.get(JWTresponse, {
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				});
+
+				if (validateResponse.data.id) {
+					setError(null);
+					navigate('/main');
+				}
+			} catch (error) {
+				const axiosError = error as AxiosError<{ message?: string }>; // Типизируем ошибку
+				setError(
+					axiosError.response?.data?.message || 'Token validation failed'
+				);
+			}
 		},
-		onError: (data) => {
-			console.log(data.message)
-			setError(data.message);
+		onError: (error: AxiosError<{ message?: string }>) => {
+			// Типизируем ошибку
+			setError(
+				error.response?.data?.message || error.message || 'An error occurred'
+			);
 		},
 	});
 
-
+	// Остальной код остается без изменений
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		if (!login || !password) {
 			setError('Fill in correct data');
 			return;
 		}
-
 		mutate();
 	};
 
@@ -57,7 +68,7 @@ const Auth: React.FC = () => {
 				className='bg-white p-8 rounded-lg shadow-lg w-full max-w-md space-y-4'
 			>
 				<h2 className='text-2xl font-bold text-center text-gray-800'>
-					Authentication form{' '}
+					Authentication form
 				</h2>
 
 				<div>
