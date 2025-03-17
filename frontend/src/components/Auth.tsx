@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router';
 import axiosFetching from '../api/AxiosFetch';
 import config from '../constants/Configurations.json'
 
@@ -7,6 +8,7 @@ const loginEndpoint = config.loginEndpoint;
 const JWTresponse = config.checkJWT;
 
 const Auth: React.FC = () => {
+	const navigate = useNavigate();
 	const [login, setLogin] = useState<string>('');
 	const [password, setPassword] = useState<string>('');
 	const [error, setError] = useState<string | null>(null);
@@ -27,8 +29,12 @@ const Auth: React.FC = () => {
                         Authorization: `Bearer ${token}`,
                     },
                 });
-                const userId = validateResponse.data.id;
-                console.log('User ID:', userId); 
+                if ( validateResponse.data.id){
+					console.log(validateResponse.data.id)
+					setError(null);
+					navigate('/main');
+				}
+
             } catch (validationError: any) {
                 setError(validationError.response?.data?.message || 'Token validation failed');
             }
