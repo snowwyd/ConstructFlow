@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { AxiosError } from 'axios'; // Импортируем AxiosError
+import { AxiosError } from 'axios';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import axiosFetching from '../api/AxiosFetch';
