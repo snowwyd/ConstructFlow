@@ -16,11 +16,12 @@ func main() {
 
 	log := setupLogger()
 
-	log.Info("config loaded successfully",
-		slog.String("env", cfg.Env),
-		slog.String("address", cfg.Address),
-		slog.Any("http_server", cfg.HTTPServer),
-	)
+	// log.Info("config loaded successfully",
+	// 	slog.String("env", cfg.Env),
+	// 	slog.String("address", cfg.Address),
+	// 	slog.Any("http_server", cfg.HTTPServer),
+	// )
+	log.Info("config loaded successfully", slog.Any("config", cfg))
 
 	appInstance, err := app.New(cfg, log)
 	if err != nil {
@@ -46,11 +47,14 @@ func setupRoutes(router *gin.Engine, appInstance *app.App, cfg *config.Config) {
 	// Группа API v1
 	api := router.Group("/api/v1")
 
-	// Маршруты аутентификации (защищенные middleware)
+	// Маршруты аутентификации
 	authGroup := api.Group("/auth")
 	{
 		authGroup.POST("/login", appInstance.AuthHandler.Login)
 		authGroup.POST("/register", appInstance.AuthHandler.RegisterUser)
+		authGroup.POST("/role", appInstance.AuthHandler.RegisterRole)
+
+		// Защищен middleware
 		authGroup.GET("/me", http.AuthMiddleware(cfg), appInstance.AuthHandler.GetCurrentUser)
 	}
 }

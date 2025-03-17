@@ -19,7 +19,7 @@ func NewUserRepository(db *Database) *UserRepository {
 }
 
 // SaveUser добавляет пользователя в БД
-func (r *UserRepository) SaveUser(ctx context.Context, login string, passHash []byte, role string) (uint, error) {
+func (r *UserRepository) SaveUser(ctx context.Context, login string, passHash []byte, roleID uint) (uint, error) {
 	const op = "postgresrepo.user.SaveUser"
 
 	var existingUser domain.User
@@ -37,7 +37,7 @@ func (r *UserRepository) SaveUser(ctx context.Context, login string, passHash []
 	newUser := domain.User{
 		Login:    login,
 		PassHash: passHash,
-		Role:     role,
+		RoleID:   roleID,
 	}
 
 	// создает пользователя и парсит в модель User

@@ -11,36 +11,41 @@ type UserRepository interface {
 	GetUserByLogin(ctx context.Context, login string) (user domain.User, err error)
 
 	// Админские ручки для создания/изменения пользователей
-	SaveUser(ctx context.Context, login string, passHash []byte, role string) (userID uint, err error)
-	UpdateUserRole(ctx context.Context, userID uint, role string) (success bool, err error)
+	SaveUser(ctx context.Context, login string, passHash []byte, roleID uint) (userID uint, err error)
+}
+
+// Для вызова методов слоя БД для работы с ролями
+type RoleRepository interface {
+	CreateRole(ctx context.Context, roleName string) (roleID uint, err error)
+	GetRoleByID(ctx context.Context, roleID uint) (roleName string, err error)
 }
 
 // Для вызова методов слоя БД для работы с папками
-type FolderRepository interface {
-	SaveFolder(ctx context.Context, parentID int, name string) (folderID int, err error)
-	DeleteFolder(ctx context.Context, folderID int) (success bool, err error)
+type DirectoryRepository interface {
+	SaveDirectory(ctx context.Context, parentID int, name string) (directoryID int, err error)
+	DeleteDirectory(ctx context.Context, directoryID int) (success bool, err error)
 
-	GetFolder(ctx context.Context, folderID int) (folder domain.Folder, err error)
-	GetFolders(ctx context.Context, folderIDs []int) (folders []domain.Folder, err error)
-	GetFolderByName(ctx context.Context, parentID int, name string) (folder domain.Folder, err error)
+	GetDirectory(ctx context.Context, directoryID int) (directory domain.Directory, err error)
+	GetDirectorys(ctx context.Context, directoryIDs []int) (directorys []domain.Directory, err error)
+	GetDirectoryByName(ctx context.Context, parentID int, name string) (directory domain.Directory, err error)
 }
 
-// Для вызова методов слоя БД для работы с таблицей users_folders
-type UsersFoldersRepository interface {
-	GetUserFolderIDs(ctx context.Context, userID int) (folderIDs []int, err error)
+// Для вызова методов слоя БД для работы с таблицей users_directorys
+type UsersDirectorysRepository interface {
+	GetUserDirectoryIDs(ctx context.Context, userID int) (directoryIDs []int, err error)
 
-	CheckFolderAccess(ctx context.Context, userID, folderID int) (access bool, err error)
+	CheckDirectoryAccess(ctx context.Context, userID, directoryID int) (access bool, err error)
 }
 
 // Для вызова методов слоя БД для работы с файлами
 type FileRepository interface {
-	SaveFile(ctx context.Context, folderID int) (fileID int, err error)
+	SaveFile(ctx context.Context, directoryID int) (fileID int, err error)
 	UpdateFile(ctx context.Context, fileID int) (success bool, err error)
 	DeleteFile(ctx context.Context, fileID int) (success bool, err error)
 
 	GetFile(ctx context.Context, fileID int) (file domain.File, err error)
 	GetFiles(ctx context.Context, fileIDs []int) (files []domain.File, err error)
-	GetFolderByName(ctx context.Context, folderID int, name string) (file domain.File, err error)
+	GetDirectoryByName(ctx context.Context, directoryID int, name string) (file domain.File, err error)
 }
 
 type UsersFilesRepository interface {

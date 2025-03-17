@@ -13,5 +13,11 @@ var (
 )
 
 var (
+	ErrRoleNotFound = errors.New("role not found")
+
+	ErrRoleAlreadyExists = errors.New("role already exists")
+)
+
+var (
 	ErrInvalidCredentials = errors.New("invalid login or password")
 )

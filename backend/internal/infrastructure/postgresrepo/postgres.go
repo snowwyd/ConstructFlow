@@ -42,8 +42,11 @@ func New(cfg *config.Config) (*Database, error) {
 func applyMigrations(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&domain.User{},
-		&domain.Folder{},
+		&domain.Role{},
+		&domain.Directory{},
 		&domain.File{},
+		&domain.UserDirectory{},
+		&domain.UserFile{},
 		&domain.Approval{},
 		&domain.Annotation{},
 		&domain.Workflow{},

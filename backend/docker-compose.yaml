@@ -4,6 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: constructflow
+    env_file:
+      - .env
     environment:
       - APP_SECRET=${APP_SECRET}
       - CONFIG_PATH=configs/docker.yaml
@@ -14,27 +16,39 @@ services:
       - DB_PORT=5432
       - DB_NAME=constructflow
       - SSL_MODE=disable
-    ports:
-      - "8080:8080"
     depends_on:
       - postgres
     volumes:
       - .:/app
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
     restart: always
 
     
 
   postgres:
     image: postgres
+    container_name: postgres
+    env_file:
+      - .env
     environment:
       - POSTGRES_DB=constructflow
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
+    networks:
+      - app-network
     restart: always
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   pgdata:
