@@ -4,6 +4,10 @@ tasks:
     desc: "runs main.go file"
     cmds:
       - go run cmd/api/main.go
+  seeddb:
+    desc: "applies migrations"
+    cmds:
+      - go run cmd/migrator/main.go -reset -migrate -seed
   build:
     desc: "builds docker-compose file"
     cmds:
@@ -13,3 +17,7 @@ tasks:
     desc: "stops containers"
     cmds:
       - docker-compose down -v
+  swag:
+    desc: "initializes swagger doc"
+    cmds:
+      - swag init -g cmd/api/main.go --parseDependency --parseInternal

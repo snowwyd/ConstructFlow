@@ -15,12 +15,12 @@ type AuthUsecase interface {
 }
 
 type FileTreeUsecase interface {
-	GetFileTree(ctx context.Context, isArchive bool) (data domain.GetFileTreeResponse, err error)
-	GetFileInfo(ctx context.Context, fileID uint) (file domain.File, err error)
+	GetFileTree(ctx context.Context, isArchive bool, userID uint) (data domain.GetFileTreeResponse, err error)
+	GetFileInfo(ctx context.Context, fileID, userID uint) (fileInfo *domain.FileResponse, err error)
 
-	UploadFile(ctx context.Context, directoryID uint, name string) (err error)
-	UploadDirectory(ctx context.Context, directoryID uint, name string) (err error)
+	UploadDirectory(ctx context.Context, directoryID *uint, name string, userID uint) (directory_id uint, err error)
+	UploadFile(ctx context.Context, directoryID uint, name string, userID uint) (file_id uint, err error)
 
-	DeleteFile(ctx context.Context, fileID uint) (err error)
-	DeleteDirectory(ctx context.Context, directoryID uint) (err error)
+	DeleteFile(ctx context.Context, fileID uint, userID uint) (err error)
+	DeleteDirectory(ctx context.Context, directoryID uint, userID uint) (err error)
 }

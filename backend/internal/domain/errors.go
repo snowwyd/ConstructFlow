@@ -21,3 +21,11 @@ var (
 var (
 	ErrInvalidCredentials = errors.New("invalid login or password")
 )
+
+var (
+	ErrFileNotFound = errors.New("file not found")
+)
+
+var (
+	ErrAccessDenied = errors.New("access denied")
+)
