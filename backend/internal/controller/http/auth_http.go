@@ -6,7 +6,6 @@ import (
 
 	"backend/internal/domain"
 	"backend/internal/domain/interfaces"
-	"backend/pkg/config"
 	"backend/pkg/utils"
 
 	"github.com/gin-gonic/gin"
@@ -14,12 +13,11 @@ import (
 
 type AuthHandler struct {
 	usecase interfaces.AuthUsecase
-	cfg     *config.Config
 }
 
 // конструктор
-func NewAuthHandler(usecase interfaces.AuthUsecase, cfg *config.Config) *AuthHandler {
-	return &AuthHandler{usecase: usecase, cfg: cfg}
+func NewAuthHandler(usecase interfaces.AuthUsecase) *AuthHandler {
+	return &AuthHandler{usecase: usecase}
 }
 
 // Login - обработчик эндпоинта /auth/login
@@ -100,10 +98,10 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 		return
 	}
 
-	userIDint := userID.(int)
+	userIDuint := userID.(uint)
 
 	// вызов Usecase GetCurrentUser
-	userResponse, err := h.usecase.GetCurrentUser(c.Request.Context(), uint(userIDint))
+	userResponse, err := h.usecase.GetCurrentUser(c.Request.Context(), userIDuint)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrUserNotFound):

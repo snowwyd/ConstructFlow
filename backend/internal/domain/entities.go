@@ -10,16 +10,16 @@ type GetFileTreeResponse struct {
 	Data []DirectoryResponse `json:"data"`
 }
 
-type DirectoryResponse struct {
-	NameFolder string         `json:"name_folder"`
-	Status     string         `json:"status"`
-	ParentID   uint           `json:"parent_id"`
-	Files      []FileResponse `json:"files"`
+type FileResponse struct {
+	ID          uint   `json:"id"`
+	NameFile    string `json:"name_file"`
+	Status      string `json:"status"`
+	DirectoryID uint   `json:"directory_id"`
 }
 
-type FileResponse struct {
-	ID       uint   `json:"id"`
-	NameFile string `json:"name_file"`
-	Status   string `json:"status"`
-	ParentID uint   `json:"parent_id"`
+type DirectoryResponse struct {
+	NameFolder   string         `json:"name_folder"`
+	Status       string         `json:"status"`
+	ParentPathID *uint          `json:"parent_path_id,omitempty"`
+	Files        []FileResponse `json:"files"`
 }

@@ -56,6 +56,18 @@ func setupRoutes(router *gin.Engine, appInstance *app.App, cfg *config.Config) {
 		// Защищен middleware
 		authGroup.GET("/me", http.AuthMiddleware(cfg), appInstance.AuthHandler.GetCurrentUser)
 	}
+
+	directoriesGroup := api.Group("/directories", http.AuthMiddleware(cfg))
+	{
+		directoriesGroup.POST("/upload", appInstance.TreeHandler.UploadDirectory)
+		directoriesGroup.GET("/", appInstance.TreeHandler.GetTree)
+	}
+
+	filesGroup := api.Group("/files", http.AuthMiddleware(cfg))
+	{
+		filesGroup.POST("/upload", appInstance.TreeHandler.UploadFile)
+	}
+
 }
 
 func setupLogger() *slog.Logger {
