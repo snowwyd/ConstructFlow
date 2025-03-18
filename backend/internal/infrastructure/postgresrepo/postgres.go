@@ -26,14 +26,14 @@ func New(cfg *config.Config) (*Database, error) {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	if err := DropAllTables(db); err != nil {
-		return nil, fmt.Errorf("%s: failed to drop tables: %w", op, err)
-	}
+	// if err := DropAllTables(db); err != nil {
+	// 	return nil, fmt.Errorf("%s: failed to drop tables: %w", op, err)
+	// }
 
 	// Применение миграций через golang-migrate
-	if err := applyMigrations(db); err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
+	// if err := applyMigrations(db); err != nil {
+	// 	return nil, fmt.Errorf("%s: %w", op, err)
+	// }
 
 	return &Database{db: db}, nil
 }

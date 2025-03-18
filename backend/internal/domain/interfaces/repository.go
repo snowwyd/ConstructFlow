@@ -76,6 +76,14 @@ type RoleRepository interface {
 
 type FileTreeRepository interface {
 	GetDirectoriesWithFiles(ctx context.Context, isArchive bool, userID uint) ([]*domain.Directory, error)
-	CreateDirectory(ctx context.Context, parentPathID *uint, name string, status string) (uint, error)
-	CreateFile(ctx context.Context, directoryID uint, name string, status string) (uint, error)
+	GetFileInfo(ctx context.Context, fileID uint) (*domain.File, error)
+
+	CreateDirectory(ctx context.Context, parentPathID *uint, name string, status string, userID uint) (uint, error)
+	CreateFile(ctx context.Context, directoryID uint, name string, status string, userID uint) (uint, error)
+
+	DeleteDirectory(ctx context.Context, directoryID uint, userID uint) error
+	DeleteFile(ctx context.Context, fileID uint, userID uint) error
+
+	CheckUserDirectoryAccess(ctx context.Context, userID, directoryID uint) (bool, error)
+	CheckUserFileAccess(ctx context.Context, userID, fileID uint) (bool, error)
 }

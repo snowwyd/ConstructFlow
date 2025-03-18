@@ -20,7 +20,20 @@ func NewAuthHandler(usecase interfaces.AuthUsecase) *AuthHandler {
 	return &AuthHandler{usecase: usecase}
 }
 
-// Login - обработчик эндпоинта /auth/login
+// Login godoc
+// @Summary Аутентификация пользователя
+// @Description Возвращает JWT токен при успешной аутентификации
+// @Tags auth
+// @Param login body string true "Логин для входа"
+// @Param password body string true "Пароль для входа"
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]string "Токен доступа"
+// @Failure 400 {object} domain.ErrorResponse "Неверный запрос"
+// @Failure 401 {object} domain.ErrorResponse "Неверные учетные данные"
+// @Failure 404 {object} domain.ErrorResponse "Пользователь не найден"
+// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера"
+// @Router /api/v1/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req struct {
 		Login    string `json:"login"`
@@ -54,7 +67,21 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
-// RegisterUser - обработчик эндпоинта /auth/register
+// RegisterUser godoc
+// @Summary Регистрация нового пользователя
+// @Description Регистрирует нового пользователя и возвращает его ID
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param login body string true "Логин пользователя"
+// @Param password body string true "Пароль пользователя"
+// @Param role_id body uint true "ID роли, назначенной пользователю"
+// @Success 201 {object} map[string]uint "ID созданного пользователя"
+// @Failure 400 {object} domain.ErrorResponse "Неверный запрос"
+// @Failure 409 {object} domain.ErrorResponse "Пользователь с таким логином уже существует"
+// @Failure 404 {object} domain.ErrorResponse "Роль не найдена"
+// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера"
+// @Router /api/v1/auth/register [post]
 func (h *AuthHandler) RegisterUser(c *gin.Context) {
 	var req struct {
 		Login    string `json:"login"`
@@ -89,19 +116,26 @@ func (h *AuthHandler) RegisterUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"user_id": userID})
 }
 
-// GetCurrentUser - обработчик эндпоинта /auth/me
+// GetCurrentUser godoc
+// @Summary Получение информации о текущем пользователе
+// @Description Возвращает информацию о пользователе на основе JWT токена
+// @Tags auth
+// @Security JWT
+// @Produce json
+// @Success 200 {object} domain.GetCurrentUserResponse "Информация о пользователе"
+// @Failure 401 {object} domain.ErrorResponse "Не авторизован"
+// @Failure 404 {object} domain.ErrorResponse "Пользователь не найден"
+// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера"
+// @Router /api/v1/auth/me [get]
 func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
-	// получение userID из контекста
-	userID, exists := c.Get("userID")
-	if !exists {
-		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+	userID, err := utils.ExtractUserID(c)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
 		return
 	}
 
-	userIDuint := userID.(uint)
-
 	// вызов Usecase GetCurrentUser
-	userResponse, err := h.usecase.GetCurrentUser(c.Request.Context(), userIDuint)
+	userResponse, err := h.usecase.GetCurrentUser(c.Request.Context(), userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrUserNotFound):
@@ -115,7 +149,18 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 	c.JSON(http.StatusOK, userResponse)
 }
 
-// RegisterRole - обработчик эндпоинта /auth/role
+// RegisterRole godoc
+// @Summary Регистрация новой роли
+// @Description Регистрирует новую роль и возвращает её ID
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param role_name body string true "Название роли"
+// @Success 201 {object} map[string]uint "ID созданной роли"
+// @Failure 400 {object} domain.ErrorResponse "Неверный запрос"
+// @Failure 409 {object} domain.ErrorResponse "Роль с таким названием уже существует"
+// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера"
+// @Router /api/v1/auth/role [post]
 func (h *AuthHandler) RegisterRole(c *gin.Context) {
 	var req struct {
 		RoleName string `json:"role_name"`
