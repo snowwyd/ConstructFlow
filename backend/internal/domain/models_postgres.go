@@ -78,3 +78,18 @@ type Workflow struct {
 	UserID uint `json:"user_id" gorm:"not null;index"`
 	Order  int  `json:"order" gorm:"not null"`
 }
+
+type FileData struct {
+	ID       uint   `json:"id"`
+	NameFile string `json:"name_file"`
+	Status   string `json:"status"`
+	ParentID uint   `json:"parent_id"`
+}
+
+type DirectoryData struct {
+	NameFolder string     `json:"name_folder"`
+	Status     string     `json:"status"`
+	Files      []FileData `json:"files"`
+}
+
+type GetFileTreeData []DirectoryData

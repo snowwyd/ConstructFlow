@@ -53,7 +53,7 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 		}
 
 		// Сохранение userID в контексте
-		c.Set("userID", int(userID))
+		c.Set("userID", uint(userID))
 		c.Next()
 	}
 }

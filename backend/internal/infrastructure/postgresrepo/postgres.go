@@ -26,14 +26,14 @@ func New(cfg *config.Config) (*Database, error) {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	if err := DropAllTables(db); err != nil {
-		return nil, fmt.Errorf("%s: failed to drop tables: %w", op, err)
-	}
+	// if err := DropAllTables(db); err != nil {
+	// 	return nil, fmt.Errorf("%s: failed to drop tables: %w", op, err)
+	// }
 
 	// Применение миграций через golang-migrate
-	if err := applyMigrations(db); err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
+	// if err := applyMigrations(db); err != nil {
+	// 	return nil, fmt.Errorf("%s: %w", op, err)
+	// }
 
 	return &Database{db: db}, nil
 }
@@ -56,7 +56,7 @@ func applyMigrations(db *gorm.DB) error {
 // TODO: разобраться с миграциями и инициализацией БД
 // DropAllTables очищает базу данных
 func DropAllTables(db *gorm.DB) error {
-	tables := []string{"users", "folders", "files", "folders", "approvals", "annotations", "workflows"}
+	tables := []string{"users", "roles", "folders", "files", "directories", "approvals", "annotations", "workflows"}
 	for _, table := range tables {
 		if err := db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s CASCADE", table)).Error; err != nil {
 			return fmt.Errorf("failed to drop table %s: %w", table, err)
