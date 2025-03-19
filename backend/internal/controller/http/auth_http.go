@@ -64,6 +64,17 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	// Установка HTTP-only куки
+	c.SetCookie(
+		"auth_token", // Имя куки
+		token,        // Значение куки (токен)
+		3600,         // Время жизни куки в секундах (1 час)
+		"/",          // Путь, для которого куки доступен
+		"",           // Домен (пустая строка = текущий домен)
+		true,         // Secure: true (куки отправляется только по HTTPS)
+		true,         // HttpOnly: true (куки недоступен через JavaScript)
+	)
+
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
