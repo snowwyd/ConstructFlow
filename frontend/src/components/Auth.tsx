@@ -23,14 +23,9 @@ const Auth: React.FC = () => {
 			});
 			return response.data;
 		},
-		onSuccess: async (data: { token: string }) => {
-			const token = data.token;
+		onSuccess: async () => {
 			try {
-				const validateResponse = await axiosFetching.get(JWTresponse, {
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				});
+				const validateResponse = await axiosFetching.get(JWTresponse);
 
 				if (validateResponse.data.id) {
 					setError(null);
