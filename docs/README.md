@@ -414,6 +414,4 @@ Swagger-документация доступна по адресу:
 ## Контакты
 По вопросам обращайтесь к **[Дане](https://github.com/snowwyd)** 😏
 
-<div align="center">
-<img src="https://media.giphy.com/media/LW4YJfuFxypiq4UtCx/giphy.gif" width="400" height="300"/>
-</div>
+<img src ="https://media.giphy.com/media/7dHKAiRnGDvbSAbT54/giphy.gif" />
