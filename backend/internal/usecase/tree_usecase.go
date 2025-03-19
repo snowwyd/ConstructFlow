@@ -76,6 +76,9 @@ func (u *FileTreeUsecase) GetFileInfo(ctx context.Context, fileID uint, userID u
 	// Проверка доступа пользователя к файлу
 	hasAccess, err := u.fileTreeRepo.CheckUserFileAccess(ctx, userID, fileID)
 	if err != nil {
+		if errors.Is(err, domain.ErrFileNotFound) {
+			log.Error("failed to get file", slogger.Err(domain.ErrFileNotFound))
+		}
 		log.Error("failed to check user file access", slogger.Err(err))
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
