@@ -203,6 +203,7 @@ func (r *FileTreeRepository) CheckUserDirectoryAccess(ctx context.Context, userI
 		Model(&domain.UserDirectory{}).
 		Where("user_id = ? AND directory_id = ?", userID, directoryID).
 		Count(&count).Error
+	// TODO: обработать ошибку, если директория не найдена
 	return count > 0, err
 }
 
@@ -212,5 +213,7 @@ func (r *FileTreeRepository) CheckUserFileAccess(ctx context.Context, userID, fi
 		Model(&domain.UserFile{}).
 		Where("user_id = ? AND file_id = ?", userID, fileID).
 		Count(&count).Error
+
+	// TODO: обработать ошибку, если файл не найден
 	return count > 0, err
 }

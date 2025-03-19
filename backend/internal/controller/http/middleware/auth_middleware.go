@@ -13,18 +13,10 @@ import (
 
 func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Извлечение токена из заголовка Authorization
-		tokenString := c.GetHeader("Authorization")
-		if tokenString == "" {
-			utils.SendErrorResponse(c, http.StatusUnauthorized, "MISSING_TOKEN", "Authorization header is missing")
-			c.Abort()
-			return
-		}
-
-		// Удаление префикса "Bearer "
-		tokenString = utils.ExtractBearerToken(tokenString)
-		if tokenString == "" {
-			utils.SendErrorResponse(c, http.StatusUnauthorized, "INVALID_TOKEN_FORMAT", "Invalid token format")
+		// Извлечение токена из куки
+		tokenString, err := c.Cookie("auth_token")
+		if err != nil || tokenString == "" {
+			utils.SendErrorResponse(c, http.StatusUnauthorized, "MISSING_TOKEN", "Authentication token is missing")
 			c.Abort()
 			return
 		}
