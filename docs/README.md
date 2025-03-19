@@ -415,4 +415,5 @@ Swagger-документация доступна по адресу:
 По вопросам обращайтесь к **[Дане](https://github.com/snowwyd)** 😏
 
 <div align="center">
-	<img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExY2h5MDZhendpODRkZ3hpeXNvN2YycHB2aWExYWk5ZXE0bTJibm10MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/LW4YJfuFxypiq4UtCx/giphy.gif" width="400" height="300"/>
+<img src="https://media.giphy.com/media/LW4YJfuFxypiq4UtCx/giphy.gif" width="400" height="300"/>
+</div>
