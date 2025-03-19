@@ -414,4 +414,5 @@ Swagger-документация доступна по адресу:
 ## Контакты
 По вопросам обращайтесь к **[Дане](https://github.com/snowwyd)** 😏
 
-<div class="tenor-gif-embed" data-postid="26206051" data-share-method="host" data-aspect-ratio="1.77778" data-width="100%"><a href="https://tenor.com/view/homelander-based-the-boys-homelander-the-boys-facts-gif-26206051">Homelander Based GIF</a>from <a href="https://tenor.com/search/homelander-gifs">Homelander GIFs</a></div> <script type="text/javascript" async src="https://tenor.com/embed.js"></script>
+<div align="center">
+	<img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExY2h5MDZhendpODRkZ3hpeXNvN2YycHB2aWExYWk5ZXE0bTJibm10MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/LW4YJfuFxypiq4UtCx/giphy.gif" width="400" height="300"/>
