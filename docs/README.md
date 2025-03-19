@@ -53,7 +53,8 @@ docker-compose --build up -d # если отсутствует go-task
 task build 
 
 # Откатить контейнеры и очистить БД
-docker-compose down # если отсутствует go-task
+# Важно! При изменении данных в .env файле обязательно выполнить эту команду и потом запустить контейнеры
+docker-compose down -v # если отсутствует go-task
 task composedown
 ```
 Пример .env файла:
