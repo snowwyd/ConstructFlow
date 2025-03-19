@@ -24,7 +24,6 @@ const Auth: React.FC = () => {
 			return response.data;
 		},
 		onSuccess: async (data: { token: string }) => {
-			// Добавляем явную типизацию для data
 			const token = data.token;
 			try {
 				const validateResponse = await axiosFetching.get(JWTresponse, {
@@ -52,7 +51,6 @@ const Auth: React.FC = () => {
 		},
 	});
 
-	// Остальной код остается без изменений
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		if (!login || !password) {

@@ -1,5 +1,6 @@
 {
 	"apiKey": "http://localhost:8080",
 	"loginEndpoint": "/api/v1/auth/login",
-	"checkJWT": "/api/v1/auth/me"
+	"checkJWT": "/api/v1/auth/me",
+	"getFiles": "/api/v1/directories"
 }
