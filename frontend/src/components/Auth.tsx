@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import axiosFetching from '../api/AxiosFetch';
 import config from '../constants/Configurations.json';
-import FilesTree from './FilesTree';
 
 const loginEndpoint = config.loginEndpoint;
 const JWTresponse = config.checkJWT;
@@ -57,7 +56,6 @@ const Auth: React.FC = () => {
 
 	return (
 		<div className='flex justify-center items-center min-h-screen bg-gray-100'>
-						<FilesTree/>
 			<form
 				onSubmit={handleSubmit}
 				className='bg-white p-8 rounded-lg shadow-lg w-full max-w-md space-y-4'

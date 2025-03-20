@@ -1,45 +1,19 @@
 import React from "react";
+import { useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { RichTreeView, TreeItem2, TreeItem2Props } from "@mui/x-tree-view";
 import FolderIcon from "@mui/icons-material/Folder";
 import DescriptionIcon from "@mui/icons-material/Description";
 import ArchiveIcon from "@mui/icons-material/Archive";
-import { Box, styled } from "@mui/material";
+import { AxiosError } from "axios";
+import { Box, styled, CircularProgress, Typography } from "@mui/material";
+import axiosFetching from "../api/AxiosFetch";
+import config from '../constants/Configurations.json';
 import { Directory } from "../interfaces/FilesTree";
 import { TreeDataItem } from "../interfaces/FilesTree";
 
+const getFolders = config.getFiles;
 
-//ТЕСТОВЫЕ ДАННЫЕ УДАЛИТЬ
-const apiResponse = {
-  data: [
-    {
-      id: 1,
-      name_folder: "ROOT",
-      status: "archive",
-      files: [
-        {
-          id: 1,
-          name_file: "Archived1.txt",
-          status: "archive",
-          directory_id: 1,
-        },
-      ],
-    },
-    {
-      id: 2,
-      name_folder: "Archived Directory",
-      status: "archive",
-      parent_path_id: 1,
-      files: [
-        {
-          id: 2,
-          name_file: "Archived2.txt",
-          status: "archive",
-          directory_id: 2,
-        },
-      ],
-    },
-  ],
-};
 const CustomTreeItem = styled(TreeItem2)(({ theme }) => ({
   "& .MuiTreeItem-content": {
     padding: theme.spacing(0.5, 0),
@@ -63,7 +37,6 @@ const transformDataToTreeItems = (data: Directory[]): TreeDataItem[] => {
       children: [],
     });
   });
-
 
   data.forEach((item) => {
     const node = map.get(item.id)!;
@@ -89,7 +62,38 @@ const transformDataToTreeItems = (data: Directory[]): TreeDataItem[] => {
 };
 
 const FilesTree: React.FC = () => {
-  const treeItems = transformDataToTreeItems(apiResponse.data);
+
+  const { mutate, isPending, isError, error, data: apiResponse } = useMutation({
+    mutationFn: async () => {
+      const response = await axiosFetching.post(getFolders,{is_archive : true});
+      return response.data; 
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      console.error("Error fetching folders:", error.response?.data?.message || error.message);
+    },
+  });
+
+  useEffect(() => {
+    mutate(); 
+  }, [mutate]);
+
+  if (isPending) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 200 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Typography color="error" align="center">
+        Error loading data: {error instanceof AxiosError ? error.message : "Unknown error"}
+      </Typography>
+    );
+  }
+
+  const treeItems = apiResponse ? transformDataToTreeItems(apiResponse.data) : [];
 
   return (
     <RichTreeView
