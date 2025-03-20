@@ -67,7 +67,7 @@ func setupRoutes(router *gin.Engine, appInstance *app.App, cfg *config.Config) {
 	{
 		directoriesGroup.POST("/upload", appInstance.TreeHandler.UploadDirectory)
 		directoriesGroup.DELETE("/", appInstance.TreeHandler.DeleteDirectory)
-		directoriesGroup.GET("/", appInstance.TreeHandler.GetTree)
+		directoriesGroup.POST("/", appInstance.TreeHandler.GetTree)
 	}
 
 	filesGroup := api.Group("/files", http.AuthMiddleware(cfg))
