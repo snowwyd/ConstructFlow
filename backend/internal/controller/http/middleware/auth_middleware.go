@@ -13,6 +13,12 @@ import (
 
 func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Пропускаем OPTIONS-запросы
+		if c.Request.Method == "OPTIONS" {
+			c.Next()
+			return
+		}
+
 		// Извлечение токена из куки
 		tokenString, err := c.Cookie("auth_token")
 		if err != nil || tokenString == "" {

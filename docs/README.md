@@ -49,7 +49,7 @@ curl -sL https://taskfile.dev/install.sh | sh
 # Создайте .env файл в директории /backend
 
 # Запустите контейнеры (PostgreSQL + приложение)
-docker-compose --build up -d # если отсутствует go-task
+docker-compose up --build -d # если отсутствует go-task
 task build 
 
 # Откатить контейнеры и очистить БД
@@ -65,7 +65,7 @@ DB_PASSWORD = your_password
 CONFIG_PATH = configs/local.yaml
 ```
 
-### 3. Примените миграции для тестирования (опционально)
+### 3. Примените миграции для тестирования
 ```bash
 # Запуск в директории backend/
 # Очищает БД, а затем создает тестовые данные для проверки методов
