@@ -1,5 +1,9 @@
+import FilesTree from "./FilesTree";
+
 const MainPage = () => {
-	return <div>MainPage</div>;
+	return <div>
+		<FilesTree/>
+	</div>;
 };
 
 export default MainPage;
