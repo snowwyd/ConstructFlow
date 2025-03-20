@@ -66,15 +66,15 @@ func setupRoutes(router *gin.Engine, appInstance *app.App, cfg *config.Config) {
 	directoriesGroup := api.Group("/directories", http.AuthMiddleware(cfg))
 	{
 		directoriesGroup.POST("/upload", appInstance.TreeHandler.UploadDirectory)
-		directoriesGroup.DELETE("/", appInstance.TreeHandler.DeleteDirectory)
-		directoriesGroup.GET("/", appInstance.TreeHandler.GetTree)
+		directoriesGroup.DELETE("", appInstance.TreeHandler.DeleteDirectory)
+		directoriesGroup.POST("", appInstance.TreeHandler.GetTree)
 	}
 
 	filesGroup := api.Group("/files", http.AuthMiddleware(cfg))
 	{
 		filesGroup.GET("/:file_id", appInstance.TreeHandler.GetFileInfo)
 		filesGroup.POST("/upload", appInstance.TreeHandler.UploadFile)
-		filesGroup.DELETE("/", appInstance.TreeHandler.DeleteFile)
+		filesGroup.DELETE("", appInstance.TreeHandler.DeleteFile)
 	}
 
 }

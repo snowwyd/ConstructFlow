@@ -23,7 +23,7 @@ func CORSMiddleware() gin.HandlerFunc {
 		}
 
 		if allowed {
-			c.Header("Access-Control-Allow-Origin", origin)
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 			c.Header("Access-Control-Allow-Credentials", "true") // Разрешаем credentials
