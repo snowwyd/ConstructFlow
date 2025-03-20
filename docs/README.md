@@ -229,7 +229,7 @@ Authorization: Bearer <JWT_TOKEN>
 
 ---
 
-### 7. Получение дерева файлов и директорий (`GET /api/v1/directories`)
+### 7. Получение дерева файлов и директорий (`POST /api/v1/directories`)
 **Заголовки:**
 ```http
 Authorization: Bearer <JWT_TOKEN>
@@ -415,3 +415,4 @@ Swagger-документация доступна по адресу:
 По вопросам обращайтесь к **[Дане](https://github.com/snowwyd)** 😏
 
 <img src ="https://media.giphy.com/media/7dHKAiRnGDvbSAbT54/giphy.gif" />
+  
