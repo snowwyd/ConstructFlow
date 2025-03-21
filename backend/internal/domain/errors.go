@@ -23,7 +23,8 @@ var (
 )
 
 var (
-	ErrFileNotFound = errors.New("file not found")
+	ErrFileNotFound      = errors.New("file not found")
+	ErrInvalidFileStatus = errors.New("file is not in a draft state")
 )
 
 var (

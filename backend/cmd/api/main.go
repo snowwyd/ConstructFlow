@@ -75,6 +75,8 @@ func setupRoutes(router *gin.Engine, appInstance *app.App, cfg *config.Config) {
 		filesGroup.GET("/:file_id", appInstance.TreeHandler.GetFileInfo)
 		filesGroup.POST("/upload", appInstance.TreeHandler.UploadFile)
 		filesGroup.DELETE("", appInstance.TreeHandler.DeleteFile)
+
+		filesGroup.POST("/:file_id/approve", appInstance.ApprovalHandler.ApproveFile)
 	}
 
 }

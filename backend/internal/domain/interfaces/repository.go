@@ -3,6 +3,8 @@ package interfaces
 import (
 	"backend/internal/domain"
 	"context"
+
+	"gorm.io/gorm"
 )
 
 // Для вызова методов слоя БД для работы с пользователями
@@ -54,14 +56,6 @@ type RoleRepository interface {
 // 	CheckFileAccess(ctx context.Context, userID, fileID int) (access bool, err error)
 // }
 
-// // Для вызова методов слоя БД для работы с файлами на согласовании
-// type ApprovalRepository interface {
-// 	SaveApproval(ctx context.Context, userID, fileID int, fileName string) (success bool, err error)
-// 	UpdateApproval(ctx context.Context, approvalID, userID int, status string) (success bool, err error)
-
-// 	GetApprovals(ctx context.Context, userID int) (approvals []domain.Approval, err error)
-// }
-
 // // Для вызова методов слоя БД для работы с процедурами согласования
 // type WorkflowRepository interface {
 // 	GetUserFromWorkflow(ctx context.Context, workflowID, order int) (userID int, err error)
@@ -86,4 +80,15 @@ type FileTreeRepository interface {
 
 	CheckUserDirectoryAccess(ctx context.Context, userID, directoryID uint) (bool, error)
 	CheckUserFileAccess(ctx context.Context, userID, fileID uint) (bool, error)
+
+	WithTx(tx *gorm.DB) FileTreeRepository // Метод для передачи транзакции
+	GetDB() *gorm.DB
+
+	GetFileWithDirectory(ctx context.Context, fileID uint, tx *gorm.DB) (*domain.File, error)
+	UpdateFileStatus(ctx context.Context, file *domain.File, tx *gorm.DB) error
+}
+
+// Для вызова методов слоя БД для работы с файлами на согласовании
+type ApprovalRepository interface {
+	CreateApproval(ctx context.Context, approval *domain.Approval, tx *gorm.DB) error
 }

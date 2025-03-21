@@ -24,3 +24,7 @@ type FileTreeUsecase interface {
 	DeleteFile(ctx context.Context, fileID uint, userID uint) (err error)
 	DeleteDirectory(ctx context.Context, directoryID uint, userID uint) (err error)
 }
+
+type ApprovalUsecase interface {
+	ApproveFile(ctx context.Context, fileID uint) (err error)
+}

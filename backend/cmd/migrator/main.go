@@ -7,6 +7,7 @@ import (
 	"backend/pkg/utils"
 	"flag"
 	"fmt"
+	"log"
 	"log/slog"
 	"os"
 
@@ -44,12 +45,21 @@ func main() {
 	}
 
 	if *migrateFlag {
-		err = db.AutoMigrate(&domain.Role{}, &domain.User{}, &domain.Directory{}, &domain.File{})
+		err = db.AutoMigrate(
+			&domain.Role{},
+			&domain.User{},
+			&domain.Directory{},
+			&domain.File{},
+			&domain.Approval{},
+			&domain.Workflow{},
+			&domain.UserDirectory{}, // Явное указание связующих таблиц
+			&domain.UserFile{},      // Явное указание связующих таблиц
+		)
 		if err != nil {
 			log.Error("failed to auto migrate", slog.String("error", err.Error()))
 			return
 		}
-		log.Info("migrations applied successfully")	
+		log.Info("migrations applied successfully")
 	}
 
 	if *seedFlag {
@@ -63,90 +73,150 @@ func resetDatabase(db *gorm.DB) {
 	db.Exec("SET CONSTRAINTS ALL DEFERRED")
 
 	// Очистка таблиц в правильном порядке
-	tables := []interface{}{
-		&domain.User{},
-		&domain.Role{},
-		&domain.File{},
-		&domain.Directory{},
-		&domain.UserDirectory{},
-		&domain.UserFile{},
+	tables := []string{
+		"user_directories", // Связующая таблица
+		"user_files",       // Связующая таблица
+		"approvals",
+		"workflows",
+		"files",
+		"directories",
+		"users",
+		"roles",
 	}
 
+	// Удаление данных из таблиц
 	for _, table := range tables {
-		db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(table)
+		db.Exec(fmt.Sprintf("DELETE FROM %s", table))
 	}
 
 	// Сброс автоинкрементных счетчиков
-	db.Exec("TRUNCATE TABLE user_directories, user_files, directories, files, users, roles RESTART IDENTITY CASCADE")
+	db.Exec(`
+        TRUNCATE TABLE 
+            user_directories, 
+            user_files, 
+            approvals, 
+            workflows, 
+            files, 
+            directories, 
+            users, 
+            roles 
+        RESTART IDENTITY CASCADE
+    `)
 }
 
 func seedData(db *gorm.DB) {
+	// TODO: сделать трех пользовтелей: 2 конструктора и 1 админ
+
+	// TODO: создать workflows:
+	// 1: user1, user2, user3
+	// 2: user2, user2, user3
+	// 3: user3, user3, user3
+
+	// TODO: сделать дерево файлов:
+	// ROOT (Folder1, Folder2, File1, File2) WorkflowID = 1
+	// Folder1 (Folder3, File3) WorkflowID = 3
+	// Folder2 (File4) WorkflowID = 2
+	// Folder3 (File5, File6) WorkflowID = 3
+
+	// TODO: выдать права:
+	// User1 (Folder3, File3, File5, File6)
+	// User2 (Folder2, File4)
+	// User3 (Folder1-3, File1-6, ROOT)
+
 	passHash, _ := utils.HashPassword("12345678")
 
-	// Создаем роли
+	// 1. Создаем роли
 	adminRole := domain.Role{RoleName: "admin"}
-	db.Where("role_name = ?", "admin").FirstOrCreate(&adminRole)
+	db.Where(adminRole).FirstOrCreate(&adminRole)
 
 	constructorRole := domain.Role{RoleName: "constructor"}
-	db.Where("role_name = ?", "constructor").FirstOrCreate(&constructorRole)
+	db.Where(constructorRole).FirstOrCreate(&constructorRole)
 
-	// Создаем пользователей
-	user1 := domain.User{
-		Login:    "snowwy",
-		PassHash: passHash,
-		RoleID:   adminRole.ID,
+	// 2. Создаем пользователей
+	users := []domain.User{
+		{Login: "user1", PassHash: passHash, RoleID: adminRole.ID},
+		{Login: "user2", PassHash: passHash, RoleID: constructorRole.ID},
+		{Login: "user3", PassHash: passHash, RoleID: constructorRole.ID},
 	}
-	db.Where("login = ?", "snowwy").FirstOrCreate(&user1)
-
-	user2 := domain.User{
-		Login:    "nubik_snowwy",
-		PassHash: passHash,
-		RoleID:   constructorRole.ID,
+	if err := db.Create(&users).Error; err != nil {
+		log.Fatalf("Failed to create users: %v", err)
 	}
-	db.Where("login = ?", "nubik_snowwy").FirstOrCreate(&user2)
 
-	// Создаем директории
-	rootDir := domain.Directory{Name: "ROOT"}
-	db.Where("name = ?", "ROOT").Attrs(domain.Directory{Status: "archive"}).FirstOrCreate(&rootDir)
+	// 3. Создаем workflows
+	workflows := []domain.Workflow{
+		// Workflow 1: user1 (order 1), user2 (order 2), user3 (order 3)
+		{WorkflowID: 1, UserID: users[0].ID, Order: 1},
+		{WorkflowID: 1, UserID: users[1].ID, Order: 2},
+		{WorkflowID: 1, UserID: users[2].ID, Order: 3},
 
-	archivedDir := domain.Directory{Name: "Archived Directory"}
-	db.Where("name = ?", "Archived Directory").Attrs(domain.Directory{
+		// Workflow 2: user2 (order 1), user2 (order 2), user3 (order 3)
+		{WorkflowID: 2, UserID: users[1].ID, Order: 1},
+		{WorkflowID: 2, UserID: users[1].ID, Order: 2},
+		{WorkflowID: 2, UserID: users[2].ID, Order: 3},
+
+		// Workflow 3: user3 (order 1, 2, 3)
+		{WorkflowID: 3, UserID: users[2].ID, Order: 1},
+		{WorkflowID: 3, UserID: users[2].ID, Order: 2},
+		{WorkflowID: 3, UserID: users[2].ID, Order: 3},
+	}
+	if err := db.Create(&workflows).Error; err != nil {
+		log.Fatalf("Failed to create workflows: %v", err)
+	}
+
+	// 4. Дерево директорий
+	rootDir := domain.Directory{
+		Name:       "ROOT",
+		WorkflowID: 1,
+	}
+	db.Where("name = ?", rootDir.Name).FirstOrCreate(&rootDir)
+
+	folder1 := domain.Directory{
+		Name:         "Folder1",
 		ParentPathID: &rootDir.ID,
-		Status:       "archive",
-	}).FirstOrCreate(&archivedDir)
+		WorkflowID:   3,
+	}
+	db.Where("name = ?", folder1.Name).FirstOrCreate(&folder1)
 
-	wipDir1 := domain.Directory{Name: "WIP Directory 1"}
-	db.Where("name = ?", "WIP Directory").Attrs(domain.Directory{
+	folder2 := domain.Directory{
+		Name:         "Folder2",
 		ParentPathID: &rootDir.ID,
-		Status:       "wip",
-	}).FirstOrCreate(&wipDir1)
+		WorkflowID:   2,
+	}
+	db.Where("name = ?", folder2.Name).FirstOrCreate(&folder2)
 
-	wipDir2 := domain.Directory{Name: "WIP Directory 2"}
-	db.Where("name = ?", "WIP Directory").Attrs(domain.Directory{
-		ParentPathID: &rootDir.ID,
-		Status:       "wip",
-	}).FirstOrCreate(&wipDir2)
+	folder3 := domain.Directory{
+		Name:         "Folder3",
+		ParentPathID: &folder1.ID,
+		WorkflowID:   3,
+	}
+	db.Where("name = ?", folder3.Name).FirstOrCreate(&folder3)
 
-	// Создаем файлы
+	// 5. Файлы
 	files := []domain.File{
-		{Name: "Archived1.txt", DirectoryID: rootDir.ID, Status: "archive"},
-		{Name: "Archived2.txt", DirectoryID: archivedDir.ID, Status: "archive"},
-		{Name: "809.txt", DirectoryID: rootDir.ID, Status: "wip"},
-		{Name: "810.txt", DirectoryID: rootDir.ID, Status: "wip"},
-		{Name: "811.txt", DirectoryID: wipDir1.ID, Status: "wip"},
-		{Name: "812.txt", DirectoryID: wipDir2.ID, Status: "wip"},
+		{Name: "File1", DirectoryID: rootDir.ID, Status: "draft"},
+		{Name: "File2", DirectoryID: rootDir.ID, Status: "draft"},
+		{Name: "File3", DirectoryID: folder1.ID, Status: "draft"},
+		{Name: "File4", DirectoryID: folder2.ID, Status: "draft"},
+		{Name: "File5", DirectoryID: folder3.ID, Status: "draft"},
+		{Name: "File6", DirectoryID: folder3.ID, Status: "draft"},
+	}
+	if err := db.Create(&files).Error; err != nil {
+		log.Fatalf("Failed to create files: %v", err)
 	}
 
-	for i := range files {
-		db.Where("name = ?", files[i].Name).Attrs(files[i]).FirstOrCreate(&files[i])
-	}
+	// 6. Назначение прав доступа
+	// User1: Folder3, File3, File5, File6
+	db.Model(&users[0]).Association("Directories").Append([]domain.Directory{folder3}) // Добавляем директорию
+	db.Model(&users[0]).Association("Files").Append([]domain.File{files[2], files[4], files[5]})
 
-	// Связываем пользователей с директориями и файлами
-	db.Model(&user1).Association("Directories").Replace([]domain.Directory{rootDir, archivedDir, wipDir1})
-	db.Model(&user1).Association("Files").Replace(files[:3])
+	// User2: Folder2, File4
+	db.Model(&users[1]).Association("Directories").Append([]domain.Directory{folder2})
+	db.Model(&users[1]).Association("Files").Append([]domain.File{files[3]})
 
-	db.Model(&user2).Association("Directories").Replace([]domain.Directory{wipDir2})
-	db.Model(&user2).Association("Files").Replace([]domain.File{files[3], files[4]})
+	// User3: все директории и файлы
+	directories := []domain.Directory{rootDir, folder1, folder2, folder3}
+	db.Model(&users[2]).Association("Directories").Append(directories)
+	db.Model(&users[2]).Association("Files").Append(files)
 }
 
 func setupLogger() *slog.Logger {

@@ -15,7 +15,7 @@ type FileTreeUsecase struct {
 	log          *slog.Logger
 }
 
-func NewFileTreeUsecase(fileTreeRepo interfaces.FileTreeRepository, log *slog.Logger) interfaces.FileTreeUsecase {
+func NewFileTreeUsecase(fileTreeRepo interfaces.FileTreeRepository, log *slog.Logger) *FileTreeUsecase {
 	return &FileTreeUsecase{
 		fileTreeRepo: fileTreeRepo,
 		log:          log,

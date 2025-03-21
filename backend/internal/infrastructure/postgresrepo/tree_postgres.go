@@ -2,6 +2,7 @@ package postgresrepo
 
 import (
 	"backend/internal/domain"
+	"backend/internal/domain/interfaces"
 	"context"
 	"fmt"
 
@@ -14,6 +15,14 @@ type FileTreeRepository struct {
 
 func NewFileTreeRepository(db *Database) *FileTreeRepository {
 	return &FileTreeRepository{db: db.db}
+}
+
+func (r *FileTreeRepository) WithTx(tx *gorm.DB) interfaces.FileTreeRepository {
+	return &FileTreeRepository{db: tx}
+}
+
+func (r *FileTreeRepository) GetDB() *gorm.DB {
+	return r.db
 }
 
 func (r *FileTreeRepository) GetDirectoriesWithFiles(ctx context.Context, isArchive bool, userID uint) ([]*domain.Directory, error) {
@@ -216,4 +225,25 @@ func (r *FileTreeRepository) CheckUserFileAccess(ctx context.Context, userID, fi
 
 	// TODO: обработать ошибку, если файл не найден
 	return count > 0, err
+}
+
+// GetFileWithDirectory получает файл с директорией
+func (r *FileTreeRepository) GetFileWithDirectory(ctx context.Context, fileID uint, tx *gorm.DB) (*domain.File, error) {
+	var file domain.File
+	query := tx.WithContext(ctx).
+		Preload("Directory").
+		Where("id = ?", fileID).
+		First(&file)
+	if query.Error != nil {
+		return nil, query.Error
+	}
+	return &file, nil
+}
+
+// UpdateFileStatus обновляет статус файла
+func (r *FileTreeRepository) UpdateFileStatus(ctx context.Context, file *domain.File, tx *gorm.DB) error {
+	return tx.WithContext(ctx).
+		Model(file).
+		Update("status", file.Status).
+		Error
 }
