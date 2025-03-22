@@ -22,6 +22,8 @@ func NewFileTreeUsecase(fileTreeRepo interfaces.FileTreeRepository, log *slog.Lo
 	}
 }
 
+// GetFileTree возвращает дерево файлов
+// Кастомные ошибки: ErrAccessDenied
 func (u *FileTreeUsecase) GetFileTree(ctx context.Context, isArchive bool, userID uint) (domain.GetFileTreeResponse, error) {
 	const op = "usecase.tree.GetFileTree"
 	log := u.log.With(slog.String("op", op), slog.Any("user_id", userID), slog.Bool("archive", isArchive))
@@ -31,8 +33,12 @@ func (u *FileTreeUsecase) GetFileTree(ctx context.Context, isArchive bool, userI
 	// Получение директорий с файлами из репозитория
 	directories, err := u.fileTreeRepo.GetDirectoriesWithFiles(ctx, isArchive, userID)
 	if err != nil {
+		if errors.Is(err, domain.ErrAccessDenied) {
+			log.Error("user has no access to this repository", slogger.Err(domain.ErrAccessDenied))
+			return domain.GetFileTreeResponse{}, domain.ErrAccessDenied
+		}
 		log.Error("failed to get directories from repository", slogger.Err(err))
-		return domain.GetFileTreeResponse{}, fmt.Errorf("%s: %w", op, domain.ErrInternal)
+		return domain.GetFileTreeResponse{}, fmt.Errorf("%s: %w", op, err)
 	}
 
 	log.Debug("directories retrieved successfully", slog.Int("count", len(directories)))
@@ -67,6 +73,8 @@ func (u *FileTreeUsecase) GetFileTree(ctx context.Context, isArchive bool, userI
 	return response, nil
 }
 
+// GetFileInfo возвращает информацию о конкретном файле
+// Кастомные ошибки: ErrFileNotFound, ErrAccessDenied
 func (u *FileTreeUsecase) GetFileInfo(ctx context.Context, fileID uint, userID uint) (*domain.FileResponse, error) {
 	const op = "usecase.file_tree.GetFileInfo"
 	log := u.log.With(slog.String("op", op), slog.Any("user_id", userID), slog.Any("file_id", fileID))
@@ -78,6 +86,7 @@ func (u *FileTreeUsecase) GetFileInfo(ctx context.Context, fileID uint, userID u
 	if err != nil {
 		if errors.Is(err, domain.ErrFileNotFound) {
 			log.Error("failed to get file", slogger.Err(domain.ErrFileNotFound))
+			return nil, domain.ErrFileNotFound
 		}
 		log.Error("failed to check user file access", slogger.Err(err))
 		return nil, fmt.Errorf("%s: %w", op, err)
@@ -110,6 +119,8 @@ func (u *FileTreeUsecase) GetFileInfo(ctx context.Context, fileID uint, userID u
 	return response, nil
 }
 
+// UploadDirectory добавляет новую директорию в уже существующую
+// Кастомные ошибки: ErrDirectoryNotFound, ErrAccessDenied
 func (u *FileTreeUsecase) UploadDirectory(ctx context.Context, parentPathID *uint, name string, userID uint) (uint, error) {
 	const op = "usecase.file.UploadDirectory"
 	log := u.log.With(slog.String("op", op), slog.Any("user_id", userID))
@@ -119,8 +130,12 @@ func (u *FileTreeUsecase) UploadDirectory(ctx context.Context, parentPathID *uin
 	if parentPathID != nil {
 		hasAccess, err := u.fileTreeRepo.CheckUserDirectoryAccess(ctx, userID, *parentPathID)
 		if err != nil {
+			if errors.Is(err, domain.ErrDirectoryNotFound) {
+				log.Error("file not found", slogger.Err(domain.ErrDirectoryNotFound))
+				return 0, domain.ErrDirectoryNotFound
+			}
 			log.Error("failed to check directory access", slogger.Err(err))
-			return 0, fmt.Errorf("%s: %w", op, domain.ErrInternal)
+			return 0, fmt.Errorf("%s: %w", op, err)
 		}
 		if !hasAccess {
 			log.Warn("user has no access to parent directory", slog.Any("parent_id", *parentPathID))
@@ -128,17 +143,19 @@ func (u *FileTreeUsecase) UploadDirectory(ctx context.Context, parentPathID *uin
 		}
 	}
 
-	status := "wip"
+	status := "draft"
 	dirID, err := u.fileTreeRepo.CreateDirectory(ctx, parentPathID, name, status, userID)
 	if err != nil {
 		log.Error("failed to create directory", slogger.Err(err))
-		return 0, fmt.Errorf("%s: %w", op, domain.ErrInternal)
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
 	log.Info("directory created successfully", slog.Any("directory_id", dirID))
 	return dirID, nil
 }
 
+// UploadDirectory добавляет новый файл в существующую директорию
+// Кастомные ошибки: ErrDirectoryNotFound, ErrAccessDenied
 func (u *FileTreeUsecase) UploadFile(ctx context.Context, directoryID uint, name string, userID uint) (uint, error) {
 	const op = "usecase.file.UploadFile"
 	log := u.log.With(slog.String("op", op), slog.Any("user_id", userID))
@@ -147,25 +164,31 @@ func (u *FileTreeUsecase) UploadFile(ctx context.Context, directoryID uint, name
 	// Проверка доступа к директории
 	hasAccess, err := u.fileTreeRepo.CheckUserDirectoryAccess(ctx, userID, directoryID)
 	if err != nil {
+		if errors.Is(err, domain.ErrDirectoryNotFound) {
+			log.Error("directory not found", slogger.Err(domain.ErrDirectoryNotFound))
+			return 0, domain.ErrDirectoryNotFound
+		}
 		log.Error("failed to check directory access", slogger.Err(err))
-		return 0, fmt.Errorf("%s: %w", op, domain.ErrInternal)
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 	if !hasAccess {
 		log.Warn("user has no access to directory", slog.Any("directory_id", directoryID))
 		return 0, domain.ErrAccessDenied
 	}
 
-	status := "wip"
+	status := "draft"
 	fileID, err := u.fileTreeRepo.CreateFile(ctx, directoryID, name, status, userID)
 	if err != nil {
 		log.Error("failed to create file", slogger.Err(err))
-		return 0, fmt.Errorf("%s: %w", op, domain.ErrInternal)
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
 	log.Info("file created successfully", slog.Any("file_id", fileID))
 	return fileID, nil
 }
 
+// DeleteDirectory удаляет существующую директорию
+// Кастомные ошибки: ErrDirectoryNotFound, ErrAccessDenied, ErrDirectoryContainsNonDraftFiles
 func (u *FileTreeUsecase) DeleteDirectory(ctx context.Context, directoryID uint, userID uint) error {
 	const op = "usecase.file_tree.DeleteDirectory"
 	log := u.log.With(slog.String("op", op), slog.Any("user_id", userID), slog.Any("directory_id", directoryID))
@@ -173,6 +196,17 @@ func (u *FileTreeUsecase) DeleteDirectory(ctx context.Context, directoryID uint,
 	log.Info("deleting directory")
 	err := u.fileTreeRepo.DeleteDirectory(ctx, directoryID, userID)
 	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrDirectoryNotFound):
+			log.Error("directory not found", slogger.Err(domain.ErrDirectoryNotFound))
+			return domain.ErrDirectoryNotFound
+		case errors.Is(err, domain.ErrAccessDenied):
+			log.Error("user has no access to this directory", slogger.Err(domain.ErrAccessDenied))
+			return domain.ErrAccessDenied
+		case errors.Is(err, domain.ErrDirectoryContainsNonDraftFiles):
+			log.Error("directory contains non draft files", slogger.Err(domain.ErrDirectoryContainsNonDraftFiles))
+			return domain.ErrDirectoryContainsNonDraftFiles
+		}
 		log.Error("failed to delete directory", slogger.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -181,6 +215,8 @@ func (u *FileTreeUsecase) DeleteDirectory(ctx context.Context, directoryID uint,
 	return nil
 }
 
+// DeleteFile удаляет существующий файл
+// Кастомные ошибки: ErrDirectoryNotFound, ErrAccessDenied, ErrCannotDeleteNonDraftFile
 func (u *FileTreeUsecase) DeleteFile(ctx context.Context, fileID uint, userID uint) error {
 	const op = "usecase.file_tree.DeleteFile"
 	log := u.log.With(slog.String("op", op), slog.Any("user_id", userID), slog.Any("file_id", fileID))
@@ -188,6 +224,17 @@ func (u *FileTreeUsecase) DeleteFile(ctx context.Context, fileID uint, userID ui
 	log.Info("deleting file")
 	err := u.fileTreeRepo.DeleteFile(ctx, fileID, userID)
 	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrDirectoryNotFound):
+			log.Error("directory not found", slogger.Err(domain.ErrDirectoryNotFound))
+			return domain.ErrDirectoryNotFound
+		case errors.Is(err, domain.ErrAccessDenied):
+			log.Error("user has no access to this directory", slogger.Err(domain.ErrAccessDenied))
+			return domain.ErrAccessDenied
+		case errors.Is(err, domain.ErrCannotDeleteNonDraftFile):
+			log.Error("cannot delete non draft file", slogger.Err(domain.ErrCannotDeleteNonDraftFile))
+			return domain.ErrCannotDeleteNonDraftFile
+		}
 		log.Error("failed to delete file", slogger.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
 	}

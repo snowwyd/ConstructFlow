@@ -122,9 +122,9 @@ func seedData(db *gorm.DB) {
 
 	// 2. Создаем пользователей
 	users := []domain.User{
-		{Login: "user1", PassHash: passHash, RoleID: adminRole.ID},
+		{Login: "user1", PassHash: passHash, RoleID: constructorRole.ID},
 		{Login: "user2", PassHash: passHash, RoleID: constructorRole.ID},
-		{Login: "user3", PassHash: passHash, RoleID: constructorRole.ID},
+		{Login: "user3", PassHash: passHash, RoleID: adminRole.ID},
 	}
 	if err := db.Create(&users).Error; err != nil {
 		log.Fatalf("Failed to create users: %v", err)
