@@ -50,7 +50,12 @@ func (h *TreeHandler) GetTree(c *gin.Context) {
 
 	response, err := h.usecase.GetFileTree(c.Request.Context(), req.IsArchive, userID)
 	if err != nil {
-		utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to get file tree")
+		switch {
+		case errors.Is(err, domain.ErrAccessDenied):
+			utils.SendErrorResponse(c, http.StatusForbidden, "ACCES_DENIED", "You do not have access to this repository")
+		default:
+			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to get file tree")
+		}
 		return
 	}
 
@@ -143,6 +148,8 @@ func (h *TreeHandler) UploadDirectory(c *gin.Context) {
 	dirID, err := h.usecase.UploadDirectory(c.Request.Context(), req.ParentPathID, req.Name, userID)
 	if err != nil {
 		switch {
+		case errors.Is(err, domain.ErrDirectoryNotFound):
+			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "Directory not found")
 		case errors.Is(err, domain.ErrAccessDenied):
 			utils.SendErrorResponse(c, http.StatusForbidden, "ACCESS_DENIED", "User has no access to this directory")
 		default:
@@ -194,6 +201,8 @@ func (h *TreeHandler) UploadFile(c *gin.Context) {
 	fileID, err := h.usecase.UploadFile(c.Request.Context(), req.DirectoryID, req.Name, userID)
 	if err != nil {
 		switch {
+		case errors.Is(err, domain.ErrDirectoryNotFound):
+			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "Directory not found")
 		case errors.Is(err, domain.ErrAccessDenied):
 			utils.SendErrorResponse(c, http.StatusForbidden, "ACCESS_DENIED", "User has no access to this directory")
 		default:
@@ -243,15 +252,19 @@ func (h *TreeHandler) DeleteDirectory(c *gin.Context) {
 	err = h.usecase.DeleteDirectory(c.Request.Context(), req.DirectoryID, userID)
 	if err != nil {
 		switch {
+		case errors.Is(err, domain.ErrDirectoryNotFound):
+			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "Directory not found")
 		case errors.Is(err, domain.ErrAccessDenied):
 			utils.SendErrorResponse(c, http.StatusForbidden, "ACCESS_DENIED", "User has no access to delete this directory")
+		case errors.Is(err, domain.ErrDirectoryContainsNonDraftFiles):
+			utils.SendErrorResponse(c, http.StatusConflict, "CONFLICT", "Directory contains non-draft files and cannot be deleted")
 		default:
 			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to delete directory")
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"mssage": "Directory deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Directory deleted successfully"})
 }
 
 // DeleteFile godoc
@@ -293,13 +306,17 @@ func (h *TreeHandler) DeleteFile(c *gin.Context) {
 	err = h.usecase.DeleteFile(c.Request.Context(), req.FileID, userID)
 	if err != nil {
 		switch {
+		case errors.Is(err, domain.ErrFileNotFound):
+			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "File not found")
 		case errors.Is(err, domain.ErrAccessDenied):
 			utils.SendErrorResponse(c, http.StatusForbidden, "ACCESS_DENIED", "User has no access to delete this file")
+		case errors.Is(err, domain.ErrCannotDeleteNonDraftFile):
+			utils.SendErrorResponse(c, http.StatusConflict, "CONFLICT", "Cannot delete non-draft files")
 		default:
 			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to delete file")
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"mssage": "File deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "File deleted successfully"})
 }

@@ -24,3 +24,11 @@ type FileTreeUsecase interface {
 	DeleteFile(ctx context.Context, fileID uint, userID uint) (err error)
 	DeleteDirectory(ctx context.Context, directoryID uint, userID uint) (err error)
 }
+
+type ApprovalUsecase interface {
+	ApproveFile(ctx context.Context, fileID uint) (err error)
+	GetApprovalsByUserID(ctx context.Context, userID uint) (approvals []domain.ApprovalResponse, err error)
+	SignApproval(ctx context.Context, approvalID, userID uint) error
+	AnnotateApproval(ctx context.Context, approvalID, userID uint, message string) error
+	FinalizeApproval(ctx context.Context, approvalID, userID uint) error
+}
