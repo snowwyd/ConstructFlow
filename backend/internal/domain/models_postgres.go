@@ -65,6 +65,8 @@ type Approval struct {
 	WorkflowID     uint   `json:"workflow_id" gorm:"not null"`
 	WorkflowOrder  int    `json:"workflow_order" gorm:"not null"`
 	AnnotationText string `json:"annotation_text"`
+
+	File File `gorm:"foreignKey:FileID"`
 }
 
 // Workflow модель

@@ -81,9 +81,10 @@ func setupRoutes(router *gin.Engine, appInstance *app.App, cfg *config.Config) {
 
 	approvalsGroup := api.Group("/approvals", http.AuthMiddleware(cfg))
 	{
-		// Добавьте новый эндпоинт
 		approvalsGroup.GET("", appInstance.ApprovalHandler.GetApprovalsByUser)
 		approvalsGroup.POST("/:approval_id/sign", appInstance.ApprovalHandler.SignApproval)
+		approvalsGroup.POST("/:approval_id/annotate", appInstance.ApprovalHandler.AnnotateApproval)
+		approvalsGroup.POST("/:approval_id/finalize", appInstance.ApprovalHandler.FinalizeApproval)
 	}
 }
 

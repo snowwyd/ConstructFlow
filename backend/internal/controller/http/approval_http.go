@@ -67,7 +67,7 @@ func (h *ApprovalHandler) SignApproval(c *gin.Context) {
 	approvalIDStr := c.Param("approval_id")
 	approvalID, err := strconv.ParseUint(approvalIDStr, 10, 64)
 	if err != nil {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_FILE_ID", "Invalid file ID")
+		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_APPROVAL_ID", "Invalid approval ID")
 		return
 	}
 
@@ -87,4 +87,72 @@ func (h *ApprovalHandler) SignApproval(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Approval signed successfully"})
+}
+
+func (h *ApprovalHandler) AnnotateApproval(c *gin.Context) {
+	approvalIDStr := c.Param("approval_id")
+	approvalID, err := strconv.ParseUint(approvalIDStr, 10, 64)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_APPROVAL_ID", "Invalid approval ID")
+		return
+	}
+
+	var req struct {
+		Message string `json:"message"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		return
+	}
+
+	userID, err := utils.ExtractUserID(c)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		return
+	}
+
+	err = h.usecase.AnnotateApproval(c.Request.Context(), uint(approvalID), userID, req.Message)
+	if err != nil {
+		if errors.Is(err, domain.ErrApprovalNotFound) {
+			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "Approval not found")
+			return
+		}
+		if errors.Is(err, domain.ErrNoPermission) {
+			utils.SendErrorResponse(c, http.StatusForbidden, "FORBIDDEN", "User has no permission to annotate this approval")
+			return
+		}
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to annotate approval")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Approval annotated successfully"})
+}
+
+func (h *ApprovalHandler) FinalizeApproval(c *gin.Context) {
+	approvalIDStr := c.Param("approval_id")
+	approvalID, err := strconv.ParseUint(approvalIDStr, 10, 64)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_APPROVAL_ID", "Invalid approval ID")
+		return
+	}
+
+	userID, err := utils.ExtractUserID(c)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		return
+	}
+
+	err = h.usecase.FinalizeApproval(c.Request.Context(), uint(approvalID), userID)
+	if err != nil {
+		if errors.Is(err, domain.ErrApprovalNotFound) {
+			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "Approval not found")
+			return
+		}
+		if errors.Is(err, domain.ErrNoPermission) {
+			utils.SendErrorResponse(c, http.StatusForbidden, "FORBIDDEN", "Only the last user in the workflow can finalize this approval")
+			return
+		}
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to finalize approval")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Approval finalized successfully"})
 }

@@ -67,6 +67,14 @@ func (u *ApprovalUsecase) SignApproval(ctx context.Context, approvalID, userID u
 	log := u.log.With(slog.String("op", op), slog.Any("login", approvalID))
 	log.Info("signing approval")
 	// Проверяем, что пользователь имеет право подписывать Approval
+	isLastUser, err := u.approvalRepo.IsLastUserInWorkflow(ctx, approvalID, userID)
+	if err != nil {
+		return err
+	}
+	if isLastUser {
+		return domain.ErrNoPermission
+	}
+
 	hasPermission, err := u.approvalRepo.CheckUserPermission(ctx, approvalID, userID)
 	if err != nil {
 		log.Error("failed to check user permission", slogger.Err(err))
@@ -83,4 +91,26 @@ func (u *ApprovalUsecase) SignApproval(ctx context.Context, approvalID, userID u
 		log.Error("failed to increment order", slogger.Err(err))
 	}
 	return nil
+}
+
+func (u *ApprovalUsecase) AnnotateApproval(ctx context.Context, approvalID, userID uint, message string) error {
+	// Проверяем права пользователя
+	hasPermission, err := u.approvalRepo.CheckUserPermission(ctx, approvalID, userID)
+	if err != nil || !hasPermission {
+		return domain.ErrNoPermission
+	}
+
+	// Обновляем Approval и File
+	return u.approvalRepo.AnnotateApproval(ctx, approvalID, message)
+}
+
+func (u *ApprovalUsecase) FinalizeApproval(ctx context.Context, approvalID, userID uint) error {
+	// Проверяем права пользователя (последний ли он в цепочке)
+	isLastUser, err := u.approvalRepo.IsLastUserInWorkflow(ctx, approvalID, userID)
+	if err != nil || !isLastUser {
+		return domain.ErrNoPermission
+	}
+
+	// Обновляем Approval и File
+	return u.approvalRepo.FinalizeApproval(ctx, approvalID)
 }

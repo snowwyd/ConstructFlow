@@ -29,4 +29,6 @@ type ApprovalUsecase interface {
 	ApproveFile(ctx context.Context, fileID uint) (err error)
 	GetApprovalsByUserID(ctx context.Context, userID uint) (approvals []domain.ApprovalResponse, err error)
 	SignApproval(ctx context.Context, approvalID, userID uint) error
+	AnnotateApproval(ctx context.Context, approvalID, userID uint, message string) error
+	FinalizeApproval(ctx context.Context, approvalID, userID uint) error
 }

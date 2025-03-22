@@ -35,6 +35,7 @@ func (r *ApprovalRepository) FindApprovalsByUser(ctx context.Context, userID uin
 		Joins("JOIN workflows ON workflows.workflow_id = approvals.workflow_id AND workflows.workflow_order = approvals.workflow_order").
 		Joins("JOIN files ON files.id = approvals.file_id").
 		Where("workflows.user_id = ?", userID).
+		Where("approvals.status = ?", "on approval").
 		Scan(&approvals).Error
 
 	return approvals, err
@@ -47,6 +48,7 @@ func (r *ApprovalRepository) CheckUserPermission(ctx context.Context, approvalID
 		Model(&domain.Approval{}).
 		Joins("JOIN workflows ON workflows.workflow_id = approvals.workflow_id AND workflows.workflow_order = approvals.workflow_order").
 		Where("approvals.id = ? AND workflows.user_id = ?", approvalID, userID).
+		Where("approvals.status = ?", "on approval").
 		Select("COUNT(*) > 0").
 		Scan(&exists).Error
 	return exists, err
@@ -59,4 +61,88 @@ func (r *ApprovalRepository) IncrementApprovalOrder(ctx context.Context, approva
 		Where("id = ?", approvalID).
 		Update("workflow_order", gorm.Expr("workflow_order + 1")).
 		Error
+}
+
+// AnnotateApproval обновляет Approval и связанный File
+func (r *ApprovalRepository) AnnotateApproval(ctx context.Context, approvalID uint, message string) error {
+	tx := r.db.WithContext(ctx).Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Находим Approval и связанный File
+	var approval domain.Approval
+	if err := tx.Preload("File").First(&approval, approvalID).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Обновляем Approval
+	approval.Status = "annotated"
+	approval.AnnotationText = message
+	if err := tx.Save(&approval).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Обновляем File
+	if approval.File.ID != 0 {
+		approval.File.Status = "draft"
+		if err := tx.Save(approval.File).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit().Error
+}
+
+func (r *ApprovalRepository) IsLastUserInWorkflow(ctx context.Context, approvalID, userID uint) (bool, error) {
+	var isLast bool
+	err := r.db.WithContext(ctx).
+		Model(&domain.Approval{}).
+		Joins("JOIN workflows ON workflows.workflow_id = approvals.workflow_id AND workflows.workflow_order = approvals.workflow_order").
+		Where("approvals.id = ?", approvalID).
+		Select(`
+            workflows.user_id = ? AND 
+            workflows.workflow_order = (SELECT MAX(workflow_order) FROM workflows WHERE workflow_id = approvals.workflow_id)
+        `, userID).
+		Scan(&isLast).Error
+	return isLast, err
+}
+
+func (r *ApprovalRepository) FinalizeApproval(ctx context.Context, approvalID uint) error {
+	tx := r.db.WithContext(ctx).Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Находим Approval и связанный File
+	var approval domain.Approval
+	if err := tx.Preload("File").First(&approval, approvalID).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Обновляем Approval
+	approval.Status = "approved"
+	if err := tx.Save(&approval).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Обновляем File
+	if approval.File.ID != 0 {
+		approval.File.Status = "approved"
+		if err := tx.Save(approval.File).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit().Error
 }

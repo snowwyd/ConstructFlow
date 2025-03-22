@@ -93,6 +93,10 @@ type ApprovalRepository interface {
 	CreateApproval(ctx context.Context, approval *domain.Approval, tx *gorm.DB) error
 	FindApprovalsByUser(ctx context.Context, userID uint) ([]domain.ApprovalResponse, error)
 
+	IsLastUserInWorkflow(ctx context.Context, approvalID, userID uint) (bool, error)
 	CheckUserPermission(ctx context.Context, approvalID, userID uint) (bool, error)
+
 	IncrementApprovalOrder(ctx context.Context, approvalID uint) error
+	AnnotateApproval(ctx context.Context, approvalID uint, message string) error
+	FinalizeApproval(ctx context.Context, approvalID uint) error
 }
