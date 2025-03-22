@@ -4,6 +4,301 @@
         "contact": {}
     },
     "paths": {
+        "/api/v1/approval/{approval_id}/annotate": {
+            "post": {
+                "description": "Добавляет сообщение (аннотацию) к одобрению",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "approval"
+                ],
+                "summary": "Добавить аннотацию к одобрению",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID одобрения",
+                        "name": "approval_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Текст аннотации",
+                        "name": "message",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Аннотация добавлена успешно",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID одобрения или тело запроса",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не аутентифицирован",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав для добавления аннотации",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Одобрение не найдено",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/approval/{approval_id}/finalize": {
+            "post": {
+                "description": "Завершает процесс одобрения для указанного одобрения",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "approval"
+                ],
+                "summary": "Завершить одобрение",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID одобрения",
+                        "name": "approval_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Одобрение завершено успешно",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID одобрения",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не аутентифицирован",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Только последний пользователь может завершить",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Одобрение не найдено",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/approval/{approval_id}/sign": {
+            "post": {
+                "description": "Подписание одобрения указанным пользователем",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "approval"
+                ],
+                "summary": "Подписать одобрение",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID одобрения",
+                        "name": "approval_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Одобрение подписано успешно",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID одобрения",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не аутентифицирован",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав для подписания или требуется завершение",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Одобрение не найдено",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/approval/{file_id}/approve": {
+            "post": {
+                "description": "Отправляет файл на одобрение",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "approval"
+                ],
+                "summary": "Одобрить файл",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID файла",
+                        "name": "file_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Файл отправлен на одобрение",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID файла или файл не в состоянии черновика",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Файл не найден",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/approvals": {
+            "get": {
+                "description": "Возвращает список одобрений для текущего пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "approval"
+                ],
+                "summary": "Получить одобрения пользователя",
+                "responses": {
+                    "200": {
+                        "description": "Список одобрений",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.Approval"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не аутентифицирован",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/login": {
             "post": {
                 "description": "Возвращает JWT токен при успешной аутентификации",
@@ -656,8 +951,91 @@
         }
     },
     "definitions": {
+        "domain.Approval": {
+            "type": "object",
+            "properties": {
+                "annotation_text": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "file": {
+                    "$ref": "#/definitions/domain.File"
+                },
+                "file_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "workflow_id": {
+                    "type": "integer"
+                },
+                "workflow_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "domain.Directory": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.File"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parentPath": {
+                    "$ref": "#/definitions/domain.Directory"
+                },
+                "parent_path_id": {
+                    "description": "Указатель для NULL",
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.User"
+                    }
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "workflow_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "domain.DirectoryResponse": {
-            "description": "Информация о директории",
+            "description": "Детальная информация о директории",
             "type": "object",
             "properties": {
                 "files": {
@@ -667,21 +1045,25 @@
                     }
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 123
                 },
                 "name_folder": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Documents"
                 },
                 "parent_path_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 456
                 },
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "active"
                 }
             }
         },
         "domain.ErrorResponse": {
-            "description": "Структура ошибки API",
+            "description": "Стандартизированный ответ при ошибке API",
             "type": "object",
             "properties": {
                 "error": {
@@ -689,51 +1071,96 @@
                     "properties": {
                         "code": {
                             "type": "string",
-                            "example": "INVALID_REQUEST"
+                            "example": "NOT_FOUND"
                         },
                         "message": {
                             "type": "string",
-                            "example": "Invalid request body"
+                            "example": "Resource not found"
                         }
                     }
                 }
             }
         },
-        "domain.FileResponse": {
-            "description": "Информация о файле",
+        "domain.File": {
             "type": "object",
             "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "directory": {
+                    "$ref": "#/definitions/domain.Directory"
+                },
                 "directory_id": {
                     "type": "integer"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "name_file": {
+                "name": {
                     "type": "string"
                 },
                 "status": {
                     "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.User"
+                    }
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "domain.FileResponse": {
+            "description": "Детальная информация о файле",
+            "type": "object",
+            "properties": {
+                "directory_id": {
+                    "type": "integer",
+                    "example": 123
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 789
+                },
+                "name_file": {
+                    "type": "string",
+                    "example": "report.pdf"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "draft"
                 }
             }
         },
         "domain.GetCurrentUserResponse": {
-            "description": "Информация о пользователе",
+            "description": "Информация о текущем пользователе",
             "type": "object",
             "properties": {
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "login": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "john_doe"
                 },
                 "role": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "user"
                 }
             }
         },
         "domain.GetFileTreeResponse": {
-            "description": "Структура ответа для дерева файлов",
+            "description": "Ответ с древовидной структурой файлов и директорий",
             "type": "object",
             "properties": {
                 "data": {
@@ -741,6 +1168,59 @@
                     "items": {
                         "$ref": "#/definitions/domain.DirectoryResponse"
                     }
+                }
+            }
+        },
+        "domain.User": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "directories": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.Directory"
+                    }
+                },
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.File"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "login": {
+                    "type": "string"
+                },
+                "pass_hash": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "roleID": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "gorm.DeletedAt": {
+            "type": "object",
+            "properties": {
+                "time": {
+                    "type": "string"
+                },
+                "valid": {
+                    "description": "Valid is true if Time is not NULL",
+                    "type": "boolean"
                 }
             }
         }
