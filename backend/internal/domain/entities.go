@@ -41,3 +41,11 @@ type ErrorResponse struct {
 		Message string `json:"message" example:"Invalid request body"`
 	} `json:"error"`
 }
+
+type ApprovalResponse struct {
+	ID            uint   `json:"id"`
+	FileID        uint   `json:"file_id"`
+	FileName      string `json:"file_name"`
+	Status        string `json:"status"`
+	WorkflowOrder int    `json:"workflow_order"`
+}

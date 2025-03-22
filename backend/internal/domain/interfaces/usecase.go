@@ -27,4 +27,6 @@ type FileTreeUsecase interface {
 
 type ApprovalUsecase interface {
 	ApproveFile(ctx context.Context, fileID uint) (err error)
+	GetApprovalsByUserID(ctx context.Context, userID uint) (approvals []domain.ApprovalResponse, err error)
+	SignApproval(ctx context.Context, approvalID, userID uint) error
 }

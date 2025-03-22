@@ -55,6 +55,7 @@ func main() {
 			&domain.UserDirectory{}, // Явное указание связующих таблиц
 			&domain.UserFile{},      // Явное указание связующих таблиц
 		)
+
 		if err != nil {
 			log.Error("failed to auto migrate", slog.String("error", err.Error()))
 			return
@@ -69,13 +70,9 @@ func main() {
 }
 
 func resetDatabase(db *gorm.DB) {
-	// Отключаем проверку внешних ключей
-	db.Exec("SET CONSTRAINTS ALL DEFERRED")
-
-	// Очистка таблиц в правильном порядке
 	tables := []string{
-		"user_directories", // Связующая таблица
-		"user_files",       // Связующая таблица
+		"user_directories", // Связующие таблицы
+		"user_files",
 		"approvals",
 		"workflows",
 		"files",
@@ -84,24 +81,15 @@ func resetDatabase(db *gorm.DB) {
 		"roles",
 	}
 
-	// Удаление данных из таблиц
+	// Отключаем проверку внешних ключей
+	db.Exec("SET CONSTRAINTS ALL DEFERRED")
+
+	// Удаляем таблицы в обратном порядке (сначала дочерние)
 	for _, table := range tables {
-		db.Exec(fmt.Sprintf("DELETE FROM %s", table))
+		db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s CASCADE", table))
 	}
 
-	// Сброс автоинкрементных счетчиков
-	db.Exec(`
-        TRUNCATE TABLE 
-            user_directories, 
-            user_files, 
-            approvals, 
-            workflows, 
-            files, 
-            directories, 
-            users, 
-            roles 
-        RESTART IDENTITY CASCADE
-    `)
+	log.Println("All tables dropped successfully")
 }
 
 func seedData(db *gorm.DB) {
@@ -145,19 +133,19 @@ func seedData(db *gorm.DB) {
 	// 3. Создаем workflows
 	workflows := []domain.Workflow{
 		// Workflow 1: user1 (order 1), user2 (order 2), user3 (order 3)
-		{WorkflowID: 1, UserID: users[0].ID, Order: 1},
-		{WorkflowID: 1, UserID: users[1].ID, Order: 2},
-		{WorkflowID: 1, UserID: users[2].ID, Order: 3},
+		{WorkflowID: 1, UserID: users[0].ID, WorkflowOrder: 1},
+		{WorkflowID: 1, UserID: users[1].ID, WorkflowOrder: 2},
+		{WorkflowID: 1, UserID: users[2].ID, WorkflowOrder: 3},
 
 		// Workflow 2: user2 (order 1), user2 (order 2), user3 (order 3)
-		{WorkflowID: 2, UserID: users[1].ID, Order: 1},
-		{WorkflowID: 2, UserID: users[1].ID, Order: 2},
-		{WorkflowID: 2, UserID: users[2].ID, Order: 3},
+		{WorkflowID: 2, UserID: users[1].ID, WorkflowOrder: 1},
+		{WorkflowID: 2, UserID: users[1].ID, WorkflowOrder: 2},
+		{WorkflowID: 2, UserID: users[2].ID, WorkflowOrder: 3},
 
 		// Workflow 3: user3 (order 1, 2, 3)
-		{WorkflowID: 3, UserID: users[2].ID, Order: 1},
-		{WorkflowID: 3, UserID: users[2].ID, Order: 2},
-		{WorkflowID: 3, UserID: users[2].ID, Order: 3},
+		{WorkflowID: 3, UserID: users[2].ID, WorkflowOrder: 1},
+		{WorkflowID: 3, UserID: users[2].ID, WorkflowOrder: 2},
+		{WorkflowID: 3, UserID: users[2].ID, WorkflowOrder: 3},
 	}
 	if err := db.Create(&workflows).Error; err != nil {
 		log.Fatalf("Failed to create workflows: %v", err)

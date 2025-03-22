@@ -3,6 +3,7 @@ package usecase
 import (
 	"backend/internal/domain"
 	"backend/internal/domain/interfaces"
+	"backend/pkg/logger/slogger"
 	"context"
 	"log/slog"
 )
@@ -38,10 +39,10 @@ func (u *ApprovalUsecase) ApproveFile(ctx context.Context, fileID uint) error {
 
 	// 3. Создать approval
 	approval := &domain.Approval{
-		FileID:     file.ID,
-		Status:     "on approval",
-		WorkflowID: file.Directory.WorkflowID,
-		Order:      1,
+		FileID:        file.ID,
+		Status:        "on approval",
+		WorkflowID:    file.Directory.WorkflowID,
+		WorkflowOrder: 1,
 	}
 	if err := u.approvalRepo.CreateApproval(ctx, approval, tx); err != nil {
 		return err
@@ -54,4 +55,32 @@ func (u *ApprovalUsecase) ApproveFile(ctx context.Context, fileID uint) error {
 	}
 
 	return tx.Commit().Error
+}
+
+// GetApprovalsByUserID получает все Approvals для пользователя через Workflow
+func (u *ApprovalUsecase) GetApprovalsByUserID(ctx context.Context, userID uint) ([]domain.ApprovalResponse, error) {
+	return u.approvalRepo.FindApprovalsByUser(ctx, userID)
+}
+
+func (u *ApprovalUsecase) SignApproval(ctx context.Context, approvalID, userID uint) error {
+	const op = "usecase.approval.SignApproval"
+	log := u.log.With(slog.String("op", op), slog.Any("login", approvalID))
+	log.Info("signing approval")
+	// Проверяем, что пользователь имеет право подписывать Approval
+	hasPermission, err := u.approvalRepo.CheckUserPermission(ctx, approvalID, userID)
+	if err != nil {
+		log.Error("failed to check user permission", slogger.Err(err))
+		return err
+	}
+	if !hasPermission {
+		log.Error("user has no permission to approval", slogger.Err(domain.ErrNoPermission))
+		return domain.ErrNoPermission
+	}
+
+	// Обновляем order
+	err = u.approvalRepo.IncrementApprovalOrder(ctx, approvalID)
+	if err != nil {
+		log.Error("failed to increment order", slogger.Err(err))
+	}
+	return nil
 }

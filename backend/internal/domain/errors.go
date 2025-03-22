@@ -30,3 +30,8 @@ var (
 var (
 	ErrAccessDenied = errors.New("access denied")
 )
+
+var (
+	ErrApprovalNotFound = errors.New("approval not found")
+	ErrNoPermission     = errors.New("user has no permission to sign this approval")
+)

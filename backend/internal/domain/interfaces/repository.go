@@ -91,4 +91,8 @@ type FileTreeRepository interface {
 // Для вызова методов слоя БД для работы с файлами на согласовании
 type ApprovalRepository interface {
 	CreateApproval(ctx context.Context, approval *domain.Approval, tx *gorm.DB) error
+	FindApprovalsByUser(ctx context.Context, userID uint) ([]domain.ApprovalResponse, error)
+
+	CheckUserPermission(ctx context.Context, approvalID, userID uint) (bool, error)
+	IncrementApprovalOrder(ctx context.Context, approvalID uint) error
 }

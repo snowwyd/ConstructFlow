@@ -45,3 +45,46 @@ func (h *ApprovalHandler) ApproveFile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "File sent for approval"})
 }
+
+// GetApprovalsByUser обработчик GET /approvals
+func (h *ApprovalHandler) GetApprovalsByUser(c *gin.Context) {
+	userID, err := utils.ExtractUserID(c)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		return
+	}
+
+	approvals, err := h.usecase.GetApprovalsByUserID(c.Request.Context(), userID)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to fetch approvals")
+		return
+	}
+
+	c.JSON(http.StatusOK, approvals)
+}
+
+func (h *ApprovalHandler) SignApproval(c *gin.Context) {
+	approvalIDStr := c.Param("approval_id")
+	approvalID, err := strconv.ParseUint(approvalIDStr, 10, 64)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_FILE_ID", "Invalid file ID")
+		return
+	}
+
+	userID, err := utils.ExtractUserID(c)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		return
+	}
+
+	err = h.usecase.SignApproval(c.Request.Context(), uint(approvalID), userID)
+	if err != nil {
+		if errors.Is(err, domain.ErrApprovalNotFound) {
+			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "Approval not found")
+			return
+		}
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to sign approval")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Approval signed successfully"})
+}
