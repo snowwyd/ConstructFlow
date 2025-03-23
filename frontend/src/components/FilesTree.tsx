@@ -4,24 +4,21 @@ import FolderIcon from '@mui/icons-material/Folder';
 import {
 	Box,
 	CircularProgress,
-	Menu,
-	MenuItem,
 	styled,
 	Typography,
 } from '@mui/material';
 import { RichTreeView, TreeItem2, TreeItem2Props } from '@mui/x-tree-view';
 import { useMutation } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import axiosFetching from '../api/AxiosFetch';
 import config from '../constants/Configurations.json';
 import { Directory, TreeDataItem } from '../interfaces/FilesTree';
+import { useDispatch } from 'react-redux';
+import { openContextMenu } from '../store/Slices/contexMenuSlice';
+import ContextMenu from './ContextMenu';
 
 const getFolders = config.getFiles;
-const createDirectory = config.createDirectory;
-const deleteDirectory = config.deleteDirectory;
-const createFile = config.createFile;
-const deleteFile = config.deleteFile;
 
 //У M-UI СВОЯ БИБЛИОТЕКА СТИЛЕЙ, В ЭТОМ КОМПОНЕНТЕ РЕШИЛ ИСПОЛЬЗОВАТЬ ЕЕ
 const CustomTreeItem = styled(TreeItem2)(({ theme }) => ({
@@ -78,12 +75,9 @@ const transformDataToTreeItems = (data: Directory[]): TreeDataItem[] => {
 };
 
 const FilesTree: React.FC = () => {
-	const [contextMenu, setContextMenu] = useState<{
-		mouseX: number;
-		mouseY: number;
-		itemId?: string;
-		itemType?: 'directory' | 'file';
-	} | null>(null);
+
+  const dispatch = useDispatch();
+
 
 	const {
 		mutate,
@@ -109,6 +103,16 @@ const FilesTree: React.FC = () => {
 	useEffect(() => {
 		mutate();
 	}, [mutate]);
+
+  const handleContextMenu = (event: React.MouseEvent<HTMLDivElement>, itemId: string, itemType: "directory" | "file") => {
+    event.preventDefault();
+    dispatch(openContextMenu({        
+      mouseX: event.clientX - 2,
+      mouseY: event.clientY - 4,
+      itemId,
+      itemType
+    }))
+  }
 
 	if (isPending) {
 		return (
@@ -138,43 +142,7 @@ const FilesTree: React.FC = () => {
 		? transformDataToTreeItems(apiResponse.data)
 		: [];
 
-	const handleContextMenu = (
-		event: React.MouseEvent<HTMLDivElement>,
-		itemId: string,
-		itemType: 'directory' | 'file'
-	) => {
-		event.preventDefault();
-		setContextMenu(
-			contextMenu === null
-				? {
-						mouseX: event.clientX - 2,
-						mouseY: event.clientY - 4,
-						itemId,
-						itemType,
-				  }
-				: null
-		);
-	};
 
-	const handleCloseContextMenu = () => {
-		setContextMenu(null);
-	};
-
-	const handleCreateFolder = () => {
-		handleCloseContextMenu();
-	};
-
-	const handleDeleteFolder = () => {
-		handleCloseContextMenu();
-	};
-
-	const handleCreateFile = () => {
-		handleCloseContextMenu();
-	};
-
-	const handleDeleteFile = () => {
-		handleCloseContextMenu();
-	};
 
 	return (
 		<>
@@ -245,28 +213,9 @@ const FilesTree: React.FC = () => {
 					padding: 1,
 				}}
 			/>
-
-			<Menu
-				open={contextMenu !== null}
-				onClose={handleCloseContextMenu}
-				anchorReference='anchorPosition'
-				anchorPosition={
-					contextMenu !== null
-						? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-						: undefined
-				}
-			>
-				{contextMenu?.itemType === 'directory' && (
-					<>
-						<MenuItem onClick={handleCreateFolder}>Создать папку</MenuItem>
-						<MenuItem onClick={handleCreateFile}>Создать файл</MenuItem>
-						<MenuItem onClick={handleDeleteFolder}>Удалить папку</MenuItem>
-					</>
-				)}
-				{contextMenu?.itemType === 'file' && (
-					<MenuItem onClick={handleDeleteFile}>Удалить файл</MenuItem>
-				)}
-			</Menu>
+      
+      {/*Контекстное меню*/}
+      <ContextMenu/>
 		</>
 	);
 };
