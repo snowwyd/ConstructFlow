@@ -1,21 +1,49 @@
-import {Menu, MenuItem} from '@mui/material';
+import {Button, Dialog, DialogActions, DialogContent, DialogTitle, Menu, MenuItem, TextField} from '@mui/material';
 import {useDispatch, useSelector} from "react-redux";
 import { closeContextMenu } from '../store/Slices/contexMenuSlice';
 import config from "../constants/Configurations.json";
+import { useRef, useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import axiosFetching from '../api/AxiosFetch';
+import { AxiosError } from 'axios';
 
 
 const createFolder =config.createDirectory;
 
 const ContextMenu = () => {
     const dispatch = useDispatch();
-    const {mouseX, mouseY, itemId, itemType} = useSelector((state: any) => state.contextMenu)
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [newName, setNewName] = useState("");
+    const treeRef = useRef<HTMLDivElement>(null);
+    const {mouseX, mouseY, itemId, itemType} = useSelector((state: any) => state.contextMenu);
+
+    const createFolderQuery = useMutation({
+        mutationFn: async (data: {parent_path_id: number, name: string}) => {
+            const response = await axiosFetching.post(createFolder, data);
+            return response.data;
+        },
+        onSuccess: () => {
+            console.log("Folder created");
+            setIsDialogOpen(false);
+            setNewName("");
+        },
+        onError: (error: AxiosError) => {
+            console.error("Error: ", error);
+        }
+    });
+
+    const handleCreateFolderSubmit = () => {
+        if (!itemId || !newName.trim()) return;
+        const parentPathId = parseInt(itemId.replace("dir-", ""), 10); 
+        createFolderQuery.mutate({ parent_path_id: parentPathId, name: newName });
+      };
     
     const handleCloseMenu = () => {
         dispatch(closeContextMenu());
     };
 
     const handleCreateFolder = () => {
-
+        setIsDialogOpen(true);
         handleCloseMenu();
       };
     
@@ -51,7 +79,7 @@ const ContextMenu = () => {
       }
 
   return (
-    <div>
+    <>
         <Menu
 		open={mouseX !== null && mouseY !== null}
 		onClose={handleCloseMenu}
@@ -60,7 +88,30 @@ const ContextMenu = () => {
 		>
             {menuItems.length > 0 ? menuItems : null}
 		</Menu>
-    </div>
+
+        <Dialog open={isDialogOpen} onClose={() => {
+            setIsDialogOpen(false);
+            treeRef.current?.focus();
+            }} >
+        <DialogTitle>Создание новой папки</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Имя папки"
+            fullWidth
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsDialogOpen(false)}>Отмена</Button>
+          <Button onClick={handleCreateFolderSubmit} disabled={!newName.trim()}>
+            Создать
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   )
 }
 
