@@ -88,7 +88,7 @@ const FilesTree: React.FC = () => {
 	} = useMutation({
 		mutationFn: async () => {
 			const response = await axiosFetching.post(getFolders, {
-				is_archive: true,
+				is_archive: false,
 			});
 			return response.data;
 		},
@@ -100,9 +100,13 @@ const FilesTree: React.FC = () => {
 		},
 	});
 
-	useEffect(() => {
-		mutate();
-	}, [mutate]);
+ const refreshTree = () => {
+    mutate();
+  };
+
+  useEffect(() => {
+    refreshTree(); 
+  }, []);
 
   const handleContextMenu = (event: React.MouseEvent<HTMLDivElement>, itemId: string, itemType: "directory" | "file") => {
     event.preventDefault();
@@ -215,7 +219,7 @@ const FilesTree: React.FC = () => {
 			/>
       
       {/*Контекстное меню*/}
-      <ContextMenu/>
+      <ContextMenu refreshTree={refreshTree}/>
 		</>
 	);
 };
