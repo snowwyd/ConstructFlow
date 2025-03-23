@@ -1,66 +1,387 @@
 definitions:
+  domain.Approval:
+    properties:
+      annotation_text:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      file:
+        $ref: '#/definitions/domain.File'
+      file_id:
+        type: integer
+      id:
+        type: integer
+      status:
+        type: string
+      updatedAt:
+        type: string
+      workflow_id:
+        type: integer
+      workflow_order:
+        type: integer
+    type: object
+  domain.Directory:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      files:
+        items:
+          $ref: '#/definitions/domain.File'
+        type: array
+      id:
+        type: integer
+      name:
+        type: string
+      parent_path_id:
+        description: Указатель для NULL
+        type: integer
+      parentPath:
+        $ref: '#/definitions/domain.Directory'
+      status:
+        type: string
+      updatedAt:
+        type: string
+      users:
+        items:
+          $ref: '#/definitions/domain.User'
+        type: array
+      version:
+        type: integer
+      workflow_id:
+        type: integer
+    type: object
   domain.DirectoryResponse:
-    description: Информация о директории
+    description: Детальная информация о директории
     properties:
       files:
         items:
           $ref: '#/definitions/domain.FileResponse'
         type: array
       id:
+        example: 123
         type: integer
       name_folder:
+        example: Documents
         type: string
       parent_path_id:
+        example: 456
         type: integer
       status:
+        example: active
         type: string
     type: object
   domain.ErrorResponse:
-    description: Структура ошибки API
+    description: Стандартизированный ответ при ошибке API
     properties:
       error:
         properties:
           code:
-            example: INVALID_REQUEST
+            example: NOT_FOUND
             type: string
           message:
-            example: Invalid request body
+            example: Resource not found
             type: string
         type: object
     type: object
-  domain.FileResponse:
-    description: Информация о файле
+  domain.File:
     properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      directory:
+        $ref: '#/definitions/domain.Directory'
       directory_id:
         type: integer
       id:
         type: integer
-      name_file:
+      name:
         type: string
       status:
         type: string
+      updatedAt:
+        type: string
+      users:
+        items:
+          $ref: '#/definitions/domain.User'
+        type: array
+      version:
+        type: integer
+    type: object
+  domain.FileResponse:
+    description: Детальная информация о файле
+    properties:
+      directory_id:
+        example: 123
+        type: integer
+      id:
+        example: 789
+        type: integer
+      name_file:
+        example: report.pdf
+        type: string
+      status:
+        example: draft
+        type: string
     type: object
   domain.GetCurrentUserResponse:
-    description: Информация о пользователе
+    description: Информация о текущем пользователе
     properties:
       id:
+        example: 1
         type: integer
       login:
+        example: john_doe
         type: string
       role:
+        example: user
         type: string
     type: object
   domain.GetFileTreeResponse:
-    description: Структура ответа для дерева файлов
+    description: Ответ с древовидной структурой файлов и директорий
     properties:
       data:
         items:
           $ref: '#/definitions/domain.DirectoryResponse'
         type: array
     type: object
+  domain.User:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      directories:
+        items:
+          $ref: '#/definitions/domain.Directory'
+        type: array
+      files:
+        items:
+          $ref: '#/definitions/domain.File'
+        type: array
+      id:
+        type: integer
+      login:
+        type: string
+      pass_hash:
+        items:
+          type: integer
+        type: array
+      roleID:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
 info:
   contact: {}
 paths:
+  /api/v1/approval/{approval_id}/annotate:
+    post:
+      consumes:
+      - application/json
+      description: Добавляет сообщение (аннотацию) к одобрению
+      parameters:
+      - description: ID одобрения
+        in: path
+        name: approval_id
+        required: true
+        type: integer
+      - description: Текст аннотации
+        in: body
+        name: message
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Аннотация добавлена успешно
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверный ID одобрения или тело запроса
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Пользователь не аутентифицирован
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Нет прав для добавления аннотации
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "404":
+          description: Одобрение не найдено
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Добавить аннотацию к одобрению
+      tags:
+      - approval
+  /api/v1/approval/{approval_id}/finalize:
+    post:
+      consumes:
+      - application/json
+      description: Завершает процесс одобрения для указанного одобрения
+      parameters:
+      - description: ID одобрения
+        in: path
+        name: approval_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Одобрение завершено успешно
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверный ID одобрения
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Пользователь не аутентифицирован
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Только последний пользователь может завершить
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "404":
+          description: Одобрение не найдено
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Завершить одобрение
+      tags:
+      - approval
+  /api/v1/approval/{approval_id}/sign:
+    post:
+      consumes:
+      - application/json
+      description: Подписание одобрения указанным пользователем
+      parameters:
+      - description: ID одобрения
+        in: path
+        name: approval_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Одобрение подписано успешно
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверный ID одобрения
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Пользователь не аутентифицирован
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Нет прав для подписания или требуется завершение
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "404":
+          description: Одобрение не найдено
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Подписать одобрение
+      tags:
+      - approval
+  /api/v1/approval/{file_id}/approve:
+    post:
+      consumes:
+      - application/json
+      description: Отправляет файл на одобрение
+      parameters:
+      - description: ID файла
+        in: path
+        name: file_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Файл отправлен на одобрение
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверный ID файла или файл не в состоянии черновика
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "404":
+          description: Файл не найден
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Одобрить файл
+      tags:
+      - approval
+  /api/v1/approvals:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список одобрений для текущего пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список одобрений
+          schema:
+            items:
+              $ref: '#/definitions/domain.Approval'
+            type: array
+        "401":
+          description: Пользователь не аутентифицирован
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Получить одобрения пользователя
+      tags:
+      - approval
   /api/v1/auth/login:
     post:
       consumes:

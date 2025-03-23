@@ -40,7 +40,7 @@ func (u *AuthUsecase) Login(ctx context.Context, login, password string) (string
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			u.log.Warn("user not found", slogger.Err(err))
-			return "", fmt.Errorf("%s: %w", op, domain.ErrUserNotFound)
+			return "", domain.ErrUserNotFound
 		}
 
 		u.log.Error("failed to get user", slogger.Err(err))
@@ -57,7 +57,7 @@ func (u *AuthUsecase) Login(ctx context.Context, login, password string) (string
 	token, err := utils.GenerateJWT(user, u.cfg.AppSecret, u.cfg.TokenTTL)
 	if err != nil {
 		u.log.Error("failed to generate jwt", slogger.Err(err))
-		return "", domain.ErrInternal
+		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	log.Info("user logged in successfully")
@@ -75,7 +75,7 @@ func (u *AuthUsecase) RegisterUser(ctx context.Context, login, password string, 
 	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
 		u.log.Error("failed to hash password", slogger.Err(err))
-		return 0, domain.ErrInternal
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
 	// проверка на существование роли
@@ -83,11 +83,11 @@ func (u *AuthUsecase) RegisterUser(ctx context.Context, login, password string, 
 	if err != nil {
 		if errors.Is(err, domain.ErrRoleNotFound) {
 			u.log.Warn("user not found", slogger.Err(err))
-			return 0, fmt.Errorf("%s: %w", op, domain.ErrRoleNotFound)
+			return 0, domain.ErrRoleNotFound
 		}
 
 		u.log.Error("failed to get user", slogger.Err(err))
-		return 0, domain.ErrInternal
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
 	// сохранение пользователя в БД
@@ -99,7 +99,7 @@ func (u *AuthUsecase) RegisterUser(ctx context.Context, login, password string, 
 		}
 
 		u.log.Error("failed to save user", slogger.Err(err))
-		return 0, domain.ErrInternal
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
 	log.Info("user registered successfully")
@@ -118,18 +118,18 @@ func (u *AuthUsecase) GetCurrentUser(ctx context.Context, userID uint) (domain.G
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			u.log.Warn("user not found", slogger.Err(err))
-			return domain.GetCurrentUserResponse{}, fmt.Errorf("%s: %w", op, domain.ErrUserNotFound)
+			return domain.GetCurrentUserResponse{}, domain.ErrUserNotFound
 		}
-		return domain.GetCurrentUserResponse{}, domain.ErrUserNotFound
+		return domain.GetCurrentUserResponse{}, fmt.Errorf("%s: %w", op, err)
 	}
 
 	roleName, err := u.roleRepo.GetRoleByID(ctx, user.RoleID)
 	if err != nil {
 		if errors.Is(err, domain.ErrRoleNotFound) {
 			u.log.Warn("role not found", slogger.Err(err))
-			return domain.GetCurrentUserResponse{}, fmt.Errorf("%s: %w", op, domain.ErrRoleNotFound)
+			return domain.GetCurrentUserResponse{}, domain.ErrRoleNotFound
 		}
-		return domain.GetCurrentUserResponse{}, domain.ErrRoleNotFound
+		return domain.GetCurrentUserResponse{}, fmt.Errorf("%s: %w", op, err)
 	}
 
 	log.Info("user info got successfully")
@@ -154,7 +154,7 @@ func (u *AuthUsecase) RegisterRole(ctx context.Context, roleName string) (uint, 
 		}
 
 		u.log.Error("failed to save role", slogger.Err(err))
-		return 0, domain.ErrInternal
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
 	log.Info("role registered successfully")
