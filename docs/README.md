@@ -60,7 +60,7 @@ docker-compose down -v
 }
 ```
 
-### 4. Создание роли (`POST /api/auth/role`)
+### 4. Создание роли (`POST/auth/role`)
 **Запрос:**
 ```json
 {
