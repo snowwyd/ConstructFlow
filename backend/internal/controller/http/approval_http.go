@@ -54,7 +54,7 @@ func (h *ApprovalHandler) ApproveFile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "File sent for approval"})
+	c.Status(http.StatusCreated)
 }
 
 // GetApprovalsByUser godoc
@@ -124,7 +124,7 @@ func (h *ApprovalHandler) SignApproval(c *gin.Context) {
 
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Approval signed successfully"})
+	c.Status(http.StatusNoContent)
 }
 
 // AnnotateApproval godoc
@@ -176,7 +176,7 @@ func (h *ApprovalHandler) AnnotateApproval(c *gin.Context) {
 		}
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Approval annotated successfully"})
+	c.Status(http.StatusNoContent)
 }
 
 // FinalizeApproval godoc
@@ -219,5 +219,5 @@ func (h *ApprovalHandler) FinalizeApproval(c *gin.Context) {
 		}
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Approval finalized successfully"})
+	c.Status(http.StatusNoContent)
 }
