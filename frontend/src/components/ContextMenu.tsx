@@ -10,7 +10,7 @@ import { AxiosError } from 'axios';
 
 const createFolder =config.createDirectory;
 
-const ContextMenu = () => {
+const ContextMenu = ({refreshTree}: {refreshTree: () => void}) => {
     const dispatch = useDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [newName, setNewName] = useState("");
@@ -24,6 +24,7 @@ const ContextMenu = () => {
         },
         onSuccess: () => {
             console.log("Folder created");
+            refreshTree();
             setIsDialogOpen(false);
             setNewName("");
         },
