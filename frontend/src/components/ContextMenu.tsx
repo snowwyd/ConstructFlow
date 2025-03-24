@@ -8,7 +8,10 @@ import axiosFetching from '../api/AxiosFetch';
 import { AxiosError } from 'axios';
 
 
-const createFolder =config.createDirectory;
+const createFolder = config.createDirectory;
+const deleteFolder = config.deleteDirectory;
+const deleteFile = config.deleteFile;
+
 
 const ContextMenu = ({refreshTree}: {refreshTree: () => void}) => {
     const dispatch = useDispatch();
@@ -33,6 +36,32 @@ const ContextMenu = ({refreshTree}: {refreshTree: () => void}) => {
         }
     });
 
+    const deleteFolderMutation = useMutation({
+        mutationFn: async (data: { directory_id: number }) => {
+          const response = await axiosFetching.delete(deleteFolder, { data });
+          return response.data;
+        },
+        onSuccess: () => {
+          refreshTree(); 
+        },
+        onError: (error: any) => {
+          console.error("Error deleting folder:", error);
+        },
+    });
+
+    const deleteFileMutation = useMutation({
+        mutationFn: async (data: {file_id: number}) => {
+            const response = await axiosFetching.delete(deleteFile, {data});
+            return response.data;
+        },
+        onSuccess: () => {
+            refreshTree();
+        },
+        onError: (error: any) => {
+            console.error("Error deleting folder:", error);
+          },
+    })
+
     const handleCreateFolderSubmit = () => {
         if (!itemId || !newName.trim()) return;
         const parentPathId = parseInt(itemId.replace("dir-", ""), 10); 
@@ -54,12 +83,16 @@ const ContextMenu = ({refreshTree}: {refreshTree: () => void}) => {
       };
     
       const handleDeleteFolder = () => {
-        console.log("Delete item:", itemId, "Type:", itemType);
+        if (!itemId) return;
+        const directoryId = parseInt(itemId.replace("dir-", ""), 10);
+        deleteFolderMutation.mutate({ directory_id: directoryId });
         handleCloseMenu();
       };
 
       const handleDeleteFile = () => {
-        console.log("Delete item:", itemId, "Type:", itemType);
+        if (!itemId) return;
+        const fileId = parseInt(itemId.replace("file-", ""), 10);
+        deleteFileMutation.mutate({ file_id: fileId });
         handleCloseMenu();
       };
 
