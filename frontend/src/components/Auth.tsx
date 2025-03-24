@@ -109,7 +109,6 @@ const Auth: React.FC = () => {
 					{isPending ? 'Logging in...' : 'Login'}
 				</button>
 			</form>
-
 		</div>
 	);
 };
