@@ -10,7 +10,7 @@ import {
 import { RichTreeView, TreeItem2, TreeItem2Props } from '@mui/x-tree-view';
 import { useMutation } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import axiosFetching from '../api/AxiosFetch';
 import config from '../constants/Configurations.json';
 import { Directory, TreeDataItem } from '../interfaces/FilesTree';
@@ -19,6 +19,7 @@ import { openContextMenu } from '../store/Slices/contexMenuSlice';
 import ContextMenu from './ContextMenu';
 
 const getFolders = config.getFiles;
+const createFile = config.createFile;
 
 //У M-UI СВОЯ БИБЛИОТЕКА СТИЛЕЙ, В ЭТОМ КОМПОНЕНТЕ РЕШИЛ ИСПОЛЬЗОВАТЬ ЕЕ
 const CustomTreeItem = styled(TreeItem2)(({ theme }) => ({
@@ -31,6 +32,13 @@ const CustomTreeItem = styled(TreeItem2)(({ theme }) => ({
 		alignItems: 'center',
 		gap: theme.spacing(1),
 	},
+}));
+
+const HighlightedTreeItem = styled(CustomTreeItem)(({ theme }) => ({
+  "& .MuiTreeItem-content": {
+    backgroundColor: "#f0f0f0", // Серый фон
+    borderRadius: theme.shape.borderRadius,
+  },
 }));
 
 // ПРЕОБРАЗОВАНИЕ ДАННЫХ В ФОРМАТ RichTreeView
@@ -77,7 +85,7 @@ const transformDataToTreeItems = (data: Directory[]): TreeDataItem[] => {
 const FilesTree: React.FC = () => {
 
   const dispatch = useDispatch();
-
+  const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
 
 	const {
 		mutate,
@@ -100,6 +108,19 @@ const FilesTree: React.FC = () => {
 		},
 	});
 
+  const createFileMutation = useMutation({
+    mutationFn: async (data: { directory_id: number; name: string }) => {
+      const response = await axiosFetching.post(createFile, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      refreshTree(); 
+    },
+    onError: (error: any) => {
+      console.error("Error creating file:", error);
+    },
+  });
+
  const refreshTree = () => {
     mutate();
   };
@@ -116,7 +137,48 @@ const FilesTree: React.FC = () => {
       itemId,
       itemType
     }))
-  }
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>, directoryId: number) => {
+    event.preventDefault();
+
+    const files = Array.from(event.dataTransfer.files);
+
+    setHighlightedItemId(null);
+
+    files.forEach((file) => {
+      const fileName = file.name;
+
+      const existingFile = findFileInDirectory(treeItems, directoryId, fileName);
+
+      if (existingFile) {
+        if (confirm(`Файл "${fileName}" уже существует. Заменить?`)) {
+          createFileMutation.mutate({ directory_id: directoryId, name: fileName });
+        }
+      } else {
+        createFileMutation.mutate({ directory_id: directoryId, name: fileName });
+      }
+    });
+  };
+
+  const findFileInDirectory = (
+    items: TreeDataItem[],
+    directoryId: number,
+    fileName: string
+  ): boolean => {
+    const directory = items.find((item) => item.id === `dir-${directoryId}`);
+    if (!directory || !directory.children) return false;
+  
+    // Удаляем состояние (draft) и нормализуем имя нового файла
+    const cleanFileName = fileName.replace(/\s*\(draft\)\s*$/, "").trim().toLowerCase();
+  
+    return directory.children.some((child) => {
+      // Удаляем состояние (draft) и нормализуем имя существующего файла
+      const childName = child.label.replace(/\s*\(draft\)\s*$/, "").trim().toLowerCase();
+      return childName === cleanFileName;
+    });
+  };
+
 
 	if (isPending) {
 		return (
@@ -148,80 +210,99 @@ const FilesTree: React.FC = () => {
 
 
 
-	return (
-		<>
-			<RichTreeView
-				items={treeItems}
-				defaultExpandedItems={['dir-1']}
-				slots={{
-					item: (props: TreeItem2Props) => {
-						const { itemId, label, ...rest } = props;
-
-						const findItem = (
-							items: TreeDataItem[],
-							id: string
-						): TreeDataItem | undefined => {
-							for (const item of items) {
-								if (item.id === id) return item;
-								if (item.children) {
-									const found = findItem(item.children, id);
-									if (found) return found;
-								}
-							}
-							return undefined;
-						};
-
-						const itemData = findItem(treeItems, itemId!);
-
-						if (!itemData) {
-							return <TreeItem2 {...rest} itemId={itemId} label={label} />;
-						}
-
-						return (
-							<CustomTreeItem
-								{...rest}
-								itemId={itemId}
-								label={
-									<Box
-										display='flex'
-										alignItems='center'
-										gap={1}
-										onContextMenu={event =>
-											handleContextMenu(event, itemId!, itemData.type)
-										}
-									>
-										{itemData.type === 'directory' ? (
-											itemData.status === 'archive' ? (
-												<ArchiveIcon color='error' />
-											) : (
-												<FolderIcon color='primary' />
-											)
-										) : (
-											<DescriptionIcon color='secondary' />
-										)}
-										<span>
-											{label} ({itemData.status})
-										</span>
-									</Box>
-								}
-							/>
-						);
-					},
-				}}
-				sx={{
-					width: '100%',
-					maxWidth: 400,
-					bgcolor: 'background.paper',
-					border: '1px solid #ccc',
-					borderRadius: 1,
-					padding: 1,
-				}}
-			/>
-      
-      {/*Контекстное меню*/}
-      <ContextMenu refreshTree={refreshTree}/>
-		</>
-	);
-};
+    return (
+      <>
+        <div tabIndex={0} style={{ outline: "none" }}>
+          <RichTreeView
+            items={treeItems}
+            defaultExpandedItems={["dir-1"]}
+            slots={{
+              item: (props: TreeItem2Props) => {
+                const { itemId, label, ...rest } = props;
+  
+                const findItem = (items: TreeDataItem[], id: string): TreeDataItem | undefined => {
+                  for (const item of items) {
+                    if (item.id === id) return item;
+                    if (item.children) {
+                      const found = findItem(item.children, id);
+                      if (found) return found;
+                    }
+                  }
+                  return undefined;
+                };
+  
+                const itemData = findItem(treeItems, itemId!);
+  
+                if (!itemData) {
+                  return <TreeItem2 {...rest} itemId={itemId} label={label} />;
+                }
+  
+                const isHighlighted = highlightedItemId === itemId;
+  
+                // Динамический выбор компонента
+                const TreeComponent = isHighlighted ? HighlightedTreeItem : CustomTreeItem;
+  
+                return (
+                  <TreeComponent
+                    {...rest}
+                    itemId={itemId}
+                    label={
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        gap={1}
+                        onContextMenu={(event) =>
+                          handleContextMenu(event, itemId!, itemData.type)
+                        }
+                        onDragOver={(event) => event.preventDefault()} // Разрешаем перетаскивание
+                        onDrop={(event) => {
+                          const directoryId = parseInt(itemId!.replace("dir-", ""), 10);
+                          handleDrop(event, directoryId);
+                        }}
+                        onDragEnter={(event) => {
+                          event.preventDefault();
+                          if (itemData.type === "directory") {
+                            setHighlightedItemId(itemId!); // Подсвечиваем папку
+                          }
+                        }}
+                        onDragLeave={() => {
+                          setHighlightedItemId(null); // Убираем подсветку
+                        }}
+                      >
+                        {itemData.type === "directory" ? (
+                          itemData.status === "archive" ? (
+                            <ArchiveIcon color="error" />
+                          ) : (
+                            <FolderIcon color="primary" />
+                          )
+                        ) : (
+                          <DescriptionIcon color="secondary" />
+                        )}
+                        <span>
+                          {label}
+                        </span>
+                      </Box>
+                    }
+                  />
+                );
+              },
+            }}
+            sx={{
+              width: "100%",
+              maxWidth: 400,
+              bgcolor: "background.paper",
+              border: "1px solid #ccc",
+              borderRadius: 1,
+              padding: 1,
+            }}
+          />
+        </div>
+  
+        {/* Подключаем контекстное меню */}
+        <ContextMenu refreshTree={refreshTree} />
+      </>
+    );
+  };
+  
 
 export default FilesTree;
