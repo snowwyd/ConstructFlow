@@ -6,7 +6,7 @@ const initialState: ContexMenuStates = {
 	mouseY: null,
 	itemId: undefined,
 	itemType: undefined,
-    treeType: undefined,
+	treeType: undefined,
 };
 
 const contextMenuSlice = createSlice({
@@ -20,14 +20,14 @@ const contextMenuSlice = createSlice({
 				mouseY: number;
 				itemId: string;
 				itemType: 'directory' | 'file';
-                treeType: 'work' | 'archive';
+				treeType: 'work' | 'archive';
 			}>
 		) => {
 			state.mouseX = action.payload.mouseX;
 			state.mouseY = action.payload.mouseY;
 			state.itemId = action.payload.itemId;
 			state.itemType = action.payload.itemType;
-            state.treeType = action.payload.treeType;
+			state.treeType = action.payload.treeType;
 		},
 		closeContextMenu: state => {
 			state.mouseX = null;

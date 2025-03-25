@@ -1,7 +1,7 @@
 import axios from 'axios';
 import config from '../constants/Configurations.json';
 
-const serverURL = config.apiKey;
+const serverURL = config.serverUrl;
 
 const axiosFetching = axios.create({
 	baseURL: serverURL,

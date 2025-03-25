@@ -28,15 +28,15 @@ const ContextMenu = () => {
 	const { mouseX, mouseY, itemId, itemType, treeType } = useSelector(
 		(state: any) => state.contextMenu
 	);
-    const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-    const refreshCorrectTree = () => {
-        if (treeType === 'work') {
-          queryClient.invalidateQueries({ queryKey: ['directories', false] });
-        } else if (treeType === 'archive') {
-          queryClient.invalidateQueries({ queryKey: ['directories', true] });
-        }
-      };
+	const refreshCorrectTree = () => {
+		if (treeType === 'work') {
+			queryClient.invalidateQueries({ queryKey: ['directories', false] });
+		} else if (treeType === 'archive') {
+			queryClient.invalidateQueries({ queryKey: ['directories', true] });
+		}
+	};
 
 	const createFolderQuery = useMutation({
 		mutationFn: async (data: { parent_path_id: number; name: string }) => {

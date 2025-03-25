@@ -83,21 +83,21 @@ const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 		null
 	);
 
-  const {
-    data: apiResponse,
-    isLoading,
-    isError,
-    error,
-    refetch: refreshTree
-  } = useQuery({
-    queryKey: ['directories', isArchive], 
-    queryFn: async () => {
-      const response = await axiosFetching.post(getFolders, {
-        is_archive: isArchive,
-      });
-      return response.data;
-    },
-  });
+	const {
+		data: apiResponse,
+		isLoading,
+		isError,
+		error,
+		refetch: refreshTree,
+	} = useQuery({
+		queryKey: ['directories', isArchive],
+		queryFn: async () => {
+			const response = await axiosFetching.post(getFolders, {
+				is_archive: isArchive,
+			});
+			return response.data;
+		},
+	});
 
 	const createFileMutation = useMutation({
 		mutationFn: async (data: { directory_id: number; name: string }) => {
@@ -111,7 +111,6 @@ const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 			console.error('Error creating file:', error);
 		},
 	});
-
 
 	useEffect(() => {
 		refreshTree();
@@ -129,7 +128,7 @@ const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 				mouseY: event.clientY - 4,
 				itemId,
 				itemType,
-        treeType: isArchive ? 'archive' : 'work',
+				treeType: isArchive ? 'archive' : 'work',
 			})
 		);
 	};
