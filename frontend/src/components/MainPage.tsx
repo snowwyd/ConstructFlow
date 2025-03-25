@@ -4,6 +4,7 @@ const MainPage = () => {
 	return (
 		<div>
 			<FilesTree isArchive={false} />
+			<FilesTree isArchive={true} />
 		</div>
 	);
 };
