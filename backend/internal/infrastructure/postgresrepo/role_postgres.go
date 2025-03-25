@@ -19,7 +19,7 @@ func NewRoleRepository(db *Database) *RoleRepository {
 }
 
 // CreateRole добавляет роль в БД
-func (r *RoleRepository) CreateRole(ctx context.Context, roleName string) (uint, error) {
+func (r *RoleRepository) CreateRole(ctx context.Context, roleName string) error {
 	const op = "postgresrepo.role.CreateRole"
 
 	var existingRole domain.Role
@@ -28,10 +28,10 @@ func (r *RoleRepository) CreateRole(ctx context.Context, roleName string) (uint,
 	// обработка ошибок и отсутствия пользователя
 	if result.Error != nil {
 		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return 0, fmt.Errorf("%s: role not found: %w", op, domain.ErrRoleNotFound)
+			return fmt.Errorf("%s: role not found: %w", op, domain.ErrRoleNotFound)
 		}
 	} else {
-		return 0, fmt.Errorf("%s: %w", op, domain.ErrRoleAlreadyExists)
+		return fmt.Errorf("%s: %w", op, domain.ErrRoleAlreadyExists)
 	}
 
 	newRole := domain.Role{
@@ -41,12 +41,12 @@ func (r *RoleRepository) CreateRole(ctx context.Context, roleName string) (uint,
 	// создает пользователя и парсит в модель Role
 	if err := r.db.WithContext(ctx).Create(&newRole).Error; err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			return 0, fmt.Errorf("%s: duplicate key error: %w", op, err)
+			return fmt.Errorf("%s: duplicate key error: %w", op, err)
 		}
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	return newRole.ID, nil
+	return nil
 }
 
 // GetRoleByID возвращает название роли по ID

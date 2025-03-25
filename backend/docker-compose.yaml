@@ -11,7 +11,6 @@ services:
       - CONFIG_PATH=configs/docker.yaml
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
-
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_NAME=constructflow
@@ -21,12 +20,10 @@ services:
     volumes:
       - .:/app
     ports:
-      - "8080:8080"
+      - "${APP_PORT:-8080}:8080"
     networks:
       - app-network
     restart: always
-
-    
 
   postgres:
     image: postgres
@@ -41,10 +38,30 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     networks:
       - app-network
     restart: always
+
+  migrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: migrator
+    env_file:
+      - .env
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=constructflow
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+    command: ["wait-for-it.sh", "postgres:5432", "--", "./migrator", "-reset", "-migrate", "-seed"]
+    restart: "no"
 
 networks:
   app-network:

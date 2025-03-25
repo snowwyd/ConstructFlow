@@ -76,7 +76,7 @@ func (r *FileTreeRepository) GetFileInfo(ctx context.Context, fileID uint) (*dom
 }
 
 // CreateDirectory записывает новую сущность Directory в БД
-func (r *FileTreeRepository) CreateDirectory(ctx context.Context, parentPathID *uint, name string, status string, userID uint) (uint, error) {
+func (r *FileTreeRepository) CreateDirectory(ctx context.Context, parentPathID *uint, name string, status string, userID uint) error {
 	tx := r.db.WithContext(ctx).Begin()
 	defer tx.Rollback()
 
@@ -87,7 +87,7 @@ func (r *FileTreeRepository) CreateDirectory(ctx context.Context, parentPathID *
 	}
 
 	if err := tx.Create(&newDir).Error; err != nil {
-		return 0, fmt.Errorf("failed to create directory: %w", err)
+		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	// Создаем связь с пользователем
@@ -97,15 +97,15 @@ func (r *FileTreeRepository) CreateDirectory(ctx context.Context, parentPathID *
 	}
 
 	if err := tx.Create(&userDir).Error; err != nil {
-		return 0, fmt.Errorf("failed to create user-directory relation: %w", err)
+		return fmt.Errorf("failed to create user-directory relation: %w", err)
 	}
 
 	tx.Commit()
-	return newDir.ID, nil
+	return nil
 }
 
 // CreateFile записывает новую сущность File в БД
-func (r *FileTreeRepository) CreateFile(ctx context.Context, directoryID uint, name string, status string, userID uint) (uint, error) {
+func (r *FileTreeRepository) CreateFile(ctx context.Context, directoryID uint, name string, status string, userID uint) error {
 	tx := r.db.WithContext(ctx).Begin()
 	defer tx.Rollback()
 
@@ -116,7 +116,7 @@ func (r *FileTreeRepository) CreateFile(ctx context.Context, directoryID uint, n
 	}
 
 	if err := tx.Create(&newFile).Error; err != nil {
-		return 0, fmt.Errorf("failed to create file: %w", err)
+		return fmt.Errorf("failed to create file: %w", err)
 	}
 
 	// Создаем связь с пользователем
@@ -126,11 +126,11 @@ func (r *FileTreeRepository) CreateFile(ctx context.Context, directoryID uint, n
 	}
 
 	if err := tx.Create(&userFile).Error; err != nil {
-		return 0, fmt.Errorf("failed to create user-file relation: %w", err)
+		return fmt.Errorf("failed to create user-file relation: %w", err)
 	}
 
 	tx.Commit()
-	return newFile.ID, nil
+	return nil
 }
 
 // DeleteDirectory рекурсивно удаляет все файлы и директории внутри указанной
