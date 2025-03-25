@@ -3,7 +3,7 @@ import FilesTree from './FilesTree';
 const MainPage = () => {
 	return (
 		<div>
-			<FilesTree />
+			<FilesTree isArchive={false}/>
 		</div>
 	);
 };
