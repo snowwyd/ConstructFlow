@@ -82,7 +82,7 @@ const transformDataToTreeItems = (data: Directory[]): TreeDataItem[] => {
 		.map(item => map.get(item.id)!);
 };
 
-const FilesTree: React.FC = () => {
+const FilesTree: React.FC<{isArchive: boolean}> = ({isArchive}) => {
 
   const dispatch = useDispatch();
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
@@ -96,7 +96,7 @@ const FilesTree: React.FC = () => {
 	} = useMutation({
 		mutationFn: async () => {
 			const response = await axiosFetching.post(getFolders, {
-				is_archive: false,
+				is_archive: isArchive,
 			});
 			return response.data;
 		},
@@ -209,98 +209,106 @@ const FilesTree: React.FC = () => {
 		: [];
 
 
-
     return (
-      <>
-        <div tabIndex={0} style={{ outline: "none" }}>
-          <RichTreeView
-            items={treeItems}
-            defaultExpandedItems={["dir-1"]}
-            slots={{
-              item: (props: TreeItem2Props) => {
-                const { itemId, label, ...rest } = props;
+      <Box
+        sx={{
+          width: '100%',
+          maxWidth: 400,
+          bgcolor: 'background.paper',
+          border: '1px solid #ccc',
+          borderRadius: 1,
+          padding: 2, 
+        }}
+      >
+        <Typography
+          variant="h6"
+          align="center"
+          sx={{
+            mb: 2,
+            fontWeight: 'bold', 
+          }}
+        >
+          {isArchive ? 'Архивное дерево' : 'Рабочее дерево'}
+        </Typography>
   
-                const findItem = (items: TreeDataItem[], id: string): TreeDataItem | undefined => {
-                  for (const item of items) {
-                    if (item.id === id) return item;
-                    if (item.children) {
-                      const found = findItem(item.children, id);
-                      if (found) return found;
-                    }
+        <RichTreeView
+          items={treeItems}
+          defaultExpandedItems={['dir-1']}
+          slots={{
+            item: (props: TreeItem2Props) => {
+              const { itemId, label, ...rest } = props;
+  
+              const findItem = (items: TreeDataItem[], id: string): TreeDataItem | undefined => {
+                for (const item of items) {
+                  if (item.id === id) return item;
+                  if (item.children) {
+                    const found = findItem(item.children, id);
+                    if (found) return found;
                   }
-                  return undefined;
-                };
-  
-                const itemData = findItem(treeItems, itemId!);
-  
-                if (!itemData) {
-                  return <TreeItem2 {...rest} itemId={itemId} label={label} />;
                 }
+                return undefined;
+              };
   
-                const isHighlighted = highlightedItemId === itemId;
+              const itemData = findItem(treeItems, itemId!);
   
-                // Динамический выбор компонента
-                const TreeComponent = isHighlighted ? HighlightedTreeItem : CustomTreeItem;
+              if (!itemData) {
+                return <TreeItem2 {...rest} itemId={itemId} label={label} />;
+              }
   
-                return (
-                  <TreeComponent
-                    {...rest}
-                    itemId={itemId}
-                    label={
-                      <Box
-                        display="flex"
-                        alignItems="center"
-                        gap={1}
-                        onContextMenu={(event) =>
-                          handleContextMenu(event, itemId!, itemData.type)
+              const isHighlighted = highlightedItemId === itemId;
+  
+              const TreeComponent = isHighlighted ? HighlightedTreeItem : CustomTreeItem;
+  
+              return (
+                <TreeComponent
+                  {...rest}
+                  itemId={itemId}
+                  label={
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      gap={1}
+                      onContextMenu={(event) =>
+                        handleContextMenu(event, itemId!, itemData.type)
+                      }
+                      onDragOver={(event) => event.preventDefault()} 
+                      onDrop={(event) => {
+                        const directoryId = parseInt(itemId!.replace('dir-', ''), 10);
+                        handleDrop(event, directoryId);
+                      }}
+                      onDragEnter={(event) => {
+                        event.preventDefault();
+                        if (itemData.type === 'directory') {
+                          setHighlightedItemId(itemId!);
                         }
-                        onDragOver={(event) => event.preventDefault()} // Разрешаем перетаскивание
-                        onDrop={(event) => {
-                          const directoryId = parseInt(itemId!.replace("dir-", ""), 10);
-                          handleDrop(event, directoryId);
-                        }}
-                        onDragEnter={(event) => {
-                          event.preventDefault();
-                          if (itemData.type === "directory") {
-                            setHighlightedItemId(itemId!); // Подсвечиваем папку
-                          }
-                        }}
-                        onDragLeave={() => {
-                          setHighlightedItemId(null); // Убираем подсветку
-                        }}
-                      >
-                        {itemData.type === "directory" ? (
-                          itemData.status === "archive" ? (
-                            <ArchiveIcon color="error" />
-                          ) : (
-                            <FolderIcon color="primary" />
-                          )
+                      }}
+                      onDragLeave={() => {
+                        setHighlightedItemId(null);
+                      }}
+                    >
+                      {itemData.type === 'directory' ? (
+                        itemData.status === 'archive' ? (
+                          <ArchiveIcon color="error" />
                         ) : (
-                          <DescriptionIcon color="secondary" />
-                        )}
-                        <span>
-                          {label}
-                        </span>
-                      </Box>
-                    }
-                  />
-                );
-              },
-            }}
-            sx={{
-              width: "100%",
-              maxWidth: 400,
-              bgcolor: "background.paper",
-              border: "1px solid #ccc",
-              borderRadius: 1,
-              padding: 1,
-            }}
-          />
-        </div>
-  
-        {/* Подключаем контекстное меню */}
+                          <FolderIcon color="primary" />
+                        )
+                      ) : (
+                        <DescriptionIcon color="secondary" />
+                      )}
+                      <span>{label}</span>
+                    </Box>
+                  }
+                />
+              );
+            },
+          }}
+          sx={{
+            width: '100%',
+          }}
+        />
+
         <ContextMenu refreshTree={refreshTree} />
-      </>
+      </Box>
     );
   };
   
