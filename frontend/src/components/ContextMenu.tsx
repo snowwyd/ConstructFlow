@@ -8,7 +8,7 @@ import {
 	MenuItem,
 	TextField,
 } from '@mui/material';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -20,14 +20,23 @@ const createFolder = config.createDirectory;
 const deleteFolder = config.deleteDirectory;
 const deleteFile = config.deleteFile;
 
-const ContextMenu = ({ refreshTree }: { refreshTree: () => void }) => {
+const ContextMenu = () => {
 	const dispatch = useDispatch();
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [newName, setNewName] = useState('');
 	const treeRef = useRef<HTMLDivElement>(null);
-	const { mouseX, mouseY, itemId, itemType } = useSelector(
+	const { mouseX, mouseY, itemId, itemType, treeType } = useSelector(
 		(state: any) => state.contextMenu
 	);
+    const queryClient = useQueryClient();
+
+    const refreshCorrectTree = () => {
+        if (treeType === 'work') {
+          queryClient.invalidateQueries({ queryKey: ['directories', false] });
+        } else if (treeType === 'archive') {
+          queryClient.invalidateQueries({ queryKey: ['directories', true] });
+        }
+      };
 
 	const createFolderQuery = useMutation({
 		mutationFn: async (data: { parent_path_id: number; name: string }) => {
@@ -36,7 +45,7 @@ const ContextMenu = ({ refreshTree }: { refreshTree: () => void }) => {
 		},
 		onSuccess: () => {
 			console.log('Folder created');
-			refreshTree();
+			refreshCorrectTree();
 			setIsDialogOpen(false);
 			setNewName('');
 		},
@@ -51,7 +60,7 @@ const ContextMenu = ({ refreshTree }: { refreshTree: () => void }) => {
 			return response.data;
 		},
 		onSuccess: () => {
-			refreshTree();
+			refreshCorrectTree();
 		},
 		onError: (error: any) => {
 			console.error('Error deleting folder:', error);
@@ -64,7 +73,7 @@ const ContextMenu = ({ refreshTree }: { refreshTree: () => void }) => {
 			return response.data;
 		},
 		onSuccess: () => {
-			refreshTree();
+			refreshCorrectTree();
 		},
 		onError: (error: any) => {
 			console.error('Error deleting folder:', error);

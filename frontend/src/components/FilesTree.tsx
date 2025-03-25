@@ -3,7 +3,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import FolderIcon from '@mui/icons-material/Folder';
 import { Box, CircularProgress, styled, Typography } from '@mui/material';
 import { RichTreeView, TreeItem2, TreeItem2Props } from '@mui/x-tree-view';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
@@ -83,26 +83,21 @@ const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 		null
 	);
 
-	const {
-		mutate,
-		isPending,
-		isError,
-		error,
-		data: apiResponse,
-	} = useMutation({
-		mutationFn: async () => {
-			const response = await axiosFetching.post(getFolders, {
-				is_archive: isArchive,
-			});
-			return response.data;
-		},
-		onError: (error: AxiosError<{ message?: string }>) => {
-			console.error(
-				'Error fetching folders:',
-				error.response?.data?.message || error.message
-			);
-		},
-	});
+  const {
+    data: apiResponse,
+    isLoading,
+    isError,
+    error,
+    refetch: refreshTree
+  } = useQuery({
+    queryKey: ['directories', isArchive], 
+    queryFn: async () => {
+      const response = await axiosFetching.post(getFolders, {
+        is_archive: isArchive,
+      });
+      return response.data;
+    },
+  });
 
 	const createFileMutation = useMutation({
 		mutationFn: async (data: { directory_id: number; name: string }) => {
@@ -117,9 +112,6 @@ const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 		},
 	});
 
-	const refreshTree = () => {
-		mutate();
-	};
 
 	useEffect(() => {
 		refreshTree();
@@ -137,6 +129,7 @@ const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 				mouseY: event.clientY - 4,
 				itemId,
 				itemType,
+        treeType: isArchive ? 'archive' : 'work',
 			})
 		);
 	};
@@ -200,7 +193,7 @@ const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 		});
 	};
 
-	if (isPending) {
+	if (isLoading) {
 		return (
 			<Box
 				sx={{
@@ -334,7 +327,7 @@ const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 				}}
 			/>
 
-			<ContextMenu refreshTree={refreshTree} />
+			<ContextMenu />
 		</Box>
 	);
 };
