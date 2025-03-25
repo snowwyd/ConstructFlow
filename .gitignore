@@ -1,8 +1,11 @@
-backend/.env
-backend/.dockerignore
+.env
 
-backend/tmp
-backend/wait-for-it.sh
-backend/Taskfile.yaml
+service_core/tmp
+service_core/wait-for-it.sh
+service_core/Taskfile.yaml
+
+
+service_file/wait-for-it.sh
+service_file/Taskfile.yaml
 
 docs/openapi.yaml

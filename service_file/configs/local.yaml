@@ -1,0 +1,13 @@
+env: "local"
+storage_path: "./data/storage.db"
+token_ttl: 1h
+http_server:
+  address: "localhost:8081"
+  timeout: 4s
+  idle_timeout: 60s
+
+database:
+  host: "host.docker.internal"
+  port: 5433
+  name: "constructflow"
+  ssl_mode: "disable"
