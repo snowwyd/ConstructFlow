@@ -124,7 +124,7 @@ func (h *TreeHandler) GetFileInfo(c *gin.Context) {
 // @Failure 403 {object} domain.ErrorResponse "Нет доступа"
 // @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка"
 // @Router /api/v1/directories/upload [post]
-func (h *TreeHandler) UploadDirectory(c *gin.Context) {
+func (h *TreeHandler) CreateDirectory(c *gin.Context) {
 	userID, err := utils.ExtractUserID(c)
 	if err != nil {
 		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
@@ -145,7 +145,7 @@ func (h *TreeHandler) UploadDirectory(c *gin.Context) {
 		return
 	}
 
-	dirID, err := h.usecase.UploadDirectory(c.Request.Context(), req.ParentPathID, req.Name, userID)
+	err = h.usecase.CreateDirectory(c.Request.Context(), req.ParentPathID, req.Name, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrDirectoryNotFound):
@@ -158,7 +158,7 @@ func (h *TreeHandler) UploadDirectory(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"id": dirID})
+	c.Status(http.StatusCreated)
 }
 
 // UploadFile godoc
@@ -198,7 +198,7 @@ func (h *TreeHandler) UploadFile(c *gin.Context) {
 		return
 	}
 
-	fileID, err := h.usecase.UploadFile(c.Request.Context(), req.DirectoryID, req.Name, userID)
+	err = h.usecase.UploadFile(c.Request.Context(), req.DirectoryID, req.Name, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrDirectoryNotFound):
@@ -211,7 +211,7 @@ func (h *TreeHandler) UploadFile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"id": fileID})
+	c.Status(http.StatusCreated)
 }
 
 // DeleteDirectory godoc
@@ -264,7 +264,7 @@ func (h *TreeHandler) DeleteDirectory(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Directory deleted successfully"})
+	c.Status(http.StatusNoContent)
 }
 
 // DeleteFile godoc
@@ -318,5 +318,5 @@ func (h *TreeHandler) DeleteFile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "File deleted successfully"})
+	c.Status(http.StatusNoContent)
 }

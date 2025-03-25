@@ -111,7 +111,7 @@ func (h *AuthHandler) RegisterUser(c *gin.Context) {
 	}
 
 	// вызов Usecase RegisterUser
-	userID, err := h.usecase.RegisterUser(c.Request.Context(), req.Login, req.Password, req.RoleID)
+	err := h.usecase.RegisterUser(c.Request.Context(), req.Login, req.Password, req.RoleID)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrUserAlreadyExists):
@@ -124,7 +124,7 @@ func (h *AuthHandler) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"user_id": userID})
+	c.Status(http.StatusCreated)
 }
 
 // GetCurrentUser godoc
@@ -188,7 +188,7 @@ func (h *AuthHandler) RegisterRole(c *gin.Context) {
 	}
 
 	// вызов Usecase RegisterRole
-	roleID, err := h.usecase.RegisterRole(c.Request.Context(), req.RoleName)
+	err := h.usecase.RegisterRole(c.Request.Context(), req.RoleName)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrRoleAlreadyExists):
@@ -199,5 +199,5 @@ func (h *AuthHandler) RegisterRole(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"role_id": roleID})
+	c.Status(http.StatusCreated)
 }

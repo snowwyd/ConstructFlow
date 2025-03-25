@@ -49,11 +49,8 @@ func main() {
 func setupRoutes(router *gin.Engine, appInstance *app.App, cfg *config.Config) {
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Группа API v1
-	api := router.Group("/api/v1")
-
 	// Маршруты аутентификации
-	authGroup := api.Group("/auth")
+	authGroup := router.Group("/auth")
 	{
 		authGroup.POST("/login", appInstance.AuthHandler.Login)
 		authGroup.POST("/register", appInstance.AuthHandler.RegisterUser)
@@ -63,28 +60,28 @@ func setupRoutes(router *gin.Engine, appInstance *app.App, cfg *config.Config) {
 		authGroup.GET("/me", http.AuthMiddleware(cfg), appInstance.AuthHandler.GetCurrentUser)
 	}
 
-	directoriesGroup := api.Group("/directories", http.AuthMiddleware(cfg))
+	directoriesGroup := router.Group("/directories", http.AuthMiddleware(cfg))
 	{
-		directoriesGroup.POST("/upload", appInstance.TreeHandler.UploadDirectory)
+		directoriesGroup.POST("/create", appInstance.TreeHandler.CreateDirectory)
 		directoriesGroup.DELETE("", appInstance.TreeHandler.DeleteDirectory)
 		directoriesGroup.POST("", appInstance.TreeHandler.GetTree)
 	}
 
-	filesGroup := api.Group("/files", http.AuthMiddleware(cfg))
+	filesGroup := router.Group("/files", http.AuthMiddleware(cfg))
 	{
 		filesGroup.GET("/:file_id", appInstance.TreeHandler.GetFileInfo)
 		filesGroup.POST("/upload", appInstance.TreeHandler.UploadFile)
 		filesGroup.DELETE("", appInstance.TreeHandler.DeleteFile)
 
-		filesGroup.POST("/:file_id/approve", appInstance.ApprovalHandler.ApproveFile)
+		filesGroup.PUT("/:file_id/approve", appInstance.ApprovalHandler.ApproveFile)
 	}
 
-	approvalsGroup := api.Group("/approvals", http.AuthMiddleware(cfg))
+	approvalsGroup := router.Group("/file-approvals", http.AuthMiddleware(cfg))
 	{
 		approvalsGroup.GET("", appInstance.ApprovalHandler.GetApprovalsByUser)
-		approvalsGroup.POST("/:approval_id/sign", appInstance.ApprovalHandler.SignApproval)
-		approvalsGroup.POST("/:approval_id/annotate", appInstance.ApprovalHandler.AnnotateApproval)
-		approvalsGroup.POST("/:approval_id/finalize", appInstance.ApprovalHandler.FinalizeApproval)
+		approvalsGroup.PUT("/:approval_id/sign", appInstance.ApprovalHandler.SignApproval)
+		approvalsGroup.PUT("/:approval_id/annotate", appInstance.ApprovalHandler.AnnotateApproval)
+		approvalsGroup.PUT("/:approval_id/finalize", appInstance.ApprovalHandler.FinalizeApproval)
 	}
 }
 

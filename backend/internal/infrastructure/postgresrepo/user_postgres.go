@@ -19,7 +19,7 @@ func NewUserRepository(db *Database) *UserRepository {
 }
 
 // SaveUser добавляет пользователя в БД
-func (r *UserRepository) SaveUser(ctx context.Context, login string, passHash []byte, roleID uint) (uint, error) {
+func (r *UserRepository) SaveUser(ctx context.Context, login string, passHash []byte, roleID uint) error {
 	const op = "postgresrepo.user.SaveUser"
 
 	var existingUser domain.User
@@ -28,10 +28,10 @@ func (r *UserRepository) SaveUser(ctx context.Context, login string, passHash []
 	// обработка ошибок и отсутствия пользователя
 	if result.Error != nil {
 		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return 0, fmt.Errorf("%s: user not found: %w", op, domain.ErrUserNotFound)
+			return fmt.Errorf("%s: user not found: %w", op, domain.ErrUserNotFound)
 		}
 	} else {
-		return 0, fmt.Errorf("%s: %w", op, domain.ErrUserAlreadyExists)
+		return fmt.Errorf("%s: %w", op, domain.ErrUserAlreadyExists)
 	}
 
 	newUser := domain.User{
@@ -43,12 +43,12 @@ func (r *UserRepository) SaveUser(ctx context.Context, login string, passHash []
 	// создает пользователя и парсит в модель User
 	if err := r.db.WithContext(ctx).Create(&newUser).Error; err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			return 0, fmt.Errorf("%s: duplicate key error: %w", op, err)
+			return fmt.Errorf("%s: duplicate key error: %w", op, err)
 		}
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	return newUser.ID, nil
+	return nil
 }
 
 // GetUserByID возвращает пользователя по ID

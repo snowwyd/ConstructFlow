@@ -121,7 +121,8 @@ func (u *FileTreeUsecase) GetFileInfo(ctx context.Context, fileID uint, userID u
 
 // UploadDirectory добавляет новую директорию в уже существующую
 // Кастомные ошибки: ErrDirectoryNotFound, ErrAccessDenied
-func (u *FileTreeUsecase) UploadDirectory(ctx context.Context, parentPathID *uint, name string, userID uint) (uint, error) {
+// TODO: если в этой директории уже есть с таким именем, то создается имя (1...)
+func (u *FileTreeUsecase) CreateDirectory(ctx context.Context, parentPathID *uint, name string, userID uint) error {
 	const op = "usecase.file.UploadDirectory"
 	log := u.log.With(slog.String("op", op), slog.Any("user_id", userID))
 
@@ -132,31 +133,32 @@ func (u *FileTreeUsecase) UploadDirectory(ctx context.Context, parentPathID *uin
 		if err != nil {
 			if errors.Is(err, domain.ErrDirectoryNotFound) {
 				log.Error("file not found", slogger.Err(domain.ErrDirectoryNotFound))
-				return 0, domain.ErrDirectoryNotFound
+				return domain.ErrDirectoryNotFound
 			}
 			log.Error("failed to check directory access", slogger.Err(err))
-			return 0, fmt.Errorf("%s: %w", op, err)
+			return fmt.Errorf("%s: %w", op, err)
 		}
 		if !hasAccess {
 			log.Warn("user has no access to parent directory", slog.Any("parent_id", *parentPathID))
-			return 0, domain.ErrAccessDenied
+			return domain.ErrAccessDenied
 		}
 	}
 
 	status := "draft"
-	dirID, err := u.fileTreeRepo.CreateDirectory(ctx, parentPathID, name, status, userID)
+	err := u.fileTreeRepo.CreateDirectory(ctx, parentPathID, name, status, userID)
 	if err != nil {
 		log.Error("failed to create directory", slogger.Err(err))
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	log.Info("directory created successfully", slog.Any("directory_id", dirID))
-	return dirID, nil
+	log.Info("directory created successfully")
+	return nil
 }
 
 // UploadDirectory добавляет новый файл в существующую директорию
 // Кастомные ошибки: ErrDirectoryNotFound, ErrAccessDenied
-func (u *FileTreeUsecase) UploadFile(ctx context.Context, directoryID uint, name string, userID uint) (uint, error) {
+// TODO: если в этой директории уже есть файл с таким именем, то создается имя (1...)
+func (u *FileTreeUsecase) UploadFile(ctx context.Context, directoryID uint, name string, userID uint) error {
 	const op = "usecase.file.UploadFile"
 	log := u.log.With(slog.String("op", op), slog.Any("user_id", userID))
 
@@ -166,25 +168,25 @@ func (u *FileTreeUsecase) UploadFile(ctx context.Context, directoryID uint, name
 	if err != nil {
 		if errors.Is(err, domain.ErrDirectoryNotFound) {
 			log.Error("directory not found", slogger.Err(domain.ErrDirectoryNotFound))
-			return 0, domain.ErrDirectoryNotFound
+			return domain.ErrDirectoryNotFound
 		}
 		log.Error("failed to check directory access", slogger.Err(err))
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 	if !hasAccess {
 		log.Warn("user has no access to directory", slog.Any("directory_id", directoryID))
-		return 0, domain.ErrAccessDenied
+		return domain.ErrAccessDenied
 	}
 
 	status := "draft"
-	fileID, err := u.fileTreeRepo.CreateFile(ctx, directoryID, name, status, userID)
+	err = u.fileTreeRepo.CreateFile(ctx, directoryID, name, status, userID)
 	if err != nil {
 		log.Error("failed to create file", slogger.Err(err))
-		return 0, fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	log.Info("file created successfully", slog.Any("file_id", fileID))
-	return fileID, nil
+	log.Info("file created successfully")
+	return nil
 }
 
 // DeleteDirectory удаляет существующую директорию
