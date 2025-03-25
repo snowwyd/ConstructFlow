@@ -70,6 +70,8 @@ APP_SECRET = your_app_secret
 DB_USER = username
 DB_PASSWORD = your_password
 CONFIG_PATH = configs/local.yaml
+
+APP_PORT=8080
 ```
 configs/local.yaml обязательно такое значение, остальные на ваше усмотрение
 
@@ -77,8 +79,7 @@ configs/local.yaml обязательно такое значение, оста�
 ```bash
 # Запуск в директории backend/
 # Очищает БД, а затем создает тестовые данные для проверки методов
-task seeddb
-go run cmd/migrator/main.go -reset -migrate -seed # если отсутствует go-task
+docker-compose run --rm migrator
 ```
 
 ## API Endpoints

@@ -20,7 +20,7 @@ type Config struct {
 }
 
 type HTTPServer struct {
-	Address     string        `yaml:"address" env-default:"localhost:8080"`
+	Address     string        `yaml:"address" env-default:"0.0.0.0:8080"`
 	Timeout     time.Duration `yaml:"timeout" env-default:"4s"`
 	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
 }
@@ -36,11 +36,12 @@ type Database struct {
 }
 
 func MustLoad() *Config {
+	// Загружаем переменные окружения из .env файла
 	if err := godotenv.Load(); err != nil {
 		log.Println(".env file not found", err)
 	}
 
-	// логика работы с config.yaml
+	// Получаем путь к YAML-конфигу из переменной окружения
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
 		log.Fatal("CONFIG_PATH is not set")
@@ -52,11 +53,12 @@ func MustLoad() *Config {
 
 	var cfg Config
 
+	// Читаем YAML-конфиг
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
 		log.Fatalf("cannot read config: %s", err)
 	}
 
-	// получение особых параметров из конфига
+	// Получаем обязательные переменные окружения
 	cfg.AppSecret = os.Getenv("APP_SECRET")
 	if cfg.AppSecret == "" {
 		log.Fatal("empty APP_SECRET")
