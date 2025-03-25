@@ -3,5 +3,5 @@ export interface ContexMenuStates {
 	mouseY: number | null;
 	itemId?: string;
 	itemType?: 'directory' | 'file';
-    treeType?: 'work' | 'archive';
+	treeType?: 'work' | 'archive';
 }
