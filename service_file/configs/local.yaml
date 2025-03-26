@@ -6,6 +6,11 @@ http_server:
   timeout: 4s
   idle_timeout: 60s
 
+grpc_server:
+  address: "localhost:50051"
+  timeout: 4s
+  idle_timeout: 60s
+
 database:
   host: "host.docker.internal"
   port: 5433
