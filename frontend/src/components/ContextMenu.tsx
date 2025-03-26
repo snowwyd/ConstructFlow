@@ -10,11 +10,12 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axiosFetching from '../api/AxiosFetch';
 import config from '../constants/Configurations.json';
-import { closeContextMenu } from '../store/Slices/contexMenuSlice';
+import { closeContextMenu } from '../store/Slices/contextMenuSlice';
+import { RootState } from '../store/store';
 
 const createFolder = config.createDirectory;
 const deleteFolder = config.deleteDirectory;
@@ -26,9 +27,47 @@ const ContextMenu = () => {
 	const [newName, setNewName] = useState('');
 	const treeRef = useRef<HTMLDivElement>(null);
 	const { mouseX, mouseY, itemId, itemType, treeType } = useSelector(
-		(state: any) => state.contextMenu
+		(state: RootState) => state.contextMenu
 	);
 	const queryClient = useQueryClient();
+
+	// Обработчик нажатия Escape
+	useEffect(() => {
+		const handleEscape = e => {
+			if (e.key === 'Escape') {
+				handleCloseMenu();
+			}
+		};
+
+		document.addEventListener('keydown', handleEscape);
+
+		return () => {
+			document.removeEventListener('keydown', handleEscape);
+		};
+	}, []);
+
+	// Обработчик клика вне меню
+	useEffect(() => {
+		const handleClickOutside = event => {
+			// Проверяем, что меню открыто
+			if (mouseX !== null && mouseY !== null) {
+				// Находим элемент меню
+				const menuElement = document.querySelector('.MuiMenu-paper');
+				// Проверяем, что клик был не по меню
+				if (menuElement && !menuElement.contains(event.target)) {
+					// Закрываем меню только если клик не по меню
+					handleCloseMenu();
+				}
+			}
+		};
+
+		// Используем capture phase для гарантии перехвата события
+		document.addEventListener('mousedown', handleClickOutside, true);
+
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside, true);
+		};
+	}, [mouseX, mouseY]);
 
 	const refreshCorrectTree = () => {
 		if (treeType === 'work') {
@@ -142,6 +181,10 @@ const ContextMenu = () => {
 		<>
 			<Menu
 				open={mouseX !== null && mouseY !== null}
+				onContextMenu={e => {
+					e.preventDefault();
+					e.stopPropagation();
+				}}
 				onClose={handleCloseMenu}
 				anchorReference='anchorPosition'
 				anchorPosition={
@@ -149,6 +192,10 @@ const ContextMenu = () => {
 						? { top: mouseY, left: mouseX }
 						: undefined
 				}
+				disableRestoreFocus={true}
+				disableAutoFocusItem={true}
+				className='context-menu-component'
+				autoFocus={false}
 			>
 				{menuItems.length > 0 ? menuItems : null}
 			</Menu>

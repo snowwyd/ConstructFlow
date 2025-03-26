@@ -1,4 +1,4 @@
-export interface ContexMenuStates {
+export interface ContextMenuStates {
 	mouseX: number | null;
 	mouseY: number | null;
 	itemId?: string;
