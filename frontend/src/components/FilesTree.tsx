@@ -10,8 +10,10 @@ import { useDispatch } from 'react-redux';
 import axiosFetching from '../api/AxiosFetch';
 import config from '../constants/Configurations.json';
 import { Directory, TreeDataItem } from '../interfaces/FilesTree';
-import { openContextMenu } from '../store/Slices/contexMenuSlice';
-import ContextMenu from './ContextMenu';
+import {
+	closeContextMenu,
+	openContextMenu,
+} from '../store/Slices/contextMenuSlice';
 
 const getFolders = config.getFiles;
 const createFile = config.createFile;
@@ -21,11 +23,15 @@ const CustomTreeItem = styled(TreeItem2)(({ theme }) => ({
 	// СТИЛИЗАЦИЯ КОНТЕЙНЕРА MuiTreeItem
 	'& .MuiTreeItem-content': {
 		padding: theme.spacing(0.5, 0),
+		width: '100%',
+		cursor: 'pointer',
 	},
 	'& .MuiTreeItem-label': {
 		display: 'flex',
 		alignItems: 'center',
 		gap: theme.spacing(1),
+		width: '100%',
+		padding: '4px 0',
 	},
 }));
 
@@ -122,10 +128,14 @@ const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 		itemType: 'directory' | 'file'
 	) => {
 		event.preventDefault();
+		event.stopPropagation();
+
+		// Закрываем меню и сразу открываем новое
+		dispatch(closeContextMenu());
 		dispatch(
 			openContextMenu({
-				mouseX: event.clientX - 2,
-				mouseY: event.clientY - 4,
+				mouseX: event.clientX,
+				mouseY: event.clientY,
 				itemId,
 				itemType,
 				treeType: isArchive ? 'archive' : 'work',
@@ -138,6 +148,7 @@ const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 		directoryId: number
 	) => {
 		event.preventDefault();
+		event.stopPropagation();
 
 		const files = Array.from(event.dataTransfer.files);
 
@@ -222,6 +233,7 @@ const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 
 	return (
 		<Box
+			className='files-tree-container'
 			sx={{
 				width: '100%',
 				maxWidth: 400,
@@ -229,6 +241,9 @@ const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 				border: '1px solid #ccc',
 				borderRadius: 1,
 				padding: 2,
+
+				position: 'relative',
+				zIndex: 1,
 			}}
 		>
 			<Typography
@@ -279,14 +294,24 @@ const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 							<TreeComponent
 								{...rest}
 								itemId={itemId}
+								className='tree-item-component'
+								onContextMenu={event => {
+									event.stopPropagation();
+
+									handleContextMenu(event, itemId!, itemData.type);
+
+									return false;
+								}}
 								label={
 									<Box
 										display='flex'
 										alignItems='center'
 										gap={1}
-										onContextMenu={event =>
-											handleContextMenu(event, itemId!, itemData.type)
-										}
+										sx={{
+											width: '100%',
+											height: '100%',
+											padding: '4px 0',
+										}}
 										onDragOver={event => event.preventDefault()}
 										onDrop={event => {
 											const directoryId = parseInt(
@@ -297,6 +322,7 @@ const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 										}}
 										onDragEnter={event => {
 											event.preventDefault();
+											event.stopPropagation();
 											if (itemData.type === 'directory') {
 												setHighlightedItemId(itemId!);
 											}
@@ -325,8 +351,6 @@ const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 					width: '100%',
 				}}
 			/>
-
-			<ContextMenu />
 		</Box>
 	);
 };

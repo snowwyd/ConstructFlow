@@ -3,7 +3,7 @@
 	"loginEndpoint": "/auth/login",
 	"checkJWT": "/auth/me",
 	"getFiles": "/directories",
-	"createDirectory": "/directories/upload",
+	"createDirectory": "/directories/create",
 	"deleteDirectory": "/directories",
 	"createFile": "/files/upload",
 	"deleteFile": "/files",
