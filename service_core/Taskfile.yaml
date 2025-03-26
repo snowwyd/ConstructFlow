@@ -17,7 +17,7 @@ tasks:
   build:
     desc: "builds docker-compose file"
     cmds:
-      - docker-compose down
+      - docker-compose down -v
       - docker-compose up --build -d
   composedown:
     desc: "stops containers"

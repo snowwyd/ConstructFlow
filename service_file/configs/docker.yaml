@@ -2,17 +2,17 @@ env: "local"
 storage_path: "./data/storage.db"
 token_ttl: 1h
 http_server:
-  address: "localhost:8080"
+  address: "0.0.0.0:8080"
   timeout: 4s
   idle_timeout: 60s
 
 grpc_server:
-  address: "localhost:50051"
+  address: "0.0.0.0:50051"
   timeout: 4s
   idle_timeout: 60s
 
 database:
-  host: "host.docker.internal"
-  port: 5433
+  host: "postgres"
+  port: 5432
   name: "constructflow_file"
   ssl_mode: "disable"
