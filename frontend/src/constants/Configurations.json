@@ -1,5 +1,11 @@
 {
-	"apiKey": "http://localhost:8080",
-	"loginEndpoint": "/api/v1/auth/login",
-	"checkJWT": "/api/v1/auth/me"
+	"serverUrl": "http://localhost:8080/",
+	"loginEndpoint": "/auth/login",
+	"checkJWT": "/auth/me",
+	"getFiles": "/directories",
+	"createDirectory": "/directories/create",
+	"deleteDirectory": "/directories",
+	"createFile": "/files/upload",
+	"deleteFile": "/files",
+	"getInfoAboutFile": "/files"
 }

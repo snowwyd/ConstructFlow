@@ -22,15 +22,9 @@ const Auth: React.FC = () => {
 			});
 			return response.data;
 		},
-		onSuccess: async (data: { token: string }) => {
-			// Добавляем явную типизацию для data
-			const token = data.token;
+		onSuccess: async () => {
 			try {
-				const validateResponse = await axiosFetching.get(JWTresponse, {
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				});
+				const validateResponse = await axiosFetching.get(JWTresponse);
 
 				if (validateResponse.data.id) {
 					setError(null);
@@ -51,7 +45,6 @@ const Auth: React.FC = () => {
 		},
 	});
 
-	// Остальной код остается без изменений
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		if (!login || !password) {
