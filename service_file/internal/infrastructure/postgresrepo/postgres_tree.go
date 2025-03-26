@@ -8,68 +8,60 @@ import (
 	"gorm.io/gorm"
 )
 
-type FileTreeRepository struct {
+type FileMetadataRepository struct {
 	db *gorm.DB
 }
 
-func NewFileTreeRepository(db *Database) *FileTreeRepository {
-	return &FileTreeRepository{db: db.db}
+func NewFileTreeRepository(db *Database) *FileMetadataRepository {
+	return &FileMetadataRepository{db: db.db}
 }
 
-func (r *FileTreeRepository) WithTx(tx *gorm.DB) interfaces.FileTreeRepository {
-	return &FileTreeRepository{db: tx}
+func (r *FileMetadataRepository) WithTx(tx *gorm.DB) interfaces.FileMetadataRepository {
+	return &FileMetadataRepository{db: tx}
 }
 
-func (r *FileTreeRepository) GetDB() *gorm.DB {
-	return r.db
+func (r *FileMetadataRepository) GetFileTree(ctx context.Context, isArchive bool, userID uint) ([]domain.Directory, error) {
+	// имитация взятия данных из репозитория
+	return []domain.Directory{domain.Directory{
+		Name:         "test",
+		Status:       "draft",
+		Version:      1,
+		ParentPathID: nil,
+		Files:        []domain.File{domain.File{}},
+	}}, nil
 }
 
-// GetDirectoriesWithFiles отдает список всех директорий и файлов, соответствующих входным условиям
-func (r *FileTreeRepository) GetDirectoriesWithFiles(ctx context.Context, isArchive bool, userID uint) ([]*domain.Directory, error) {
+func (r *FileMetadataRepository) GetFileByID(ctx context.Context, fileID uint) (*domain.File, error) {
 	panic("implement me!")
 }
 
-func (r *FileTreeRepository) GetFileInfo(ctx context.Context, fileID uint) (*domain.File, error) {
+func (r *FileMetadataRepository) GetDirectoryByID(ctx context.Context, directoryID uint) (*domain.Directory, error) {
+	panic("implement me!")
+}
+func (r *FileMetadataRepository) CreateFile(ctx context.Context, directoryID uint, name string, status string, userID uint) error {
 	panic("implement me!")
 }
 
-// CreateDirectory записывает новую сущность Directory в БД
-func (r *FileTreeRepository) CreateDirectory(ctx context.Context, parentPathID *uint, name string, status string, userID uint) error {
+func (r *FileMetadataRepository) CreateDirectory(ctx context.Context, parentPathID *uint, name string, status string, userID uint) error {
 	panic("implement me!")
 }
 
-// CreateFile записывает новую сущность File в БД
-func (r *FileTreeRepository) CreateFile(ctx context.Context, directoryID uint, name string, status string, userID uint) error {
+func (r *FileMetadataRepository) DeleteFile(ctx context.Context, fileID uint, userID uint) error {
 	panic("implement me!")
 }
 
-// DeleteDirectory рекурсивно удаляет все файлы и директории внутри указанной
-func (r *FileTreeRepository) DeleteDirectory(ctx context.Context, directoryID uint, userID uint) error {
+func (r *FileMetadataRepository) DeleteDirectory(ctx context.Context, directoryID uint, userID uint) error {
 	panic("implement me!")
 }
 
-// DeleteFile удаляет файл из БД
-func (r *FileTreeRepository) DeleteFile(ctx context.Context, fileID uint, userID uint) error {
+func (r *FileMetadataRepository) CheckUserFileAccess(ctx context.Context, userID, fileID uint) (bool, error) {
 	panic("implement me!")
 }
 
-// CheckUserDirectoryAccess проверяет доступ пользователя к директории
-func (r *FileTreeRepository) CheckUserDirectoryAccess(ctx context.Context, userID, directoryID uint) (bool, error) {
+func (r *FileMetadataRepository) CheckUserDirectoryAccess(ctx context.Context, userID, directoryID uint) (bool, error) {
 	panic("implement me!")
 }
 
-// CheckUserFileAccess проверяет доступ пользователя к файлу
-func (r *FileTreeRepository) CheckUserFileAccess(ctx context.Context, userID, fileID uint) (bool, error) {
-	panic("implement me!")
-}
-
-// GetFileWithDirectory получает файл с директорией
-// Кастомные ошибки: ErrFileNotFound
-func (r *FileTreeRepository) GetFileWithDirectory(ctx context.Context, fileID uint, tx *gorm.DB) (*domain.File, error) {
-	panic("implement me!")
-}
-
-// UpdateFileStatus обновляет статус файла
-func (r *FileTreeRepository) UpdateFileStatus(ctx context.Context, file *domain.File, tx *gorm.DB) error {
+func (r *FileMetadataRepository) UpdateFileStatus(ctx context.Context, file *domain.File, tx *gorm.DB) error {
 	panic("implement me!")
 }

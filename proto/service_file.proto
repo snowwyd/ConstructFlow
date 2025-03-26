@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package file;
+
+option go_package = "service-file/proto;pb";
+
+service FileService {
+  rpc GetFileByID(GetFileRequest) returns (FileResponse);
+  // TODO: остальные методы
+}
+
+message GetFileRequest {
+  uint32 file_id = 1;
+  uint32 user_id = 2;
+}
+
+message FileResponse {
+  uint32 id = 1;
+  string name = 2;
+  string status = 3;
+}

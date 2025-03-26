@@ -19,6 +19,6 @@ COPY configs/ configs
 COPY wait-for-it.sh /usr/local/bin/wait-for-it.sh
 RUN chmod +x /usr/local/bin/wait-for-it.sh
 
-EXPOSE 8080
+EXPOSE 8080 50051
 
 CMD ["wait-for-it.sh", "postgres:5432", "--", "./app"]

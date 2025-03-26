@@ -13,6 +13,7 @@ type Config struct {
 	Env         string `yaml:"env" env-default:"local"`
 	StoragePath string `yaml:"storage_path" env-required:"true"`
 	HTTPServer  `yaml:"http_server"`
+	GRPCServer  `yaml:"grpc_server"`
 	Database    `yaml:"database"`
 	TokenTTL    time.Duration `yaml:"token_ttl" env-default:"10m"`
 
@@ -21,6 +22,12 @@ type Config struct {
 
 type HTTPServer struct {
 	Address     string        `yaml:"address" env-default:"0.0.0.0:8080"`
+	Timeout     time.Duration `yaml:"timeout" env-default:"4s"`
+	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
+}
+
+type GRPCServer struct {
+	Address     string        `yaml:"address" env-default:"0.0.0.0:50051"`
 	Timeout     time.Duration `yaml:"timeout" env-default:"4s"`
 	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
 }
