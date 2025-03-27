@@ -3,9 +3,13 @@ tasks:
   run:
     desc: "runs main.go file"
     cmds:
-      - go run cmd/main.go
+      - go run cmd/service/main.go
   build:
     desc: "builds docker-compose file"
     cmds:
       - docker-compose down -v
       - docker-compose up --build -d
+  seeddb:
+    desc: "applies migrations"
+    cmds:
+      - go run cmd/migrator/main.go -reset -migrate -seed
