@@ -21,7 +21,7 @@ type FileMetadataRepository interface {
 	CheckUserFileAccess(ctx context.Context, userID, fileID uint) (bool, error)
 	CheckUserDirectoryAccess(ctx context.Context, userID, directoryID uint) (bool, error)
 
-	UpdateFileStatus(ctx context.Context, file *domain.File, tx *gorm.DB) error
+	UpdateFileStatus(ctx context.Context, fileID uint, status string, tx *gorm.DB) error
 	WithTx(tx *gorm.DB) FileMetadataRepository // Метод для передачи транзакции
 	GetDB() *gorm.DB
 }

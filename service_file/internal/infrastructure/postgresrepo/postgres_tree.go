@@ -120,6 +120,25 @@ func (r *FileMetadataRepository) CheckUserDirectoryAccess(ctx context.Context, u
 	panic("implement me!")
 }
 
-func (r *FileMetadataRepository) UpdateFileStatus(ctx context.Context, file *domain.File, tx *gorm.DB) error {
-	panic("implement me!")
+func (r *FileMetadataRepository) UpdateFileStatus(ctx context.Context, fileID uint, status string, tx *gorm.DB) error {
+	// Проверяем существование файла
+	var file domain.File
+	if err := tx.WithContext(ctx).First(&file, fileID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return domain.ErrFileNotFound
+		}
+		return err
+	}
+
+	// Обновляем статус файла
+	file.Status = status
+
+	fmt.Println(file)
+
+	// Используем явное условие для обновления
+	return tx.WithContext(ctx).
+		Model(&domain.File{}).    // Указываем модель, а не экземпляр
+		Where("id = ?", fileID).  // Указываем условие для обновления
+		Update("status", status). // Обновляем только поле status
+		Error
 }

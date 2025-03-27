@@ -2,10 +2,13 @@ syntax = "proto3";
 
 package file;
 
+import "google/protobuf/empty.proto";
+
 option go_package = "service-file/proto;pb";
 
 service FileService {
   rpc GetFileByID(GetFileRequest) returns (FileResponse);
+  rpc UpdateFileStatus(UpdateFileStatusRequest) returns (google.protobuf.Empty);
   // TODO: остальные методы
 }
 
@@ -28,4 +31,13 @@ message DirectoryResponse {
   string name = 3;
   string status = 4;
   uint32 workflow_id = 5;
+}
+
+message UpdateFileStatusRequest {
+  uint32 file_id = 1;
+  string status = 2;
+}
+
+message SuccessResponse {
+  bool success = 1;
 }

@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,7 +20,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FileService_GetFileByID_FullMethodName = "/file.FileService/GetFileByID"
+	FileService_GetFileByID_FullMethodName      = "/file.FileService/GetFileByID"
+	FileService_UpdateFileStatus_FullMethodName = "/file.FileService/UpdateFileStatus"
 )
 
 // FileServiceClient is the client API for FileService service.
@@ -27,6 +29,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FileServiceClient interface {
 	GetFileByID(ctx context.Context, in *GetFileRequest, opts ...grpc.CallOption) (*FileResponse, error)
+	UpdateFileStatus(ctx context.Context, in *UpdateFileStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type fileServiceClient struct {
@@ -47,11 +50,22 @@ func (c *fileServiceClient) GetFileByID(ctx context.Context, in *GetFileRequest,
 	return out, nil
 }
 
+func (c *fileServiceClient) UpdateFileStatus(ctx context.Context, in *UpdateFileStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, FileService_UpdateFileStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServiceServer is the server API for FileService service.
 // All implementations must embed UnimplementedFileServiceServer
 // for forward compatibility.
 type FileServiceServer interface {
 	GetFileByID(context.Context, *GetFileRequest) (*FileResponse, error)
+	UpdateFileStatus(context.Context, *UpdateFileStatusRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedFileServiceServer()
 }
 
@@ -64,6 +78,9 @@ type UnimplementedFileServiceServer struct{}
 
 func (UnimplementedFileServiceServer) GetFileByID(context.Context, *GetFileRequest) (*FileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFileByID not implemented")
+}
+func (UnimplementedFileServiceServer) UpdateFileStatus(context.Context, *UpdateFileStatusRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateFileStatus not implemented")
 }
 func (UnimplementedFileServiceServer) mustEmbedUnimplementedFileServiceServer() {}
 func (UnimplementedFileServiceServer) testEmbeddedByValue()                     {}
@@ -104,6 +121,24 @@ func _FileService_GetFileByID_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileService_UpdateFileStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateFileStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).UpdateFileStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_UpdateFileStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).UpdateFileStatus(ctx, req.(*UpdateFileStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FileService_ServiceDesc is the grpc.ServiceDesc for FileService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +149,10 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFileByID",
 			Handler:    _FileService_GetFileByID_Handler,
+		},
+		{
+			MethodName: "UpdateFileStatus",
+			Handler:    _FileService_UpdateFileStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

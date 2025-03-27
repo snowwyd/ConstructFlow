@@ -13,13 +13,15 @@ import (
 type ApprovalUsecase struct {
 	approvalRepo interfaces.ApprovalRepository
 	fileTreeRepo interfaces.FileTreeRepository
+	fileService  interfaces.FileService
 	log          *slog.Logger
 }
 
-func NewApprovalUsecase(fileTreeRepo interfaces.FileTreeRepository, approvalRepo interfaces.ApprovalRepository, log *slog.Logger) *ApprovalUsecase {
+func NewApprovalUsecase(fileTreeRepo interfaces.FileTreeRepository, approvalRepo interfaces.ApprovalRepository, fileService interfaces.FileService, log *slog.Logger) *ApprovalUsecase {
 	return &ApprovalUsecase{
 		approvalRepo: approvalRepo,
 		fileTreeRepo: fileTreeRepo,
+		fileService:  fileService,
 		log:          log,
 	}
 }
@@ -37,20 +39,9 @@ func (u *ApprovalUsecase) ApproveFile(ctx context.Context, fileID uint) error {
 
 	log.Info("starting file approval process")
 
-	// 1. Получить файл с директорией
-	// log.Debug("fetching file with directory")
-	// file, err := u.fileTreeRepo.GetFileWithDirectory(ctx, fileID, tx)
-	// if err != nil {
-	// 	if errors.Is(err, domain.ErrFileNotFound) {
-	// 		log.Error("file not found", slogger.Err(err))
-	// 		return domain.ErrFileNotFound
-	// 	}
-	// 	log.Error("failed to get file", slogger.Err(err))
-	// 	return fmt.Errorf("%s: %w", op, err)
-	// }
 	// 1. Получить файл с директорией через gRPC
 	log.Debug("fetching file with directory from file service")
-	file, err := u.fileTreeRepo.GetFileWithDirectory(ctx, fileID)
+	file, err := u.fileService.GetFileWithDirectory(ctx, fileID)
 	if err != nil {
 		if errors.Is(err, domain.ErrFileNotFound) {
 			log.Error("file not found", slogger.Err(err))
@@ -81,19 +72,16 @@ func (u *ApprovalUsecase) ApproveFile(ctx context.Context, fileID uint) error {
 	}
 
 	// 4. Обновить статус файла
-	// log.Debug("updating file status", slog.String("new_status", "approving"))
-	// file.Status = "approving"
-	// if err := u.fileTreeRepo.UpdateFileStatus(ctx, file, tx); err != nil {
-	// 	log.Error("failed to update file status", slogger.Err(err))
-	// 	return fmt.Errorf("%s: %w", op, err)
-	// }
+	err = u.fileService.UpdateFileStatus(ctx, fileID, "approving")
+	if err != nil {
+		if errors.Is(err, domain.ErrFileNotFound) {
+			log.Error("file not found", slogger.Err(err))
+			return domain.ErrFileNotFound
+		}
+		log.Error("failed to get file", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
-	// if err := tx.Commit().Error; err != nil {
-	// 	log.Error("transaction commit failed", slogger.Err(err))
-	// 	return fmt.Errorf("%s: %w", op, err)
-	// }
-	fmt.Println(file)
-	fmt.Println(approval)
 	log.Info("file approval process completed successfully")
 	return nil
 }

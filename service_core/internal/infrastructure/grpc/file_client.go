@@ -28,6 +28,7 @@ func (c *FileGRPCClient) GetFileWithDirectory(ctx context.Context, fileID uint) 
 	req := &pb.GetFileRequest{
 		FileId: uint32(fileID),
 	}
+
 	resp, err := c.client.GetFileByID(ctx, req)
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -58,4 +59,20 @@ func uintPtrOrNil(value uint32) *uint {
 	}
 	v := uint(value)
 	return &v
+}
+
+func (c *FileGRPCClient) UpdateFileStatus(ctx context.Context, fileID uint, fileStatus string) error {
+	req := &pb.UpdateFileStatusRequest{
+		FileId: uint32(fileID),
+		Status: fileStatus,
+	}
+
+	_, err := c.client.UpdateFileStatus(ctx, req)
+	if err != nil {
+		st, _ := status.FromError(err)
+		log.Printf("gRPC error: %v", st.Message())
+		return err
+	}
+
+	return nil
 }
