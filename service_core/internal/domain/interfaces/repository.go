@@ -38,7 +38,7 @@ type FileTreeRepository interface {
 	WithTx(tx *gorm.DB) FileTreeRepository // Метод для передачи транзакции
 	GetDB() *gorm.DB
 
-	GetFileWithDirectory(ctx context.Context, fileID uint) (*domain.File, error)
+	GetFileWithDirectory(ctx context.Context, fileID uint, tx *gorm.DB) (*domain.File, error)
 	UpdateFileStatus(ctx context.Context, file *domain.File, tx *gorm.DB) error
 }
 

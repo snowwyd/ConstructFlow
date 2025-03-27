@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"service-core/internal/domain"
+	"service-core/internal/domain/interfaces"
 
 	"gorm.io/gorm"
 )
@@ -23,6 +24,9 @@ func NewFileTreeRepository(db *Database) *FileTreeRepository {
 
 func (r *FileTreeRepository) GetDB() *gorm.DB {
 	return r.db
+}
+func (r *FileTreeRepository) WithTx(tx *gorm.DB) interfaces.FileTreeRepository {
+	return &FileTreeRepository{db: tx}
 }
 
 // GetDirectoriesWithFiles отдает список всех директорий и файлов, соответствующих входным условиям

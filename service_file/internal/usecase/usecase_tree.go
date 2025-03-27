@@ -92,6 +92,11 @@ func (u *FileTreeUsecase) GetFileByID(ctx context.Context, fileID uint) (domain.
 		}
 	}
 
+	if err := tx.Commit().Error; err != nil {
+		log.Error("failed to commit transaction", slogger.Err(err))
+		return domain.File{}, fmt.Errorf("%s: %w", op, err)
+	}
+
 	log.Info("file info response prepared successfully")
 	return *file, nil
 }
@@ -116,7 +121,32 @@ func (u *FileTreeUsecase) DeleteDirectory(ctx context.Context, directoryID uint,
 }
 
 func (u *FileTreeUsecase) UpdateFileStatus(ctx context.Context, fileID uint, status string) error {
-	panic("implement me!")
+	const op = "usecases.tree.UpdateFileStatus"
+
+	log := u.log.With(slog.String("op", op))
+	log.Info("updating file status")
+
+	tx := u.fileMetadataRepo.GetDB().Begin()
+	defer tx.Rollback()
+
+	if err := u.fileMetadataRepo.UpdateFileStatus(ctx, fileID, status, tx); err != nil {
+		switch {
+		case errors.Is(err, domain.ErrFileNotFound):
+			log.Error("file not found", slogger.Err(domain.ErrFileNotFound))
+			return domain.ErrFileNotFound
+		default:
+			log.Error("failed to update file status", slogger.Err(err))
+			return err
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		log.Error("failed to commit transaction", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("file status updated successfully")
+	return nil
 }
 
 func (u *FileTreeUsecase) CheckAccessToFile(ctx context.Context, fileID, userID uint) (bool, error) {

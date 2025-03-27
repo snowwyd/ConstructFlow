@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type GRPCServer struct {
@@ -54,4 +55,17 @@ func uint32PtrOrNil(value *uint) uint32 {
 		return 0
 	}
 	return uint32(*value)
+}
+
+func (s *GRPCServer) UpdateFileStatus(ctx context.Context, req *pb.UpdateFileStatusRequest) (*emptypb.Empty, error) {
+	err := s.usecase.UpdateFileStatus(ctx, uint(req.GetFileId()), req.GetStatus())
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrFileNotFound):
+			return &emptypb.Empty{}, status.Error(codes.NotFound, "file not found")
+		default:
+			return &emptypb.Empty{}, status.Error(codes.Internal, "internal error")
+		}
+	}
+	return &emptypb.Empty{}, nil
 }
