@@ -12,15 +12,13 @@ import (
 
 type ApprovalUsecase struct {
 	approvalRepo interfaces.ApprovalRepository
-	fileTreeRepo interfaces.FileTreeRepository
 	fileService  interfaces.FileService
 	log          *slog.Logger
 }
 
-func NewApprovalUsecase(fileTreeRepo interfaces.FileTreeRepository, approvalRepo interfaces.ApprovalRepository, fileService interfaces.FileService, log *slog.Logger) *ApprovalUsecase {
+func NewApprovalUsecase(approvalRepo interfaces.ApprovalRepository, fileService interfaces.FileService, log *slog.Logger) *ApprovalUsecase {
 	return &ApprovalUsecase{
 		approvalRepo: approvalRepo,
-		fileTreeRepo: fileTreeRepo,
 		fileService:  fileService,
 		log:          log,
 	}
@@ -95,19 +93,19 @@ func (u *ApprovalUsecase) SignApproval(ctx context.Context, approvalID, userID u
 
 	// Проверка последнего пользователя в workflow
 	log.Debug("checking if user is last in workflow")
-	isLastUser, err := u.approvalRepo.IsLastUserInWorkflow(ctx, approvalID, userID)
+	approval, err := u.approvalRepo.IsLastUserInWorkflow(ctx, approvalID, userID)
 	if err != nil {
-		log.Error("failed to check workflow position", slogger.Err(err))
-		return fmt.Errorf("%s: %w", op, err)
+		log.Error("failed to check workflow position", slogger.Err(domain.ErrNoPermission))
+		return fmt.Errorf("%s: %w", op, domain.ErrNoPermission)
 	}
-	if isLastUser {
-		log.Warn("user is last in workflow and cannot sign", slogger.Err(domain.ErrNoPermission))
-		return domain.ErrNoPermission
+	if approval.ID != 0 {
+		log.Error("expected finalize but got sign", slogger.Err(domain.ErrNoPermission))
+		return fmt.Errorf("%s: %w", op, domain.ErrNoPermission)
 	}
 
 	// Проверка прав доступа
 	log.Debug("checking user permissions")
-	hasPermission, err := u.approvalRepo.CheckUserPermission(ctx, approvalID, userID)
+	_, err = u.approvalRepo.CheckUserPermission(ctx, approvalID, userID)
 	if err != nil {
 		if errors.Is(err, domain.ErrApprovalNotFound) {
 			log.Error("permission check failed", slogger.Err(domain.ErrApprovalNotFound))
@@ -115,10 +113,6 @@ func (u *ApprovalUsecase) SignApproval(ctx context.Context, approvalID, userID u
 		}
 		log.Error("permission check failed", slogger.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
-	}
-	if !hasPermission {
-		log.Warn("user has no permission to sign approval")
-		return domain.ErrNoPermission
 	}
 
 	// Обновление порядка
@@ -141,7 +135,7 @@ func (u *ApprovalUsecase) AnnotateApproval(ctx context.Context, approvalID, user
 
 	// Проверка прав
 	log.Debug("checking user permissions")
-	hasPermission, err := u.approvalRepo.CheckUserPermission(ctx, approvalID, userID)
+	approval, err := u.approvalRepo.CheckUserPermission(ctx, approvalID, userID)
 	if err != nil {
 		if errors.Is(err, domain.ErrApprovalNotFound) {
 			log.Error("permission check failed", slogger.Err(domain.ErrApprovalNotFound))
@@ -150,15 +144,22 @@ func (u *ApprovalUsecase) AnnotateApproval(ctx context.Context, approvalID, user
 		log.Error("permission check failed", slogger.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
-	if !hasPermission {
-		log.Warn("user has no permission to annotate")
-		return domain.ErrNoPermission
-	}
 
 	// Обновление аннотации
-	log.Debug("updating approval annotation")
+	log.Debug("updating approval")
 	if err := u.approvalRepo.AnnotateApproval(ctx, approvalID, message); err != nil {
 		log.Error("annotation update failed", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	// 4. Обновить статус файла
+	err = u.fileService.UpdateFileStatus(ctx, approval.FileID, "draft")
+	if err != nil {
+		if errors.Is(err, domain.ErrFileNotFound) {
+			log.Error("file not found", slogger.Err(err))
+			return domain.ErrFileNotFound
+		}
+		log.Error("failed to get file", slogger.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -175,19 +176,30 @@ func (u *ApprovalUsecase) FinalizeApproval(ctx context.Context, approvalID, user
 
 	// Проверка последнего пользователя
 	log.Debug("checking if user is last in workflow")
-	isLastUser, err := u.approvalRepo.IsLastUserInWorkflow(ctx, approvalID, userID)
+	approval, err := u.approvalRepo.IsLastUserInWorkflow(ctx, approvalID, userID)
 	if err != nil {
-		log.Error("workflow position check failed", slogger.Err(err))
-		return fmt.Errorf("%s: %w", op, err)
-	}
-	if !isLastUser {
-		log.Warn("only last user can finalize approval")
+		log.Error("workflow position check failed", slogger.Err(domain.ErrNoPermission))
 		return domain.ErrNoPermission
+	}
+	if approval.ID == 0 {
+		log.Error("cannot finalize this approval", slogger.Err(domain.ErrNoPermission))
+		return fmt.Errorf("%s: %w", op, domain.ErrNoPermission)
 	}
 
 	log.Debug("finalizing approval status")
 	if err := u.approvalRepo.FinalizeApproval(ctx, approvalID); err != nil {
 		log.Error("finalization failed", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	// 4. Обновить статус файла
+	err = u.fileService.UpdateFileStatus(ctx, approval.FileID, "approved")
+	if err != nil {
+		if errors.Is(err, domain.ErrFileNotFound) {
+			log.Error("file not found", slogger.Err(err))
+			return domain.ErrFileNotFound
+		}
+		log.Error("failed to get file", slogger.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 

@@ -133,8 +133,6 @@ func (r *FileMetadataRepository) UpdateFileStatus(ctx context.Context, fileID ui
 	// Обновляем статус файла
 	file.Status = status
 
-	fmt.Println(file)
-
 	// Используем явное условие для обновления
 	return tx.WithContext(ctx).
 		Model(&domain.File{}).    // Указываем модель, а не экземпляр

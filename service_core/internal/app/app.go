@@ -38,7 +38,7 @@ func New(cfg *config.Config, logger *slog.Logger) (*App, error) {
 	// Инициализация use cases
 	authUsecase := usecase.NewAuthUsecase(userRepo, roleRepo, cfg, logger)
 	fileTreeUsecase := usecase.NewFileTreeUsecase(fileTreeRepo, logger)
-	approvalUsecase := usecase.NewApprovalUsecase(fileTreeRepo, approvalRepo, fileService, logger)
+	approvalUsecase := usecase.NewApprovalUsecase(approvalRepo, fileService, logger)
 
 	// Инициализация контроллеров
 	authHandler := http.NewAuthHandler(authUsecase)
