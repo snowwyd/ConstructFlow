@@ -7,11 +7,12 @@ import (
 
 type FileTreeUsecase interface {
 	GetFileByID(ctx context.Context, fileID uint) (domain.File, error)
+	GetFileInfo(ctx context.Context, fileID uint, userID uint) (*domain.FileResponse, error)
 	GetDirectoryByID(ctx context.Context, directoryID uint) (*domain.DirectoryResponse, error)
 	GetFileTree(ctx context.Context, isArchive bool, userID uint) (data domain.GetFileTreeResponse, err error)
 
 	CreateFile(ctx context.Context, directoryID uint, name string, userID uint) (err error)
-	CreateDirectory(ctx context.Context, directoryID *uint, name string, userID uint) (err error)
+	CreateDirectory(ctx context.Context, parentPathID *uint, name string, userID uint) (err error)
 
 	DeleteFile(ctx context.Context, fileID uint, userID uint) (err error)
 	DeleteDirectory(ctx context.Context, directoryID uint, userID uint) (err error)

@@ -8,7 +8,8 @@ import (
 )
 
 type FileMetadataRepository interface {
-	GetFileByID(ctx context.Context, fileID uint, tx *gorm.DB) (*domain.File, error)
+	GetFileByID(ctx context.Context, fileID uint) (*domain.File, error)
+	GetFileInfo(ctx context.Context, fileID uint) (*domain.File, error)
 	GetDirectoryByID(ctx context.Context, directoryID uint) (*domain.Directory, error)
 	GetFileTree(ctx context.Context, isArchive bool, userID uint) ([]domain.Directory, error)
 
