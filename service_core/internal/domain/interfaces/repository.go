@@ -47,8 +47,8 @@ type ApprovalRepository interface {
 	CreateApproval(ctx context.Context, approval *domain.Approval) error
 	FindApprovalsByUser(ctx context.Context, userID uint) ([]domain.ApprovalResponse, error)
 
-	IsLastUserInWorkflow(ctx context.Context, approvalID, userID uint) (bool, error)
-	CheckUserPermission(ctx context.Context, approvalID, userID uint) (bool, error)
+	IsLastUserInWorkflow(ctx context.Context, approvalID, userID uint) (*domain.Approval, error)
+	CheckUserPermission(ctx context.Context, approvalID, userID uint) (*domain.Approval, error)
 
 	IncrementApprovalOrder(ctx context.Context, approvalID uint) error
 	AnnotateApproval(ctx context.Context, approvalID uint, message string) error
