@@ -14,10 +14,10 @@ import (
 
 type GRPCServer struct {
 	pb.UnimplementedFileServiceServer
-	usecase interfaces.FileTreeUsecase
+	usecase interfaces.GRPCUsecase
 }
 
-func NewGRPCServer(usecase interfaces.FileTreeUsecase) *GRPCServer {
+func NewGRPCServer(usecase interfaces.GRPCUsecase) *GRPCServer {
 	return &GRPCServer{
 		usecase: usecase,
 	}
@@ -68,4 +68,25 @@ func (s *GRPCServer) UpdateFileStatus(ctx context.Context, req *pb.UpdateFileSta
 		}
 	}
 	return &emptypb.Empty{}, nil
+}
+
+func (s *GRPCServer) GetFilesInfo(ctx context.Context, req *pb.GetFilesRequest) (*pb.GetFilesResponse, error) {
+	fileIDs := req.FileIds
+	fileNames := make(map[uint32]string)
+
+	// Получаем все файлы за один запрос
+
+	files, err := s.usecase.GetFilesByID(ctx, fileIDs)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get files: %v", err)
+	}
+
+	// Заполняем map file_id → file_name
+	for _, file := range files {
+		fileNames[uint32(file.ID)] = file.Name
+	}
+
+	return &pb.GetFilesResponse{
+		FileNames: fileNames,
+	}, nil
 }

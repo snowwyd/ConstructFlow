@@ -5,18 +5,20 @@ import (
 	"service-file/internal/domain"
 )
 
-type FileTreeUsecase interface {
-	GetFileByID(ctx context.Context, fileID uint) (domain.File, error)
-	GetDirectoryByID(ctx context.Context, directoryID uint) (*domain.DirectoryResponse, error)
-	GetFileTree(ctx context.Context, isArchive bool, userID uint) (data domain.GetFileTreeResponse, err error)
+type DirectoryUsecase interface {
+	GetFileTree(ctx context.Context, isArchive bool, userID uint) (domain.GetFileTreeResponse, error)
+	CreateDirectory(ctx context.Context, parentPathID *uint, name string, userID uint) error
+	DeleteDirectory(ctx context.Context, directoryID uint, userID uint) error
+}
 
-	CreateFile(ctx context.Context, directoryID uint, name string, userID uint) (err error)
-	CreateDirectory(ctx context.Context, directoryID *uint, name string, userID uint) (err error)
+type FileUsecase interface {
+	GetFileInfo(ctx context.Context, fileID uint, userID uint) (*domain.FileResponse, error)
+	CreateFile(ctx context.Context, directoryID uint, name string, userID uint) error
+	DeleteFile(ctx context.Context, fileID uint, userID uint) error
+}
 
-	DeleteFile(ctx context.Context, fileID uint, userID uint) (err error)
-	DeleteDirectory(ctx context.Context, directoryID uint, userID uint) (err error)
-
+type GRPCUsecase interface {
+	GetFileByID(ctx context.Context, fileID uint) (*domain.File, error)
 	UpdateFileStatus(ctx context.Context, fileID uint, status string) error
-	CheckAccessToFile(ctx context.Context, fileID, userID uint) (bool, error)
-	CheckAccessToDirectory(ctx context.Context, directoryID, userID uint) (bool, error)
+	GetFilesByID(ctx context.Context, fileIDs []uint32) ([]domain.File, error)
 }

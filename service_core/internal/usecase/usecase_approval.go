@@ -26,15 +26,54 @@ func NewApprovalUsecase(approvalRepo interfaces.ApprovalRepository, fileService 
 
 // GetApprovalsByUserID получает все Approvals для пользователя через Workflow
 func (u *ApprovalUsecase) GetApprovalsByUserID(ctx context.Context, userID uint) ([]domain.ApprovalResponse, error) {
-	return u.approvalRepo.FindApprovalsByUser(ctx, userID)
+	const op = "usecase.approval.GetApprovalsByUserID"
+
+	log := u.log.With(slog.String("op", op), slog.Any("user_id", userID))
+	log.Info("getting user approvals")
+
+	approvals, err := u.approvalRepo.FindApprovalsByUser(ctx, userID)
+	if err != nil {
+		log.Error("failed to get approvals", slogger.Err(err))
+		return []domain.ApprovalResponse{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	var fileIDs []uint32
+	fileIDSet := make(map[uint32]struct{}) // Для уникальности
+	for _, a := range approvals {
+		fileID := uint32(a.FileID)
+		if _, exists := fileIDSet[fileID]; !exists {
+			fileIDSet[fileID] = struct{}{}
+			fileIDs = append(fileIDs, fileID)
+		}
+	}
+
+	// Получаем имена файлов из файлового сервиса
+	fileNames, err := u.fileService.GetFilesInfo(ctx, fileIDs)
+	if err != nil {
+		log.Error("failed to get file names from file service", slogger.Err(err))
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	// Обновляем fileName в каждом approval
+	for i := range approvals {
+		fileID := uint32(approvals[i].FileID)
+		if name, exists := fileNames[fileID]; exists {
+			approvals[i].FileName = name
+		} else {
+			log.Warn("file not found in file service", slog.Uint64("file_id", uint64(fileID)))
+			approvals[i].FileName = "unknown" // Или пропустить такие записи
+		}
+	}
+
+	return approvals, nil
 }
 
 // ApproveFile создает новую сущность Approval и обновляет статус файла на "approving"
 // Кастомные ошибки: ErrInvalidFileStatus, ErrFileNotFound
 func (u *ApprovalUsecase) ApproveFile(ctx context.Context, fileID uint) error {
 	const op = "usecase.approval.ApproveFile"
-	log := u.log.With(slog.String("op", op), slog.Any("file_id", fileID))
 
+	log := u.log.With(slog.String("op", op), slog.Any("file_id", fileID))
 	log.Info("starting file approval process")
 
 	// 1. Получить файл с директорией через gRPC
