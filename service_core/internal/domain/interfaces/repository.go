@@ -1,8 +1,8 @@
 package interfaces
 
 import (
-	"service-core/internal/domain"
 	"context"
+	"service-core/internal/domain"
 
 	"gorm.io/gorm"
 )
@@ -38,13 +38,13 @@ type FileTreeRepository interface {
 	WithTx(tx *gorm.DB) FileTreeRepository // Метод для передачи транзакции
 	GetDB() *gorm.DB
 
-	GetFileWithDirectory(ctx context.Context, fileID uint, tx *gorm.DB) (*domain.File, error)
+	GetFileWithDirectory(ctx context.Context, fileID uint) (*domain.File, error)
 	UpdateFileStatus(ctx context.Context, file *domain.File, tx *gorm.DB) error
 }
 
 // Для вызова методов слоя БД для работы с файлами на согласовании
 type ApprovalRepository interface {
-	CreateApproval(ctx context.Context, approval *domain.Approval, tx *gorm.DB) error
+	CreateApproval(ctx context.Context, approval *domain.Approval) error
 	FindApprovalsByUser(ctx context.Context, userID uint) ([]domain.ApprovalResponse, error)
 
 	IsLastUserInWorkflow(ctx context.Context, approvalID, userID uint) (bool, error)

@@ -23,7 +23,7 @@ func NewGRPCServer(usecase interfaces.FileTreeUsecase) *GRPCServer {
 }
 
 func (s *GRPCServer) GetFileByID(ctx context.Context, req *pb.GetFileRequest) (*pb.FileResponse, error) {
-	fileInfo, err := s.usecase.GetFileByID(ctx, uint(req.GetFileId()))
+	file, err := s.usecase.GetFileByID(ctx, uint(req.GetFileId()))
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrFileNotFound):
@@ -34,9 +34,24 @@ func (s *GRPCServer) GetFileByID(ctx context.Context, req *pb.GetFileRequest) (*
 	}
 
 	return &pb.FileResponse{
-		Id:          uint64(fileInfo.ID),
-		Name:        fileInfo.NameFile,
-		Status:      fileInfo.Status,
-		DirectoryId: uint64(fileInfo.DirectoryID),
+		Id:          uint32(file.ID),
+		DirectoryId: uint32(file.DirectoryID),
+		Name:        file.Name,
+		Status:      file.Status,
+		Version:     int32(file.Version),
+		Directory: &pb.DirectoryResponse{
+			Id:           uint32(file.Directory.ID),
+			ParentPathId: uint32PtrOrNil(file.Directory.ParentPathID),
+			Name:         file.Directory.Name,
+			Status:       file.Directory.Status,
+			WorkflowId:   uint32(file.Directory.WorkflowID),
+		},
 	}, nil
+}
+
+func uint32PtrOrNil(value *uint) uint32 {
+	if value == nil {
+		return 0
+	}
+	return uint32(*value)
 }

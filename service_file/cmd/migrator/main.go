@@ -88,6 +88,7 @@ func seedData(db *gorm.DB) {
 	rootDir := domain.Directory{
 		Name:       "ROOT",
 		WorkflowID: 1,
+		Status:     "draft",
 	}
 	db.Where("name = ?", rootDir.Name).FirstOrCreate(&rootDir)
 
@@ -95,6 +96,7 @@ func seedData(db *gorm.DB) {
 		Name:         "Folder1",
 		ParentPathID: &rootDir.ID,
 		WorkflowID:   3,
+		Status:       "draft",
 	}
 	db.Where("name = ?", folder1.Name).FirstOrCreate(&folder1)
 
@@ -102,6 +104,7 @@ func seedData(db *gorm.DB) {
 		Name:         "Folder2",
 		ParentPathID: &rootDir.ID,
 		WorkflowID:   2,
+		Status:       "draft",
 	}
 	db.Where("name = ?", folder2.Name).FirstOrCreate(&folder2)
 
@@ -109,6 +112,7 @@ func seedData(db *gorm.DB) {
 		Name:         "Folder3",
 		ParentPathID: &folder1.ID,
 		WorkflowID:   3,
+		Status:       "draft",
 	}
 	db.Where("name = ?", folder3.Name).FirstOrCreate(&folder3)
 

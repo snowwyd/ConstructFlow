@@ -71,33 +71,29 @@ func (u *FileTreeUsecase) GetFileTree(ctx context.Context, isArchive bool, userI
 	return response, nil
 }
 
-func (u *FileTreeUsecase) GetFileByID(ctx context.Context, fileID uint) (domain.FileResponse, error) {
+func (u *FileTreeUsecase) GetFileByID(ctx context.Context, fileID uint) (domain.File, error) {
 	const op = "usecases.tree.GetFileByID"
 
 	log := u.log.With(slog.String("op", op))
 	log.Info("getting file by id")
 
-	file, err := u.fileMetadataRepo.GetFileByID(ctx, fileID)
+	tx := u.fileMetadataRepo.GetDB().Begin()
+	defer tx.Rollback()
+
+	file, err := u.fileMetadataRepo.GetFileByID(ctx, fileID, tx)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrFileNotFound):
 			log.Error("file not found", slogger.Err(domain.ErrFileNotFound))
-			return domain.FileResponse{}, fmt.Errorf("%s: %w", op, domain.ErrFileNotFound)
+			return domain.File{}, fmt.Errorf("%s: %w", op, domain.ErrFileNotFound)
 		default:
 			log.Error("failed to get file info", slogger.Err(err))
-			return domain.FileResponse{}, fmt.Errorf("%s: %w", op, err)
+			return domain.File{}, fmt.Errorf("%s: %w", op, err)
 		}
 	}
 
-	response := domain.FileResponse{
-		ID:          file.ID,
-		NameFile:    file.Name,
-		Status:      file.Status,
-		DirectoryID: file.DirectoryID,
-	}
-
 	log.Info("file info response prepared successfully")
-	return response, nil
+	return *file, nil
 }
 func (u *FileTreeUsecase) GetDirectoryByID(ctx context.Context, directoryID uint) (*domain.DirectoryResponse, error) {
 	panic("implement me!")

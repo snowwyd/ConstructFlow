@@ -22,6 +22,10 @@ func (r *FileMetadataRepository) WithTx(tx *gorm.DB) interfaces.FileMetadataRepo
 	return &FileMetadataRepository{db: tx}
 }
 
+func (r *FileMetadataRepository) GetDB() *gorm.DB {
+	return r.db
+}
+
 func (r *FileMetadataRepository) GetFileTree(ctx context.Context, isArchive bool, userID uint) ([]domain.Directory, error) {
 	const op = "infrastructure.postgres.tree.GetFileTree"
 
@@ -56,17 +60,22 @@ func (r *FileMetadataRepository) GetFileTree(ctx context.Context, isArchive bool
 	return directories, nil
 }
 
-func (r *FileMetadataRepository) GetFileByID(ctx context.Context, fileID uint) (*domain.File, error) {
+func (r *FileMetadataRepository) GetFileByID(ctx context.Context, fileID uint, tx *gorm.DB) (*domain.File, error) {
 	const op = "infrastructure.postgres.tree.GetFileByID"
 
 	var file domain.File
-	err := r.db.WithContext(ctx).First(&file, fileID).Error
+	query := tx.WithContext(ctx).
+		Preload("Directory").
+		Where("id = ?", fileID).
+		First(&file)
 
-	switch {
-	case errors.Is(err, gorm.ErrRecordNotFound):
-		return nil, fmt.Errorf("%s: %w", op, domain.ErrFileNotFound)
-	case err != nil:
-		return nil, fmt.Errorf("%s: %w", op, err)
+	// Обработка ошибок
+	if query.Error != nil {
+		if errors.Is(query.Error, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("%s: %w", op, domain.ErrFileNotFound)
+		}
+		// Все остальные ошибки считаются внутренними
+		return nil, fmt.Errorf("%s: %w", op, domain.ErrInternal)
 	}
 
 	return &file, nil

@@ -8,7 +8,7 @@ import (
 )
 
 type FileMetadataRepository interface {
-	GetFileByID(ctx context.Context, fileID uint) (*domain.File, error)
+	GetFileByID(ctx context.Context, fileID uint, tx *gorm.DB) (*domain.File, error)
 	GetDirectoryByID(ctx context.Context, directoryID uint) (*domain.Directory, error)
 	GetFileTree(ctx context.Context, isArchive bool, userID uint) ([]domain.Directory, error)
 
@@ -23,4 +23,5 @@ type FileMetadataRepository interface {
 
 	UpdateFileStatus(ctx context.Context, file *domain.File, tx *gorm.DB) error
 	WithTx(tx *gorm.DB) FileMetadataRepository // Метод для передачи транзакции
+	GetDB() *gorm.DB
 }

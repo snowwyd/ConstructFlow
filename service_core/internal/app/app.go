@@ -1,11 +1,13 @@
 package app
 
 import (
+	"log"
+	"log/slog"
 	http "service-core/internal/controller"
+	"service-core/internal/infrastructure/grpc"
 	"service-core/internal/infrastructure/postgresrepo"
 	"service-core/internal/usecase"
 	"service-core/pkg/config"
-	"log/slog"
 )
 
 type App struct {
@@ -23,10 +25,14 @@ func New(cfg *config.Config, logger *slog.Logger) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+	grpcClient, err := grpc.NewFileGRPCClient("localhost:50051")
+	if err != nil {
+		log.Fatalf("Failed to create gRPC client: %v", err)
+	}
 
 	userRepo := postgresrepo.NewUserRepository(db)
 	roleRepo := postgresrepo.NewRoleRepository(db)
-	fileTreeRepo := postgresrepo.NewFileTreeRepository(db)
+	fileTreeRepo := grpc.NewFileRepository(grpcClient)
 	approvalRepo := postgresrepo.NewApprovalRepository(db)
 
 	// Инициализация use cases

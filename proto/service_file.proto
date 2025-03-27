@@ -14,8 +14,18 @@ message GetFileRequest {
 }
 
 message FileResponse {
-  uint64 id = 1;
-  string name = 2;
-  string status = 3;
-  uint64 directory_id = 4;
+  uint32 id = 1;
+  uint32 directory_id = 2;
+  string name = 3;
+  string status = 4;
+  int32 version = 5;
+  DirectoryResponse directory = 6;
+}
+
+message DirectoryResponse {
+  uint32 id = 1;
+  uint32 parent_path_id = 2;
+  string name = 3;
+  string status = 4;
+  uint32 workflow_id = 5;
 }
