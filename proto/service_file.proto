@@ -11,11 +11,11 @@ service FileService {
 
 message GetFileRequest {
   uint32 file_id = 1;
-  uint32 user_id = 2;
 }
 
 message FileResponse {
-  uint32 id = 1;
+  uint64 id = 1;
   string name = 2;
   string status = 3;
+  uint64 directory_id = 4;
 }

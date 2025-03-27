@@ -1,8 +1,10 @@
 package http
 
 import (
+	"errors"
 	"net/http"
 
+	"service-file/internal/domain"
 	"service-file/internal/domain/interfaces"
 	"service-file/pkg/utils"
 
@@ -35,7 +37,12 @@ func (h *TreeHandler) GetTree(c *gin.Context) {
 
 	response, err := h.usecase.GetFileTree(c.Request.Context(), req.IsArchive, userID)
 	if err != nil {
-		utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to get file tree")
+		switch {
+		case errors.Is(err, domain.ErrAccessDenied):
+			utils.SendErrorResponse(c, http.StatusForbidden, "ACCESS_DENIED", "user has no access to this repository")
+		default:
+			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to get file tree")
+		}
 		return
 	}
 

@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"service-file/internal/domain"
@@ -29,9 +30,16 @@ func (u *FileTreeUsecase) GetFileTree(ctx context.Context, isArchive bool, userI
 
 	directories, err := u.fileMetadataRepo.GetFileTree(ctx, isArchive, userID)
 	if err != nil {
-		log.Error("failed to get file tree", slogger.Err(err))
-		return domain.GetFileTreeResponse{}, fmt.Errorf("%s: %w", op, err)
+		switch {
+		case errors.Is(err, domain.ErrAccessDenied):
+			log.Error("user has no acces to this repository", slogger.Err(domain.ErrAccessDenied))
+			return domain.GetFileTreeResponse{}, fmt.Errorf("%s: %w", op, domain.ErrAccessDenied)
+		default:
+			log.Error("failed to get file tree", slogger.Err(err))
+			return domain.GetFileTreeResponse{}, fmt.Errorf("%s: %w", op, err)
+		}
 	}
+
 	log.Debug("directories retrieved successfully")
 
 	response := domain.GetFileTreeResponse{
@@ -64,7 +72,32 @@ func (u *FileTreeUsecase) GetFileTree(ctx context.Context, isArchive bool, userI
 }
 
 func (u *FileTreeUsecase) GetFileByID(ctx context.Context, fileID uint) (domain.FileResponse, error) {
-	return domain.FileResponse{ID: fileID}, nil
+	const op = "usecases.tree.GetFileByID"
+
+	log := u.log.With(slog.String("op", op))
+	log.Info("getting file by id")
+
+	file, err := u.fileMetadataRepo.GetFileByID(ctx, fileID)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrFileNotFound):
+			log.Error("file not found", slogger.Err(domain.ErrFileNotFound))
+			return domain.FileResponse{}, fmt.Errorf("%s: %w", op, domain.ErrFileNotFound)
+		default:
+			log.Error("failed to get file info", slogger.Err(err))
+			return domain.FileResponse{}, fmt.Errorf("%s: %w", op, err)
+		}
+	}
+
+	response := domain.FileResponse{
+		ID:          file.ID,
+		NameFile:    file.Name,
+		Status:      file.Status,
+		DirectoryID: file.DirectoryID,
+	}
+
+	log.Info("file info response prepared successfully")
+	return response, nil
 }
 func (u *FileTreeUsecase) GetDirectoryByID(ctx context.Context, directoryID uint) (*domain.DirectoryResponse, error) {
 	panic("implement me!")
