@@ -1,11 +1,10 @@
 package postgresrepo
 
 import (
-	"service-core/internal/domain"
-	"service-core/internal/domain/interfaces"
 	"context"
 	"errors"
 	"fmt"
+	"service-core/internal/domain"
 
 	"gorm.io/gorm"
 )
@@ -18,9 +17,9 @@ func NewFileTreeRepository(db *Database) *FileTreeRepository {
 	return &FileTreeRepository{db: db.db}
 }
 
-func (r *FileTreeRepository) WithTx(tx *gorm.DB) interfaces.FileTreeRepository {
-	return &FileTreeRepository{db: tx}
-}
+// func (r *FileTreeRepository) WithTx(tx *gorm.DB) interfaces.FileTreeRepository {
+// 	return &FileTreeRepository{db: tx}
+// }
 
 func (r *FileTreeRepository) GetDB() *gorm.DB {
 	return r.db

@@ -6,8 +6,7 @@ import (
 )
 
 type FileTreeUsecase interface {
-	// REST usecases
-	GetFileByID(ctx context.Context, fileID uint) (domain.FileResponse, error)
+	GetFileByID(ctx context.Context, fileID uint) (domain.File, error)
 	GetDirectoryByID(ctx context.Context, directoryID uint) (*domain.DirectoryResponse, error)
 	GetFileTree(ctx context.Context, isArchive bool, userID uint) (data domain.GetFileTreeResponse, err error)
 
@@ -17,7 +16,6 @@ type FileTreeUsecase interface {
 	DeleteFile(ctx context.Context, fileID uint, userID uint) (err error)
 	DeleteDirectory(ctx context.Context, directoryID uint, userID uint) (err error)
 
-	// gRPC usecases
 	UpdateFileStatus(ctx context.Context, fileID uint, status string) error
 	CheckAccessToFile(ctx context.Context, fileID, userID uint) (bool, error)
 	CheckAccessToDirectory(ctx context.Context, directoryID, userID uint) (bool, error)

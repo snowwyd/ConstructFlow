@@ -1,9 +1,9 @@
 package postgresrepo
 
 import (
-	"service-core/internal/domain"
 	"context"
 	"fmt"
+	"service-core/internal/domain"
 
 	"gorm.io/gorm"
 )
@@ -16,8 +16,8 @@ func NewApprovalRepository(db *Database) *ApprovalRepository {
 	return &ApprovalRepository{db: db.db}
 }
 
-func (r *ApprovalRepository) CreateApproval(ctx context.Context, approval *domain.Approval, tx *gorm.DB) error {
-	return tx.WithContext(ctx).Create(approval).Error
+func (r *ApprovalRepository) CreateApproval(ctx context.Context, approval *domain.Approval) error {
+	return r.db.Create(approval).Error
 }
 
 // FindApprovalsByUser находит Approvals через связь с Workflow
