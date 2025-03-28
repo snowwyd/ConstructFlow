@@ -1,8 +1,8 @@
 package interfaces
 
 import (
-	"service-core/internal/domain"
 	"context"
+	"service-core/internal/domain"
 )
 
 type AuthUsecase interface {
@@ -12,17 +12,6 @@ type AuthUsecase interface {
 	// для админа и локального тестирования
 	RegisterUser(ctx context.Context, login, password string, roleID uint) (err error)
 	RegisterRole(ctx context.Context, roleName string) (err error)
-}
-
-type FileTreeUsecase interface {
-	GetFileTree(ctx context.Context, isArchive bool, userID uint) (data domain.GetFileTreeResponse, err error)
-	GetFileInfo(ctx context.Context, fileID, userID uint) (fileInfo *domain.FileResponse, err error)
-
-	CreateDirectory(ctx context.Context, directoryID *uint, name string, userID uint) (err error)
-	UploadFile(ctx context.Context, directoryID uint, name string, userID uint) (err error)
-
-	DeleteFile(ctx context.Context, fileID uint, userID uint) (err error)
-	DeleteDirectory(ctx context.Context, directoryID uint, userID uint) (err error)
 }
 
 type ApprovalUsecase interface {

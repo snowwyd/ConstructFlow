@@ -26,14 +26,17 @@ func New(cfg *config.Config, logger *slog.Logger) (*App, error) {
 		return nil, err
 	}
 
-	fileTreeRepo := postgresrepo.NewFileTreeRepository(db)
+	directoryRepo := postgresrepo.NewDirectoryRepository(db)
+	fileMetadataRepo := postgresrepo.NewFileMetadataRepository(db)
 
 	// Инициализация use cases
-	fileTreeUsecase := usecase.NewFileTreeUsecase(fileTreeRepo, logger)
+	directoryUsecase := usecase.NewDirectoryUsecase(directoryRepo, logger)
+	fileUsecase := usecase.NewFileUsecase(directoryRepo, fileMetadataRepo, logger)
+	gRPCUsecase := usecase.NewGRPCUsecase(fileMetadataRepo, logger)
 
 	// Инициализация контроллеров
-	treeHandler := http.NewTreeHandler(fileTreeUsecase)
-	grpcServer := grpcHandler.NewGRPCServer(fileTreeUsecase)
+	treeHandler := http.NewTreeHandler(directoryUsecase, fileUsecase)
+	grpcServer := grpcHandler.NewGRPCServer(gRPCUsecase)
 
 	// Инициализация gRPC-сервера
 	return &App{

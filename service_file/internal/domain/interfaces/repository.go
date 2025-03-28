@@ -7,22 +7,29 @@ import (
 	"gorm.io/gorm"
 )
 
-type FileMetadataRepository interface {
-	GetFileByID(ctx context.Context, fileID uint) (*domain.File, error)
-	GetFileInfo(ctx context.Context, fileID uint) (*domain.File, error)
-	GetDirectoryByID(ctx context.Context, directoryID uint) (*domain.Directory, error)
+type DirectoryRepository interface {
 	GetFileTree(ctx context.Context, isArchive bool, userID uint) ([]domain.Directory, error)
 
-	CreateFile(ctx context.Context, directoryID uint, name string, status string, userID uint) error
 	CreateDirectory(ctx context.Context, parentPathID *uint, name string, status string, userID uint) error
-
-	DeleteFile(ctx context.Context, fileID uint, userID uint) error
 	DeleteDirectory(ctx context.Context, directoryID uint, userID uint) error
 
-	CheckUserFileAccess(ctx context.Context, userID, fileID uint) (bool, error)
 	CheckUserDirectoryAccess(ctx context.Context, userID, directoryID uint) (bool, error)
 
+	WithTx(tx *gorm.DB) DirectoryRepository // Метод для передачи транзакции
+	GetDB() *gorm.DB
+}
+
+type FileMetadataRepository interface {
+	GetFileByID(ctx context.Context, fileID uint) (*domain.File, error)
+	GetFilesByID(ctx context.Context, fileIDs []uint32, files *[]domain.File) error
+	GetFileInfo(ctx context.Context, fileID uint, userID uint) (*domain.File, error)
+
+	CreateFile(ctx context.Context, directoryID uint, name string, status string, userID uint) error
 	UpdateFileStatus(ctx context.Context, fileID uint, status string, tx *gorm.DB) error
+	DeleteFile(ctx context.Context, fileID uint, userID uint) error
+
+	CheckUserFileAccess(ctx context.Context, userID, fileID uint) (bool, error)
+
 	WithTx(tx *gorm.DB) FileMetadataRepository // Метод для передачи транзакции
 	GetDB() *gorm.DB
 }

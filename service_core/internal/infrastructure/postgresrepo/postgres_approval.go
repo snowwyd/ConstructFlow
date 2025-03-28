@@ -30,12 +30,10 @@ func (r *ApprovalRepository) FindApprovalsByUser(ctx context.Context, userID uin
 		Select(`
             approvals.id,
             approvals.file_id,
-            files.name AS file_name,
             approvals.status,
             approvals.workflow_order
         `).
 		Joins("JOIN workflows ON workflows.workflow_id = approvals.workflow_id AND workflows.workflow_order = approvals.workflow_order").
-		Joins("JOIN files ON files.id = approvals.file_id").
 		Where("workflows.user_id = ?", userID).
 		Where("approvals.status = ?", "on approval").
 		Scan(&approvals).Error

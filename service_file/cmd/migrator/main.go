@@ -55,6 +55,18 @@ func main() {
 			log.Error("failed to auto migrate", slog.String("error", err.Error()))
 			return
 		}
+		createIndexQuery := `
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_file_name
+		ON files (directory_id, name);
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_directory_name
+		ON directories (parent_path_id, name);
+	`
+		if err = db.Exec(createIndexQuery).Error; err != nil {
+			log.Error("failed to create unique index", slog.String("error", err.Error()))
+			return
+		}
+		log.Info("unique index idx_directory_file_name created successfully")
+
 		log.Info("migrations applied successfully")
 	}
 

@@ -22,3 +22,7 @@ func (r *FileRepositoryImpl) GetFileWithDirectory(ctx context.Context, fileID ui
 func (r *FileRepositoryImpl) UpdateFileStatus(ctx context.Context, fileID uint, status string) error {
 	return r.client.UpdateFileStatus(ctx, fileID, status)
 }
+
+func (r *FileRepositoryImpl) GetFilesInfo(ctx context.Context, fileIDs []uint32) (map[uint32]string, error) {
+	return r.client.GetFilesInfo(ctx, fileIDs)
+}

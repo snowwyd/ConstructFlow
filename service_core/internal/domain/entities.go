@@ -8,31 +8,6 @@ type GetCurrentUserResponse struct {
 	Role  string `json:"role" example:"user"`
 }
 
-// GetFileTreeResponse godoc
-// @Description Ответ с древовидной структурой файлов и директорий
-type GetFileTreeResponse struct {
-	Data []DirectoryResponse `json:"data"`
-}
-
-// DirectoryResponse godoc
-// @Description Детальная информация о директории
-type DirectoryResponse struct {
-	ID           uint           `json:"id" example:"123"`
-	NameFolder   string         `json:"name_folder" example:"Documents"`
-	Status       string         `json:"status" example:"active"`
-	ParentPathID *uint          `json:"parent_path_id,omitempty" example:"456"`
-	Files        []FileResponse `json:"files"`
-}
-
-// FileResponse godoc
-// @Description Детальная информация о файле
-type FileResponse struct {
-	ID          uint   `json:"id" example:"789"`
-	NameFile    string `json:"name_file" example:"report.pdf"`
-	Status      string `json:"status" example:"draft"`
-	DirectoryID uint   `json:"directory_id" example:"123"`
-}
-
 // ErrorResponse godoc
 // @Description Стандартизированный ответ при ошибке API
 type ErrorResponse struct {
@@ -50,4 +25,28 @@ type ApprovalResponse struct {
 	FileName      string `json:"file_name" example:"report.pdf"`
 	Status        string `json:"status" example:"on approval"`
 	WorkflowOrder int    `json:"workflow_order" example:"2"`
+}
+
+// Directory модель
+type Directory struct {
+	ID           uint
+	ParentPathID *uint
+	Name         string
+	Status       string
+	Version      int
+	ParentPath   *Directory
+	WorkflowID   uint
+
+	Files []File
+}
+
+// File модель
+type File struct {
+	ID          uint
+	DirectoryID uint
+	Name        string
+	Status      string
+	Version     int
+
+	Directory *Directory
 }

@@ -13,11 +13,15 @@ import (
 )
 
 type TreeHandler struct {
-	usecase interfaces.FileTreeUsecase
+	directoryUsecase interfaces.DirectoryUsecase
+	fileUsecase      interfaces.FileUsecase
 }
 
-func NewTreeHandler(usecase interfaces.FileTreeUsecase) *TreeHandler {
-	return &TreeHandler{usecase: usecase}
+func NewTreeHandler(directoryUsecase interfaces.DirectoryUsecase, fileUsecase interfaces.FileUsecase) *TreeHandler {
+	return &TreeHandler{
+		directoryUsecase: directoryUsecase,
+		fileUsecase:      fileUsecase,
+	}
 }
 
 func (h *TreeHandler) GetTree(c *gin.Context) {
@@ -36,7 +40,7 @@ func (h *TreeHandler) GetTree(c *gin.Context) {
 		return
 	}
 
-	response, err := h.usecase.GetFileTree(c.Request.Context(), req.IsArchive, userID)
+	response, err := h.directoryUsecase.GetFileTree(c.Request.Context(), req.IsArchive, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrAccessDenied):
@@ -51,22 +55,20 @@ func (h *TreeHandler) GetTree(c *gin.Context) {
 }
 
 func (h *TreeHandler) GetFileInfo(c *gin.Context) {
-	// Извлечение userID из контекста (добавлено middleware)
 	userID, err := utils.ExtractUserID(c)
 	if err != nil {
 		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
 		return
 	}
 
-	// Извлечение fileID из параметров URL
 	fileIDStr := c.Param("file_id")
 	fileID, err := strconv.ParseUint(fileIDStr, 10, 64)
 	if err != nil {
 		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid file ID")
 		return
 	}
-	// Вызов UseCase метода
-	fileInfo, err := h.usecase.GetFileInfo(c.Request.Context(), uint(fileID), userID)
+
+	fileInfo, err := h.fileUsecase.GetFileInfo(c.Request.Context(), uint(fileID), userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrAccessDenied):
@@ -79,7 +81,6 @@ func (h *TreeHandler) GetFileInfo(c *gin.Context) {
 		return
 	}
 
-	// Успешный ответ
 	c.JSON(http.StatusOK, fileInfo)
 }
 
@@ -104,15 +105,17 @@ func (h *TreeHandler) CreateDirectory(c *gin.Context) {
 		return
 	}
 
-	err = h.usecase.CreateDirectory(c.Request.Context(), req.ParentPathID, req.Name, userID)
+	err = h.directoryUsecase.CreateDirectory(c.Request.Context(), req.ParentPathID, req.Name, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrDirectoryNotFound):
 			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "Directory not found")
 		case errors.Is(err, domain.ErrAccessDenied):
 			utils.SendErrorResponse(c, http.StatusForbidden, "ACCESS_DENIED", "User has no access to this directory")
+		case errors.Is(err, domain.ErrDirectoryAlreadyExists):
+			utils.SendErrorResponse(c, http.StatusConflict, "CONFLICT", "Directory already exists")
 		default:
-			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to register user")
+			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to upload directory")
 		}
 		return
 	}
@@ -142,15 +145,17 @@ func (h *TreeHandler) UploadFile(c *gin.Context) {
 		return
 	}
 
-	err = h.usecase.CreateFile(c.Request.Context(), req.DirectoryID, req.Name, userID)
+	err = h.fileUsecase.CreateFile(c.Request.Context(), req.DirectoryID, req.Name, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrDirectoryNotFound):
 			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "Directory not found")
 		case errors.Is(err, domain.ErrAccessDenied):
 			utils.SendErrorResponse(c, http.StatusForbidden, "ACCESS_DENIED", "User has no access to this directory")
+		case errors.Is(err, domain.ErrFileAlreadyExists):
+			utils.SendErrorResponse(c, http.StatusConflict, "CONFLICT", "File already exists")
 		default:
-			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to register user")
+			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to upload file")
 		}
 		return
 	}
@@ -179,7 +184,7 @@ func (h *TreeHandler) DeleteDirectory(c *gin.Context) {
 		return
 	}
 
-	err = h.usecase.DeleteDirectory(c.Request.Context(), req.DirectoryID, userID)
+	err = h.directoryUsecase.DeleteDirectory(c.Request.Context(), req.DirectoryID, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrDirectoryNotFound):
@@ -218,7 +223,7 @@ func (h *TreeHandler) DeleteFile(c *gin.Context) {
 		return
 	}
 
-	err = h.usecase.DeleteFile(c.Request.Context(), req.FileID, userID)
+	err = h.fileUsecase.DeleteFile(c.Request.Context(), req.FileID, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrFileNotFound):
