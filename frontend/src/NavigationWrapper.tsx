@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { setNavigateFunction } from './api/NavigationService';
+import Header from './components/Header';
 
 interface NavigationWrapperProps {
 	children: ReactNode;
@@ -14,7 +15,12 @@ const NavigationWrapper = ({ children }: NavigationWrapperProps) => {
 		setNavigateFunction(navigate);
 	}, [navigate]);
 
-	return <>{children}</>;
+	return (
+		<>
+			<Header />
+			{children}
+		</>
+	);
 };
 
 export default NavigationWrapper;
