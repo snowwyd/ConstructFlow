@@ -79,7 +79,7 @@ func (r *FileMetadataRepository) GetFileInfo(ctx context.Context, fileID, userID
 	return &result.File, nil
 }
 
-func (r *FileMetadataRepository) CreateFile(ctx context.Context, directoryID uint, name string, status string, userID uint) error {
+func (r *FileMetadataRepository) CreateFile(ctx context.Context, directoryID uint, name string, status string, userID uint, minioKey string) error {
 	const op = "infrastructure.postgresrepo.file.CreateFile"
 
 	// Начинаем транзакцию
@@ -95,9 +95,10 @@ func (r *FileMetadataRepository) CreateFile(ctx context.Context, directoryID uin
 
 	// Создаем новый файл
 	newFile := domain.File{
-		DirectoryID: directoryID,
-		Name:        name,
-		Status:      status,
+		DirectoryID:    directoryID,
+		Name:           name,
+		Status:         status,
+		MinioObjectKey: minioKey,
 	}
 	if err := tx.Create(&newFile).Error; err != nil {
 		tx.Rollback()

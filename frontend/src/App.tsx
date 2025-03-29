@@ -4,6 +4,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { Provider } from 'react-redux';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import NavigationWrapper from './NavigationWrapper';
+import ApprovalEditorPage from './components/ApprovalEditorPage';
 import Auth from './components/Auth';
 import MainPage from './components/MainPage';
 import { store } from './store/store';
@@ -69,9 +70,10 @@ const App = () => {
 						<Routes>
 							<Route path='/' element={<Auth />} />
 							<Route path='/main' element={<MainPage />} />
-							{/* Added new routes for approvals and users management */}
+							{/* Added routes for approvals, users management, and approval editor */}
 							<Route path='/approvals' element={<ApprovalsPage />} />
 							<Route path='/users' element={<UsersPage />} />
+							<Route path='/approval-editor' element={<ApprovalEditorPage />} />
 						</Routes>
 					</NavigationWrapper>
 				</BrowserRouter>
