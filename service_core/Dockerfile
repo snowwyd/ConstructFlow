@@ -7,7 +7,6 @@ RUN go mod download
 
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o app ./cmd/api/main.go
-
 RUN CGO_ENABLED=0 GOOS=linux go build -o migrator ./cmd/migrator/main.go
 
 FROM debian:latest
@@ -24,4 +23,4 @@ RUN chmod +x /usr/local/bin/wait-for-it.sh
 
 EXPOSE 8080
 
-CMD ["wait-for-it.sh", "postgres:5432", "--", "./app"]
+CMD ["wait-for-it.sh", "postgres_core::5432", "--", "./app"]

@@ -2,8 +2,10 @@ package app
 
 import (
 	"log/slog"
+	grpcapp "service-file/internal/app/grpc"
+	httpapp "service-file/internal/app/http"
+
 	http "service-file/internal/controller"
-	grpcHandler "service-file/internal/infrastructure/grpc"
 
 	"service-file/internal/infrastructure/postgresrepo"
 	"service-file/internal/usecase"
@@ -11,16 +13,11 @@ import (
 )
 
 type App struct {
-	Config      *config.Config
-	Logger      *slog.Logger
-	TreeHandler *http.TreeHandler
-	GRPCServer  *grpcHandler.GRPCServer // Добавлено поле для gRPC-сервера
-
-	// ... другие обработчики и use cases
+	HTTPSrv *httpapp.App
+	GRPCSrv *grpcapp.App
 }
 
 func New(cfg *config.Config, logger *slog.Logger) (*App, error) {
-	// Инициализация репозиториев
 	db, err := postgresrepo.New(cfg)
 	if err != nil {
 		return nil, err
@@ -29,20 +26,17 @@ func New(cfg *config.Config, logger *slog.Logger) (*App, error) {
 	directoryRepo := postgresrepo.NewDirectoryRepository(db)
 	fileMetadataRepo := postgresrepo.NewFileMetadataRepository(db)
 
-	// Инициализация use cases
 	directoryUsecase := usecase.NewDirectoryUsecase(directoryRepo, logger)
 	fileUsecase := usecase.NewFileUsecase(directoryRepo, fileMetadataRepo, logger)
 	gRPCUsecase := usecase.NewGRPCUsecase(fileMetadataRepo, logger)
 
-	// Инициализация контроллеров
 	treeHandler := http.NewTreeHandler(directoryUsecase, fileUsecase)
-	grpcServer := grpcHandler.NewGRPCServer(gRPCUsecase)
 
-	// Инициализация gRPC-сервера
+	httpApp := httpapp.New(logger, treeHandler, cfg)
+	grpcApp := grpcapp.New(logger, gRPCUsecase, cfg.GRPCServer.Address)
+
 	return &App{
-		Config:      cfg,
-		Logger:      logger,
-		TreeHandler: treeHandler,
-		GRPCServer:  grpcServer,
+		HTTPSrv: httpApp,
+		GRPCSrv: grpcApp,
 	}, nil
 }

@@ -15,6 +15,7 @@ type Config struct {
 	HTTPServer  `yaml:"http_server"`
 	Database    `yaml:"database"`
 	TokenTTL    time.Duration `yaml:"token_ttl" env-default:"10m"`
+	GRPCAddress string        `yaml:"grpc_address"`
 
 	AppSecret string
 }

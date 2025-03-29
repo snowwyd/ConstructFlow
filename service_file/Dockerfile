@@ -6,13 +6,15 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o app ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o app ./cmd/service/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o migrator ./cmd/migrator/main.go
 
 FROM debian:latest
 
 WORKDIR /root/
 
 COPY --from=build /app/app .
+COPY --from=build /app/migrator .
 
 COPY configs/ configs
 
@@ -21,4 +23,4 @@ RUN chmod +x /usr/local/bin/wait-for-it.sh
 
 EXPOSE 8080 50051
 
-CMD ["wait-for-it.sh", "postgres:5432", "--", "./app"]
+CMD ["wait-for-it.sh", "postgres_file:5432", "--", "./app"]

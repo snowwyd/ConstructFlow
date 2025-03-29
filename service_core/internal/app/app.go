@@ -3,7 +3,9 @@ package app
 import (
 	"log"
 	"log/slog"
+	httpapp "service-core/internal/app/http"
 	http "service-core/internal/controller"
+
 	"service-core/internal/infrastructure/grpc"
 	"service-core/internal/infrastructure/postgresrepo"
 	"service-core/internal/usecase"
@@ -11,20 +13,16 @@ import (
 )
 
 type App struct {
-	Config          *config.Config
-	Logger          *slog.Logger
-	AuthHandler     *http.AuthHandler
-	ApprovalHandler *http.ApprovalHandler
-	// ... другие обработчики и use cases
+	HTTPSrv *httpapp.App
 }
 
 func New(cfg *config.Config, logger *slog.Logger) (*App, error) {
-	// Инициализация репозиториев
 	db, err := postgresrepo.New(cfg)
 	if err != nil {
 		return nil, err
 	}
-	grpcClient, err := grpc.NewFileGRPCClient("localhost:50051")
+
+	grpcClient, err := grpc.NewFileGRPCClient(cfg.GRPCAddress)
 	if err != nil {
 		log.Fatalf("Failed to create gRPC client: %v", err)
 	}
@@ -33,18 +31,16 @@ func New(cfg *config.Config, logger *slog.Logger) (*App, error) {
 	roleRepo := postgresrepo.NewRoleRepository(db)
 	approvalRepo := postgresrepo.NewApprovalRepository(db)
 	fileService := grpc.NewFileService(grpcClient)
-	// Инициализация use cases
+
 	authUsecase := usecase.NewAuthUsecase(userRepo, roleRepo, cfg, logger)
 	approvalUsecase := usecase.NewApprovalUsecase(approvalRepo, fileService, logger)
 
-	// Инициализация контроллеров
 	authHandler := http.NewAuthHandler(authUsecase)
 	approvalHandler := http.NewApprovalHandler(approvalUsecase)
 
+	httpApp := httpapp.New(logger, authHandler, approvalHandler, cfg)
+
 	return &App{
-		Config:          cfg,
-		Logger:          logger,
-		AuthHandler:     authHandler,
-		ApprovalHandler: approvalHandler,
+		HTTPSrv: httpApp,
 	}, nil
 }

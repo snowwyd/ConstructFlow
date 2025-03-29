@@ -1,15 +1,15 @@
 package usecase
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"log/slog"
 	"service-core/internal/domain"
 	"service-core/internal/domain/interfaces"
 	"service-core/pkg/config"
 	"service-core/pkg/logger/slogger"
 	"service-core/pkg/utils"
-	"context"
-	"errors"
-	"fmt"
-	"log/slog"
 )
 
 type AuthUsecase struct {
@@ -35,25 +35,25 @@ func (u *AuthUsecase) Login(ctx context.Context, login, password string) (string
 	log := u.log.With(slog.String("op", op), slog.String("login", login))
 	log.Info("logging user in")
 
-	// проверка на существование пользователя с таким логином
+	log.Debug("getting user by login")
 	user, err := u.userRepo.GetUserByLogin(ctx, login)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			u.log.Warn("user not found", slogger.Err(err))
-			return "", domain.ErrUserNotFound
+			return "", fmt.Errorf("%s: %w", op, domain.ErrUserNotFound)
 		}
 
 		u.log.Error("failed to get user", slogger.Err(err))
-		return "", domain.ErrInvalidCredentials
+		return "", fmt.Errorf("%s: %w", op, domain.ErrInvalidCredentials)
 	}
 
-	// проверка пароля
+	log.Debug("comparing pass and hash")
 	if err := utils.CheckPassword(user.PassHash, password); err != nil {
 		u.log.Error("invalid credentials", slogger.Err(err))
-		return "", domain.ErrInvalidCredentials
+		return "", fmt.Errorf("%s: %w", op, domain.ErrInvalidCredentials)
 	}
 
-	// генерация токена через параметры из .env (в конфиге)
+	log.Debug("generating JWT")
 	token, err := utils.GenerateJWT(user, u.cfg.AppSecret, u.cfg.TokenTTL)
 	if err != nil {
 		u.log.Error("failed to generate jwt", slogger.Err(err))
@@ -71,33 +71,31 @@ func (u *AuthUsecase) RegisterUser(ctx context.Context, login, password string, 
 	log := u.log.With(slog.String("op", op), slog.String("login", login))
 	log.Info("registering user")
 
-	// генерация хэша пароля
+	log.Debug("hashing password")
 	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
 		u.log.Error("failed to hash password", slogger.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	// проверка на существование роли
+	log.Debug("getting role by ID")
 	_, err = u.roleRepo.GetRoleByID(ctx, roleID)
 	if err != nil {
 		if errors.Is(err, domain.ErrRoleNotFound) {
-			u.log.Warn("user not found", slogger.Err(err))
-			return domain.ErrRoleNotFound
+			u.log.Warn("role not found", slogger.Err(err))
+			return fmt.Errorf("%s: %w", op, domain.ErrRoleNotFound)
 		}
-
-		u.log.Error("failed to get user", slogger.Err(err))
+		u.log.Error("failed to get role", slogger.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	// сохранение пользователя в БД
+	log.Debug("saving user")
 	err = u.userRepo.SaveUser(ctx, login, hashedPassword, roleID)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserAlreadyExists) {
 			u.log.Error("user already exists", slogger.Err(domain.ErrUserAlreadyExists))
-			return domain.ErrUserAlreadyExists
+			return fmt.Errorf("%s: %w", op, domain.ErrUserAlreadyExists)
 		}
-
 		u.log.Error("failed to save user", slogger.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -108,26 +106,27 @@ func (u *AuthUsecase) RegisterUser(ctx context.Context, login, password string, 
 
 // GetCurrentUser возвращает информацию о пользователе по ID
 func (u *AuthUsecase) GetCurrentUser(ctx context.Context, userID uint) (domain.GetCurrentUserResponse, error) {
-	const op = "usecase.auth.RegisterUser"
+	const op = "usecase.auth.GetCurrentUser"
 
 	log := u.log.With(slog.String("op", op), slog.Any("userID", userID))
 	log.Info("getting current user info")
 
-	// получение пользователя по ID
+	log.Debug("getting user by ID")
 	user, err := u.userRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			u.log.Warn("user not found", slogger.Err(err))
-			return domain.GetCurrentUserResponse{}, domain.ErrUserNotFound
+			return domain.GetCurrentUserResponse{}, fmt.Errorf("%s: %w", op, domain.ErrUserNotFound)
 		}
 		return domain.GetCurrentUserResponse{}, fmt.Errorf("%s: %w", op, err)
 	}
 
+	log.Debug("getting role by ID")
 	roleName, err := u.roleRepo.GetRoleByID(ctx, user.RoleID)
 	if err != nil {
 		if errors.Is(err, domain.ErrRoleNotFound) {
 			u.log.Warn("role not found", slogger.Err(err))
-			return domain.GetCurrentUserResponse{}, domain.ErrRoleNotFound
+			return domain.GetCurrentUserResponse{}, fmt.Errorf("%s: %w", op, domain.ErrRoleNotFound)
 		}
 		return domain.GetCurrentUserResponse{}, fmt.Errorf("%s: %w", op, err)
 	}
@@ -140,19 +139,20 @@ func (u *AuthUsecase) GetCurrentUser(ctx context.Context, userID uint) (domain.G
 	}, nil
 }
 
+// RegisterRole создает роль
 func (u *AuthUsecase) RegisterRole(ctx context.Context, roleName string) error {
 	const op = "usecase.auth.RegisterRole"
 
 	log := u.log.With(slog.String("op", op), slog.Any("role", roleName))
 	log.Info("registering new role")
 
+	log.Debug("inserting role into DB")
 	err := u.roleRepo.CreateRole(ctx, roleName)
 	if err != nil {
 		if errors.Is(err, domain.ErrRoleAlreadyExists) {
 			u.log.Error("role already exists", slogger.Err(domain.ErrRoleAlreadyExists))
-			return domain.ErrRoleAlreadyExists
+			return fmt.Errorf("%s: %w", op, domain.ErrRoleAlreadyExists)
 		}
-
 		u.log.Error("failed to save role", slogger.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
