@@ -1,4 +1,4 @@
-package grpc
+package filegrpc
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"service-file/internal/domain/interfaces"
 	pb "service-file/internal/proto"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -17,10 +18,8 @@ type GRPCServer struct {
 	usecase interfaces.GRPCUsecase
 }
 
-func NewGRPCServer(usecase interfaces.GRPCUsecase) *GRPCServer {
-	return &GRPCServer{
-		usecase: usecase,
-	}
+func NewGRPCServer(gRPC *grpc.Server, usecase interfaces.GRPCUsecase) {
+	pb.RegisterFileServiceServer(gRPC, &GRPCServer{usecase: usecase})
 }
 
 func (s *GRPCServer) GetFileByID(ctx context.Context, req *pb.GetFileRequest) (*pb.FileResponse, error) {

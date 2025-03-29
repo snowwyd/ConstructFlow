@@ -40,7 +40,11 @@ func (r *ApprovalRepository) FindApprovalsByUser(ctx context.Context, userID uin
 		Where("approvals.status = ?", "on approval").
 		Scan(&approvals).Error
 
-	return approvals, fmt.Errorf("%s: %w", op, err)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return approvals, nil
 }
 
 // CheckUserPermission проверяет, имеет ли пользователь право подписывать Approval
