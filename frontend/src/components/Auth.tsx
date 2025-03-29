@@ -26,6 +26,19 @@ import config from '../constants/Configurations.json';
 const loginEndpoint = config.loginEndpoint;
 const JWTresponse = config.checkJWT;
 
+// Type for login credentials
+interface LoginCredentials {
+	login: string;
+	password: string;
+}
+
+// Type for JWT validation response
+interface JWTValidationResponse {
+	id: number;
+	login: string;
+	role: string;
+}
+
 const Auth = () => {
 	const theme = useTheme();
 	const navigate = useNavigate();
@@ -36,15 +49,17 @@ const Auth = () => {
 
 	const { mutate, isPending } = useMutation({
 		mutationFn: async () => {
-			const response = await axiosFetching.post(loginEndpoint, {
-				login,
-				password,
-			});
+			const response = await axiosFetching.post<{ token: string }>(
+				loginEndpoint,
+				{ login, password } as LoginCredentials
+			);
 			return response.data;
 		},
 		onSuccess: async () => {
 			try {
-				const validateResponse = await axiosFetching.get(JWTresponse);
+				const validateResponse = await axiosFetching.get<JWTValidationResponse>(
+					JWTresponse
+				);
 
 				if (validateResponse.data.id) {
 					setError(null);

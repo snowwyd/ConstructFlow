@@ -19,7 +19,7 @@ import {
 import Button from '@mui/material/Button';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axiosFetching from '../api/AxiosFetch';
 import config from '../constants/Configurations.json';
@@ -29,6 +29,19 @@ import { RootState } from '../store/store';
 const createFolder = config.createDirectory;
 const deleteFolder = config.deleteDirectory;
 const deleteFile = config.deleteFile;
+
+type CreateFolderPayload = {
+	parent_path_id: number;
+	name: string;
+};
+
+type DeleteFolderPayload = {
+	directory_id: number;
+};
+
+type DeleteFilePayload = {
+	file_id: number;
+};
 
 const ContextMenu = () => {
 	const theme = useTheme();
@@ -40,6 +53,11 @@ const ContextMenu = () => {
 		(state: RootState) => state.contextMenu
 	);
 	const queryClient = useQueryClient();
+
+	// Handle closing the context menu
+	const handleCloseMenu = useCallback(() => {
+		dispatch(closeContextMenu());
+	}, [dispatch]);
 
 	// Обработчик нажатия Escape
 	useEffect(() => {
@@ -54,7 +72,7 @@ const ContextMenu = () => {
 		return () => {
 			document.removeEventListener('keydown', handleEscape);
 		};
-	}, []);
+	}, [handleCloseMenu]); // Added handleCloseMenu to dependency array
 
 	// Обработчик клика вне меню
 	useEffect(() => {
@@ -77,7 +95,7 @@ const ContextMenu = () => {
 		return () => {
 			document.removeEventListener('mousedown', handleClickOutside, true);
 		};
-	}, [mouseX, mouseY]);
+	}, [mouseX, mouseY, handleCloseMenu]); // Added handleCloseMenu to dependency array
 
 	const refreshCorrectTree = () => {
 		if (treeType === 'work') {
@@ -88,7 +106,7 @@ const ContextMenu = () => {
 	};
 
 	const createFolderQuery = useMutation({
-		mutationFn: async (data: { parent_path_id: number; name: string }) => {
+		mutationFn: async (data: CreateFolderPayload) => {
 			const response = await axiosFetching.post(createFolder, data);
 			return response.data;
 		},
@@ -104,27 +122,27 @@ const ContextMenu = () => {
 	});
 
 	const deleteFolderMutation = useMutation({
-		mutationFn: async (data: { directory_id: number }) => {
+		mutationFn: async (data: DeleteFolderPayload) => {
 			const response = await axiosFetching.delete(deleteFolder, { data });
 			return response.data;
 		},
 		onSuccess: () => {
 			refreshCorrectTree();
 		},
-		onError: (error: any) => {
+		onError: (error: AxiosError) => {
 			console.error('Error deleting folder:', error);
 		},
 	});
 
 	const deleteFileMutation = useMutation({
-		mutationFn: async (data: { file_id: number }) => {
+		mutationFn: async (data: DeleteFilePayload) => {
 			const response = await axiosFetching.delete(deleteFile, { data });
 			return response.data;
 		},
 		onSuccess: () => {
 			refreshCorrectTree();
 		},
-		onError: (error: any) => {
+		onError: (error: AxiosError) => {
 			console.error('Error deleting folder:', error);
 		},
 	});
@@ -133,10 +151,6 @@ const ContextMenu = () => {
 		if (!itemId || !newName.trim()) return;
 		const parentPathId = parseInt(itemId.replace('dir-', ''), 10);
 		createFolderQuery.mutate({ parent_path_id: parentPathId, name: newName });
-	};
-
-	const handleCloseMenu = () => {
-		dispatch(closeContextMenu());
 	};
 
 	const handleCreateFolder = () => {
@@ -271,6 +285,7 @@ const ContextMenu = () => {
 		);
 	}
 
+	// Fix for PaperProps deprecation - using slotProps instead
 	return (
 		<>
 			<Menu
@@ -290,15 +305,20 @@ const ContextMenu = () => {
 				disableAutoFocusItem={true}
 				className='context-menu-component'
 				autoFocus={false}
-				PaperProps={{
-					elevation: 3,
-					sx: {
-						mt: 0.5,
-						borderRadius: 2,
-						minWidth: 180,
-						padding: '4px 0',
-						boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.15)}`,
-						overflow: 'hidden',
+				slotProps={{
+					paper: {
+						elevation: 3,
+						sx: {
+							mt: 0.5,
+							borderRadius: 2,
+							minWidth: 180,
+							padding: '4px 0',
+							boxShadow: `0 4px 20px ${alpha(
+								theme.palette.primary.main,
+								0.15
+							)}`,
+							overflow: 'hidden',
+						},
 					},
 				}}
 			>
@@ -312,12 +332,17 @@ const ContextMenu = () => {
 					setIsDialogOpen(false);
 					treeRef.current?.focus();
 				}}
-				PaperProps={{
-					sx: {
-						borderRadius: 3,
-						boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.15)}`,
-						maxWidth: 450,
-						width: '100%',
+				slotProps={{
+					paper: {
+						sx: {
+							borderRadius: 3,
+							boxShadow: `0 8px 32px ${alpha(
+								theme.palette.primary.main,
+								0.15
+							)}`,
+							maxWidth: 450,
+							width: '100%',
+						},
 					},
 				}}
 			>
