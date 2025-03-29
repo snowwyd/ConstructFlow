@@ -198,7 +198,7 @@ const Header = () => {
 			active: isActive('/main'),
 		},
 		{
-			label: 'Одобрения',
+			label: 'Согласования',
 			icon: (
 				<Badge badgeContent={pendingApprovals} color='error' sx={{ mr: 1 }}>
 					<AssignmentTurnedInIcon />
@@ -212,7 +212,7 @@ const Header = () => {
 	// Add Admin section if user has admin role
 	if (userInfo?.role === 'admin') {
 		navItems.push({
-			label: 'Пользователи',
+			label: 'Права и пользователи',
 			icon: <PeopleOutlineIcon sx={{ mr: 1 }} />,
 			path: '/users',
 			active: isActive('/users'),
