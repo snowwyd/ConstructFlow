@@ -23,6 +23,8 @@ func (r *ApprovalRepository) CreateApproval(ctx context.Context, approval *domai
 
 // FindApprovalsByUser находит Approvals через связь с Workflow
 func (r *ApprovalRepository) FindApprovalsByUser(ctx context.Context, userID uint) ([]domain.ApprovalResponse, error) {
+	const op = "infrastructure.postgresrepo.approval.FindApprovalsByUser"
+
 	var approvals []domain.ApprovalResponse
 
 	err := r.db.WithContext(ctx).
@@ -38,16 +40,16 @@ func (r *ApprovalRepository) FindApprovalsByUser(ctx context.Context, userID uin
 		Where("approvals.status = ?", "on approval").
 		Scan(&approvals).Error
 
-	return approvals, err
+	return approvals, fmt.Errorf("%s: %w", op, err)
 }
 
 // CheckUserPermission проверяет, имеет ли пользователь право подписывать Approval
 // Кастомные ошибки: ErrApprovalNotFound
 func (r *ApprovalRepository) CheckUserPermission(ctx context.Context, approvalID, userID uint) (*domain.Approval, error) {
-	// Инициализируем пустую структуру Approval
+	const op = "infrastructure.postgresrepo.approval.CheckUserPermission"
+
 	var approval domain.Approval
 
-	// Проверяем существование Approval и права доступа
 	err := r.db.WithContext(ctx).
 		Joins("JOIN workflows ON workflows.workflow_id = approvals.workflow_id AND workflows.workflow_order = approvals.workflow_order").
 		Where("approvals.id = ? AND workflows.user_id = ?", approvalID, userID).
@@ -56,23 +58,20 @@ func (r *ApprovalRepository) CheckUserPermission(ctx context.Context, approvalID
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// Если запись не найдена, возвращаем пустую структуру
-			return &domain.Approval{}, domain.ErrApprovalNotFound
+			return &domain.Approval{}, fmt.Errorf("%s: %w", op, domain.ErrApprovalNotFound)
 		}
-		// Возвращаем ошибку, если произошла другая проблема
-		return nil, fmt.Errorf("permission check failed: %w", domain.ErrInternal)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	// Возвращаем найденную сущность Approval
 	return &approval, nil
 }
 
 // IsLastUserInWorkflow - проверка на то, является ли пользователь крайним в цепочке согласования
 func (r *ApprovalRepository) IsLastUserInWorkflow(ctx context.Context, approvalID, userID uint) (*domain.Approval, error) {
-	// Инициализируем пустую структуру Approval
+	const op = "infrastructure.postgresrepo.approval.IsLastUserInWorkflow"
+
 	var approval domain.Approval
 
-	// Проверяем, является ли пользователь последним в цепочке согласования
 	err := r.db.WithContext(ctx).
 		Joins("JOIN workflows ON workflows.workflow_id = approvals.workflow_id AND workflows.workflow_order = approvals.workflow_order").
 		Where("approvals.id = ?", approvalID).
@@ -83,28 +82,29 @@ func (r *ApprovalRepository) IsLastUserInWorkflow(ctx context.Context, approvalI
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// Если запись не найдена, возвращаем пустую структуру
 			return &domain.Approval{}, nil
 		}
-		// Возвращаем ошибку, если произошла другая проблема
-		return nil, fmt.Errorf("failed to check last user in workflow: %w", domain.ErrInternal)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	// Возвращаем найденную сущность Approval
 	return &approval, nil
 }
 
 // IncrementApprovalOrder увеличивает поле order у Approval
 func (r *ApprovalRepository) IncrementApprovalOrder(ctx context.Context, approvalID uint) error {
-	return r.db.WithContext(ctx).
+	const op = "infrastructure.postgresrepo.approval.IncrementApprovalOrder"
+
+	return fmt.Errorf("%s: %w", op, r.db.WithContext(ctx).
 		Model(&domain.Approval{}).
 		Where("id = ?", approvalID).
 		Update("workflow_order", gorm.Expr("workflow_order + 1")).
-		Error
+		Error)
 }
 
 // AnnotateApproval обновляет Approval
 func (r *ApprovalRepository) AnnotateApproval(ctx context.Context, approvalID uint, message string) error {
+	const op = "infrastructure.postgresrepo.approval.AnnotateApproval"
+
 	tx := r.db.WithContext(ctx).Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -112,14 +112,13 @@ func (r *ApprovalRepository) AnnotateApproval(ctx context.Context, approvalID ui
 		}
 	}()
 
-	// Находим Approval
 	var approval domain.Approval
 	if err := tx.First(&approval, approvalID).Error; err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return domain.ErrApprovalNotFound
+			return fmt.Errorf("%s: %w", op, domain.ErrApprovalNotFound)
 		}
-		return fmt.Errorf("failed to find approval: %w", domain.ErrInternal)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	// Обновляем Approval
@@ -127,14 +126,16 @@ func (r *ApprovalRepository) AnnotateApproval(ctx context.Context, approvalID ui
 	approval.AnnotationText = message
 	if err := tx.Save(&approval).Error; err != nil {
 		tx.Rollback()
-		return fmt.Errorf("failed to update approval: %w", domain.ErrInternal)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	return tx.Commit().Error
+	return fmt.Errorf("%s: %w", op, tx.Commit().Error)
 }
 
 // FinalizeApproval обновляет Approval и связанный File
 func (r *ApprovalRepository) FinalizeApproval(ctx context.Context, approvalID uint) error {
+	const op = "infrastructure.postgresrepo.approval.FinalizeApproval"
+
 	tx := r.db.WithContext(ctx).Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -142,22 +143,21 @@ func (r *ApprovalRepository) FinalizeApproval(ctx context.Context, approvalID ui
 		}
 	}()
 
-	// Находим Approval
 	var approval domain.Approval
 	if err := tx.First(&approval, approvalID).Error; err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return domain.ErrApprovalNotFound
+			return fmt.Errorf("%s: %w", op, domain.ErrApprovalNotFound)
 		}
-		return fmt.Errorf("failed to find approval: %w", domain.ErrInternal)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	// Обновляем Approval
 	approval.Status = "approved"
 	if err := tx.Save(&approval).Error; err != nil {
 		tx.Rollback()
-		return fmt.Errorf("failed to update approval: %w", domain.ErrInternal)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	return tx.Commit().Error
+	return fmt.Errorf("%s: %w", op, tx.Commit().Error)
 }

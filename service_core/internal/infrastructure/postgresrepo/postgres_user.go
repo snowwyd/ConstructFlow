@@ -1,10 +1,10 @@
 package postgresrepo
 
 import (
-	"service-core/internal/domain"
 	"context"
 	"errors"
 	"fmt"
+	"service-core/internal/domain"
 
 	"gorm.io/gorm"
 )
@@ -13,22 +13,20 @@ type UserRepository struct {
 	db *gorm.DB
 }
 
-// NewUserRepository конструктор
 func NewUserRepository(db *Database) *UserRepository {
 	return &UserRepository{db: db.db}
 }
 
 // SaveUser добавляет пользователя в БД
 func (r *UserRepository) SaveUser(ctx context.Context, login string, passHash []byte, roleID uint) error {
-	const op = "postgresrepo.user.SaveUser"
+	const op = "infrastructure.postgresrepo.user.SaveUser"
 
 	var existingUser domain.User
 	result := r.db.WithContext(ctx).Where("login = ?", login).First(&existingUser)
 
-	// обработка ошибок и отсутствия пользователя
 	if result.Error != nil {
 		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("%s: user not found: %w", op, domain.ErrUserNotFound)
+			return fmt.Errorf("%s: %w", op, domain.ErrUserNotFound)
 		}
 	} else {
 		return fmt.Errorf("%s: %w", op, domain.ErrUserAlreadyExists)
@@ -40,10 +38,9 @@ func (r *UserRepository) SaveUser(ctx context.Context, login string, passHash []
 		RoleID:   roleID,
 	}
 
-	// создает пользователя и парсит в модель User
 	if err := r.db.WithContext(ctx).Create(&newUser).Error; err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			return fmt.Errorf("%s: duplicate key error: %w", op, err)
+			return fmt.Errorf("%s: %w", op, err)
 		}
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -53,15 +50,14 @@ func (r *UserRepository) SaveUser(ctx context.Context, login string, passHash []
 
 // GetUserByID возвращает пользователя по ID
 func (r *UserRepository) GetUserByID(ctx context.Context, userID uint) (domain.User, error) {
-	const op = "postgresrepo.user.GetUserByID"
+	const op = "infrastructure.postgresrepo.user.GetUserByID"
 
 	var user domain.User
 	result := r.db.WithContext(ctx).First(&user, userID)
 
-	// обработка ошибок и отсутствия пользователя
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return domain.User{}, fmt.Errorf("%s: user not found: %w", op, domain.ErrUserNotFound)
+			return domain.User{}, fmt.Errorf("%s: %w", op, domain.ErrUserNotFound)
 		}
 		return domain.User{}, fmt.Errorf("%s: %w", op, result.Error)
 	}
@@ -71,23 +67,17 @@ func (r *UserRepository) GetUserByID(ctx context.Context, userID uint) (domain.U
 
 // GetUserByLogin возвращает пользователя по логину
 func (r *UserRepository) GetUserByLogin(ctx context.Context, login string) (domain.User, error) {
-	const op = "postgresrepo.user.GetUserByLogin"
+	const op = "infrastructure.postgresrepo.user.GetUserByLogin"
 
 	var user domain.User
 	result := r.db.WithContext(ctx).Where("login = ?", login).First(&user)
 
-	// обработка ошибок и отсутствия пользователя
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return domain.User{}, fmt.Errorf("%s: user not found: %w", op, domain.ErrUserNotFound)
+			return domain.User{}, fmt.Errorf("%s: %w", op, domain.ErrUserNotFound)
 		}
 		return domain.User{}, fmt.Errorf("%s: %w", op, result.Error)
 	}
 
 	return user, nil
-}
-
-// TODO: implement?
-func (r *UserRepository) UpdateUserRole(ctx context.Context, userID uint, role string) (success bool, err error) {
-	panic("unimplemented")
 }

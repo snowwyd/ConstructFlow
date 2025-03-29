@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"service-core/internal/domain"
@@ -35,6 +36,8 @@ func addAPIKey(ctx context.Context, method string, req, reply interface{}, cc *g
 }
 
 func (c *FileGRPCClient) GetFileWithDirectory(ctx context.Context, fileID uint) (*domain.File, error) {
+	const op = "infrastructure.grpc.fileclient.GetFileWithDirectory"
+
 	req := &pb.GetFileRequest{
 		FileId: uint32(fileID),
 	}
@@ -43,7 +46,7 @@ func (c *FileGRPCClient) GetFileWithDirectory(ctx context.Context, fileID uint) 
 	if err != nil {
 		st, _ := status.FromError(err)
 		log.Printf("gRPC error: %v", st.Message())
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	file := &domain.File{
@@ -64,6 +67,8 @@ func (c *FileGRPCClient) GetFileWithDirectory(ctx context.Context, fileID uint) 
 }
 
 func (c *FileGRPCClient) UpdateFileStatus(ctx context.Context, fileID uint, fileStatus string) error {
+	const op = "infrastructure.grpc.fileclient.UpdateFileStatus"
+
 	req := &pb.UpdateFileStatusRequest{
 		FileId: uint32(fileID),
 		Status: fileStatus,
@@ -73,19 +78,21 @@ func (c *FileGRPCClient) UpdateFileStatus(ctx context.Context, fileID uint, file
 	if err != nil {
 		st, _ := status.FromError(err)
 		log.Printf("gRPC error: %v", st.Message())
-		return err
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	return nil
 }
 
 func (c *FileGRPCClient) GetFilesInfo(ctx context.Context, fileIDs []uint32) (map[uint32]string, error) {
+	const op = "infrastructure.grpc.fileclient.GetFilesInfo"
+
 	req := &pb.GetFilesRequest{
 		FileIds: fileIDs,
 	}
 	resp, err := c.client.GetFilesInfo(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 	return resp.FileNames, nil
 }
