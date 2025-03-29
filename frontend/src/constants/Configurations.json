@@ -7,5 +7,6 @@
 	"deleteDirectory": "/directories",
 	"createFile": "/files/upload",
 	"deleteFile": "/files",
-	"getInfoAboutFile": "/files"
+	"getInfoAboutFile": "/files",
+	"getApprovals": "/approvals"
 }

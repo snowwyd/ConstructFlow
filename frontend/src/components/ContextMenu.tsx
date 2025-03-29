@@ -1,13 +1,22 @@
+import CloseIcon from '@mui/icons-material/Close';
+import CreateNewFolderOutlinedIcon from '@mui/icons-material/CreateNewFolderOutlined';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import NoteAddOutlinedIcon from '@mui/icons-material/NoteAddOutlined';
 import {
-	Button,
+	alpha,
+	Box,
 	Dialog,
 	DialogActions,
 	DialogContent,
 	DialogTitle,
+	IconButton,
 	Menu,
 	MenuItem,
 	TextField,
+	Typography,
+	useTheme,
 } from '@mui/material';
+import Button from '@mui/material/Button';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { useEffect, useRef, useState } from 'react';
@@ -22,6 +31,7 @@ const deleteFolder = config.deleteDirectory;
 const deleteFile = config.deleteFile;
 
 const ContextMenu = () => {
+	const theme = useTheme();
 	const dispatch = useDispatch();
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [newName, setNewName] = useState('');
@@ -33,7 +43,7 @@ const ContextMenu = () => {
 
 	// Обработчик нажатия Escape
 	useEffect(() => {
-		const handleEscape = e => {
+		const handleEscape = (e: KeyboardEvent) => {
 			if (e.key === 'Escape') {
 				handleCloseMenu();
 			}
@@ -48,13 +58,13 @@ const ContextMenu = () => {
 
 	// Обработчик клика вне меню
 	useEffect(() => {
-		const handleClickOutside = event => {
+		const handleClickOutside = (event: MouseEvent) => {
 			// Проверяем, что меню открыто
 			if (mouseX !== null && mouseY !== null) {
 				// Находим элемент меню
 				const menuElement = document.querySelector('.MuiMenu-paper');
 				// Проверяем, что клик был не по меню
-				if (menuElement && !menuElement.contains(event.target)) {
+				if (menuElement && !menuElement.contains(event.target as Node)) {
 					// Закрываем меню только если клик не по меню
 					handleCloseMenu();
 				}
@@ -153,26 +163,110 @@ const ContextMenu = () => {
 		handleCloseMenu();
 	};
 
+	// Проверка, является ли элемент архивным
+	const isArchiveItem = treeType === 'archive';
+
+	// Create menu items based on item type and archive status
 	const menuItems = [];
 
-	if (itemType === 'directory') {
+	// Add create folder and file options for non-archive directories
+	if (itemType === 'directory' && !isArchiveItem) {
 		menuItems.push(
-			<MenuItem key='create-folder' onClick={handleCreateFolder}>
-				Создать папку
-			</MenuItem>,
-			<MenuItem key='create-file' onClick={handleCreateFile}>
-				Создать файл
-			</MenuItem>,
-			<MenuItem key='delete-folder' onClick={handleDeleteFolder}>
-				Удалить папку
+			<MenuItem
+				key='create-folder'
+				onClick={handleCreateFolder}
+				sx={{
+					py: 1,
+					px: 2,
+					'&:hover': {
+						backgroundColor: alpha(theme.palette.primary.main, 0.08),
+					},
+				}}
+			>
+				<CreateNewFolderOutlinedIcon
+					fontSize='small'
+					sx={{
+						mr: 1.5,
+						color: theme.palette.primary.main,
+					}}
+				/>
+				<Typography variant='body2'>Создать папку</Typography>
+			</MenuItem>
+		);
+
+		menuItems.push(
+			<MenuItem
+				key='create-file'
+				onClick={handleCreateFile}
+				sx={{
+					py: 1,
+					px: 2,
+					'&:hover': {
+						backgroundColor: alpha(theme.palette.primary.main, 0.08),
+					},
+				}}
+			>
+				<NoteAddOutlinedIcon
+					fontSize='small'
+					sx={{
+						mr: 1.5,
+						color: theme.palette.primary.main,
+					}}
+				/>
+				<Typography variant='body2'>Создать файл</Typography>
 			</MenuItem>
 		);
 	}
 
-	if (itemType === 'file') {
+	// Add delete option based on item type
+	if (itemType === 'directory') {
 		menuItems.push(
-			<MenuItem key='delete-file' onClick={handleDeleteFile}>
-				Удалить файл
+			<MenuItem
+				key='delete-folder'
+				onClick={handleDeleteFolder}
+				sx={{
+					py: 1,
+					px: 2,
+					'&:hover': {
+						backgroundColor: alpha(theme.palette.error.main, 0.08),
+					},
+				}}
+			>
+				<DeleteOutlineOutlinedIcon
+					fontSize='small'
+					sx={{
+						mr: 1.5,
+						color: theme.palette.error.main,
+					}}
+				/>
+				<Typography variant='body2' color={theme.palette.error.main}>
+					Удалить папку
+				</Typography>
+			</MenuItem>
+		);
+	} else if (itemType === 'file') {
+		menuItems.push(
+			<MenuItem
+				key='delete-file'
+				onClick={handleDeleteFile}
+				sx={{
+					py: 1,
+					px: 2,
+					'&:hover': {
+						backgroundColor: alpha(theme.palette.error.main, 0.08),
+					},
+				}}
+			>
+				<DeleteOutlineOutlinedIcon
+					fontSize='small'
+					sx={{
+						mr: 1.5,
+						color: theme.palette.error.main,
+					}}
+				/>
+				<Typography variant='body2' color={theme.palette.error.main}>
+					Удалить файл
+				</Typography>
 			</MenuItem>
 		);
 	}
@@ -196,8 +290,20 @@ const ContextMenu = () => {
 				disableAutoFocusItem={true}
 				className='context-menu-component'
 				autoFocus={false}
+				PaperProps={{
+					elevation: 3,
+					sx: {
+						mt: 0.5,
+						borderRadius: 2,
+						minWidth: 180,
+						padding: '4px 0',
+						boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.15)}`,
+						overflow: 'hidden',
+					},
+				}}
 			>
-				{menuItems.length > 0 ? menuItems : null}
+				{/* If no menu items, render an empty box to avoid empty Menu warning */}
+				{menuItems.length > 0 ? menuItems : <Box sx={{ display: 'none' }} />}
 			</Menu>
 
 			<Dialog
@@ -206,9 +312,39 @@ const ContextMenu = () => {
 					setIsDialogOpen(false);
 					treeRef.current?.focus();
 				}}
+				PaperProps={{
+					sx: {
+						borderRadius: 3,
+						boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.15)}`,
+						maxWidth: 450,
+						width: '100%',
+					},
+				}}
 			>
-				<DialogTitle>Создание новой папки</DialogTitle>
-				<DialogContent>
+				<DialogTitle
+					sx={{
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'space-between',
+						borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+						pb: 2,
+					}}
+				>
+					<Box display='flex' alignItems='center' gap={1}>
+						<CreateNewFolderOutlinedIcon color='primary' />
+						<Typography variant='h6' fontWeight={600}>
+							Создание новой папки
+						</Typography>
+					</Box>
+					<IconButton
+						onClick={() => setIsDialogOpen(false)}
+						size='small'
+						sx={{ color: theme.palette.text.secondary }}
+					>
+						<CloseIcon fontSize='small' />
+					</IconButton>
+				</DialogTitle>
+				<DialogContent sx={{ pt: 3, pb: 2 }}>
 					<TextField
 						autoFocus
 						margin='dense'
@@ -216,11 +352,44 @@ const ContextMenu = () => {
 						fullWidth
 						value={newName}
 						onChange={e => setNewName(e.target.value)}
+						variant='outlined'
+						sx={{
+							'& .MuiOutlinedInput-root': {
+								borderRadius: 2,
+							},
+						}}
 					/>
 				</DialogContent>
-				<DialogActions>
-					<Button onClick={() => setIsDialogOpen(false)}>Отмена</Button>
-					<Button onClick={handleCreateFolderSubmit} disabled={!newName.trim()}>
+				<DialogActions
+					sx={{
+						px: 3,
+						py: 2,
+						borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+					}}
+				>
+					<Button
+						onClick={() => setIsDialogOpen(false)}
+						variant='outlined'
+						sx={{
+							borderRadius: 2,
+							px: 3,
+							textTransform: 'none',
+						}}
+					>
+						Отмена
+					</Button>
+					<Button
+						onClick={handleCreateFolderSubmit}
+						disabled={!newName.trim()}
+						variant='contained'
+						sx={{
+							borderRadius: 2,
+							px: 3,
+							textTransform: 'none',
+							ml: 1,
+							boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+						}}
+					>
 						Создать
 					</Button>
 				</DialogActions>
