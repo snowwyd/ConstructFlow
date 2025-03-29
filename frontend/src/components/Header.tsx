@@ -1,5 +1,6 @@
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
+import BuildCircleIcon from '@mui/icons-material/BuildCircle';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -60,6 +61,9 @@ const Header = () => {
 	const mobileMenuOpen = Boolean(mobileMenuAnchor);
 	const userMenuOpen = Boolean(userMenuAnchor);
 
+	// Check if user is admin
+	const isAdmin = userInfo?.role === 'admin';
+
 	// Check auth status and load user data
 	useEffect(() => {
 		const checkAuthStatus = async () => {
@@ -86,7 +90,7 @@ const Header = () => {
 		};
 
 		checkAuthStatus();
-	}, [location.pathname, isLoginPage]); // Added isLoginPage to dependency array
+	}, [location.pathname, isLoginPage]);
 
 	/**
 	 * Fetch pending approvals that require user attention
@@ -189,7 +193,7 @@ const Header = () => {
 		handleMobileMenuClose();
 	};
 
-	// Navigation items with icons - updated based on Swagger API
+	// Base navigation items with icons
 	const navItems = [
 		{
 			label: 'Файлы',
@@ -210,7 +214,16 @@ const Header = () => {
 	];
 
 	// Add Admin section if user has admin role
-	if (userInfo?.role === 'admin') {
+	if (isAdmin) {
+		// Add Approval Editor tab for admins
+		navItems.push({
+			label: 'Редактор согласования',
+			icon: <BuildCircleIcon sx={{ mr: 1 }} />,
+			path: '/approval-editor',
+			active: isActive('/approval-editor'),
+		});
+
+		// Keep Users management as the last tab
 		navItems.push({
 			label: 'Права и пользователи',
 			icon: <PeopleOutlineIcon sx={{ mr: 1 }} />,
