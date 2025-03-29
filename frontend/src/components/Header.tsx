@@ -33,6 +33,15 @@ interface UserInfo {
 	role: string;
 }
 
+// Interface for approval items
+interface ApprovalItem {
+	id: number;
+	file_id: number;
+	file_name: string;
+	status: string;
+	workflow_order: number;
+}
+
 const Header = () => {
 	const theme = useTheme();
 	const location = useLocation();
@@ -77,7 +86,7 @@ const Header = () => {
 		};
 
 		checkAuthStatus();
-	}, [location.pathname]);
+	}, [location.pathname, isLoginPage]); // Added isLoginPage to dependency array
 
 	/**
 	 * Fetch pending approvals that require user attention
@@ -92,7 +101,7 @@ const Header = () => {
 			// ).length;
 
 			// Mock implementation based on API documentation
-			const mockApprovals = [
+			const mockApprovals: ApprovalItem[] = [
 				{
 					id: 1,
 					file_id: 3,
@@ -364,24 +373,26 @@ const Header = () => {
 							anchorEl={userMenuAnchor}
 							open={userMenuOpen}
 							onClose={handleUserMenuClose}
-							PaperProps={{
-								elevation: 3,
-								sx: {
-									mt: 1.5,
-									overflow: 'visible',
-									filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.08))',
-									minWidth: 200,
-									'&:before': {
-										content: '""',
-										display: 'block',
-										position: 'absolute',
-										top: 0,
-										right: 14,
-										width: 10,
-										height: 10,
-										bgcolor: 'background.paper',
-										transform: 'translateY(-50%) rotate(45deg)',
-										zIndex: 0,
+							slotProps={{
+								paper: {
+									elevation: 3,
+									sx: {
+										mt: 1.5,
+										overflow: 'visible',
+										filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.08))',
+										minWidth: 200,
+										'&:before': {
+											content: '""',
+											display: 'block',
+											position: 'absolute',
+											top: 0,
+											right: 14,
+											width: 10,
+											height: 10,
+											bgcolor: 'background.paper',
+											transform: 'translateY(-50%) rotate(45deg)',
+											zIndex: 0,
+										},
 									},
 								},
 							}}
@@ -412,11 +423,13 @@ const Header = () => {
 							anchorEl={mobileMenuAnchor}
 							open={mobileMenuOpen}
 							onClose={handleMobileMenuClose}
-							PaperProps={{
-								elevation: 3,
-								sx: {
-									mt: 1.5,
-									minWidth: 200,
+							slotProps={{
+								paper: {
+									elevation: 3,
+									sx: {
+										mt: 1.5,
+										minWidth: 200,
+									},
 								},
 							}}
 							transformOrigin={{ horizontal: 'right', vertical: 'top' }}
