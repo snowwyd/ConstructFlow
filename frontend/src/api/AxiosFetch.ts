@@ -1,6 +1,6 @@
 import axios from 'axios';
 import config from '../constants/Configurations.json';
-import { useNavigate } from 'react-router-dom';
+import { redirectToLogin } from './NavigationService';
 
 const serverURL = config.serverUrl;
 
@@ -10,13 +10,14 @@ const axiosFetching = axios.create({
 });
 
 axiosFetching.interceptors.response.use(
-	(response) => response,
-	(error) => {
-	  const navigate = useNavigate(); 
-	  if (error.response && error.response.status === 401) {
-		navigate('/'); 
-	  }
+	response => response,
+	error => {
+		if (error.response && error.response.status === 401) {
+			// Use our navigation service instead of useNavigate
+			redirectToLogin();
+		}
+		return Promise.reject(error); // Не забудь вернуть rejected Promise для дальнейшей обработки ошибок
 	}
-  );
+);
 
 export default axiosFetching;
