@@ -1,0 +1,29 @@
+version: "3"
+tasks:
+  run:
+    desc: "runs main.go file"
+    cmds:
+      - go run cmd/api/main.go
+  alltogether:
+    desc: "Rebuild containers and apply test data"
+    cmds:
+      - docker-compose down -v
+      - docker-compose up --build -d
+      - go run cmd/migrator/main.go -reset -migrate -seed
+  seeddb:
+    desc: "applies migrations"
+    cmds:
+      - go run cmd/migrator/main.go -reset -migrate -seed
+  build:
+    desc: "builds docker-compose file"
+    cmds:
+      - docker-compose down -v
+      - docker-compose up --build -d
+  composedown:
+    desc: "stops containers"
+    cmds:
+      - docker-compose down -v
+  swag:
+    desc: "initializes swagger doc"
+    cmds:
+      - swag init -g cmd/api/main.go --parseDependency --parseInternal

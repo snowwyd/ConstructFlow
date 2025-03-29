@@ -1,0 +1,19 @@
+migrate -path data/migrations -database "postgres://snowwy:megaballsgaming@localhost:5432/constructflow?sslmode=disable" up
+
+docker exec -it constructflow_postgres psql -U snowwy -d constructflow
+
+docker exec -it 09474256e200 bash psql -h postgres -U snowwy -d constructflow
+
+migrate -path ./data/migrations -database "postgres://snowwy:megaballsgaming@$localhost:5432/constructflow?sslmode=disable" down
+
+#cf Fixed docker, added docs, added Docker cmds in Taskfile
+
+mraz.lol password: Emr-K3t-iux-fDJ
+
+Во всех эндпоинтах, где создание - убрать json ответ и оставить только 201
+Во всех, где удаление - убрать json и оставить 202
+Показ дерева - GET, с isArchive в URL 
+
+В docker compose сделать срауз же seedData
+
+В docker-compose сделать dependencies, который будет ждать postgres

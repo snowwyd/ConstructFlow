@@ -1,0 +1,7 @@
+version: "3"
+tasks:
+  gen:
+    desc: "Generates pb files for File Service"
+    cmds:
+      - mkdir -p service_file/internal/proto && protoc -I proto proto/service_file.proto --go_out=service_file/internal/proto --go_opt=paths=source_relative --go-grpc_out=service_file/internal/proto --go-grpc_opt=paths=source_relative
+      - mkdir -p service_core/internal/proto && protoc -I proto proto/service_file.proto --go_out=service_core/internal/proto --go_opt=paths=source_relative --go-grpc_out=service_core/internal/proto --go-grpc_opt=paths=source_relative
