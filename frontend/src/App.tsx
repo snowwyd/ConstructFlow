@@ -24,11 +24,11 @@ const ApprovalsPage = () => (
 			}}
 		>
 			<Typography variant='h4' gutterBottom>
-				Система одобрений
+				Система согласований
 			</Typography>
 			<Typography variant='body1' color='text.secondary'>
 				Эта страница находится в разработке. Здесь будет отображаться список
-				одобрений, требующих вашего внимания или решения.
+				согласований, требующих вашего внимания или решения.
 			</Typography>
 		</Paper>
 	</Box>
@@ -49,7 +49,7 @@ const UsersPage = () => (
 			}}
 		>
 			<Typography variant='h4' gutterBottom>
-				Управление пользователями
+				Управление правами и пользователями
 			</Typography>
 			<Typography variant='body1' color='text.secondary'>
 				Эта страница находится в разработке. Здесь будет отображаться список
