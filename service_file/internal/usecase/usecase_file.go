@@ -13,13 +13,15 @@ import (
 type FileUsecase struct {
 	fileMetadataRepo interfaces.FileMetadataRepository
 	directoryRepo    interfaces.DirectoryRepository
+	fileStorage      interfaces.FileStorage
 	log              *slog.Logger
 }
 
-func NewFileUsecase(directoryRepo interfaces.DirectoryRepository, fileMetadataRepo interfaces.FileMetadataRepository, log *slog.Logger) *FileUsecase {
+func NewFileUsecase(directoryRepo interfaces.DirectoryRepository, fileMetadataRepo interfaces.FileMetadataRepository, fileStorage interfaces.FileStorage, log *slog.Logger) *FileUsecase {
 	return &FileUsecase{
 		directoryRepo:    directoryRepo,
 		fileMetadataRepo: fileMetadataRepo,
+		fileStorage:      fileStorage,
 		log:              log,
 	}
 }
@@ -56,7 +58,7 @@ func (u *FileUsecase) GetFileInfo(ctx context.Context, fileID uint, userID uint)
 	return response, nil
 }
 
-func (u *FileUsecase) CreateFile(ctx context.Context, directoryID uint, name string, userID uint) (err error) {
+func (u *FileUsecase) CreateFile(ctx context.Context, directoryID uint, name string, fileData []byte, userID uint) (err error) {
 	const op = "usecase.file.CreateFile"
 
 	log := u.log.With(slog.String("op", op), slog.Any("user_id", userID))
@@ -79,9 +81,16 @@ func (u *FileUsecase) CreateFile(ctx context.Context, directoryID uint, name str
 		return fmt.Errorf("%s: %w", op, domain.ErrAccessDenied)
 	}
 
+	log.Debug("uploading file into minio")
+	objectKey := fmt.Sprintf("files/%d/%s", directoryID, name)
+	if err := u.fileStorage.UploadFile(ctx, "files", objectKey, fileData); err != nil {
+		log.Error("failed to upload file into minio")
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
 	log.Debug("creating file")
 	status := "draft"
-	err = u.fileMetadataRepo.CreateFile(ctx, directoryID, name, status, userID)
+	err = u.fileMetadataRepo.CreateFile(ctx, directoryID, name, status, userID, objectKey)
 	if err != nil {
 		if errors.Is(err, domain.ErrFileAlreadyExists) {
 			log.Error("file already exists", slogger.Err(domain.ErrFileAlreadyExists))

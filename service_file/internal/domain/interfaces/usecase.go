@@ -13,7 +13,7 @@ type DirectoryUsecase interface {
 
 type FileUsecase interface {
 	GetFileInfo(ctx context.Context, fileID uint, userID uint) (*domain.FileResponse, error)
-	CreateFile(ctx context.Context, directoryID uint, name string, userID uint) error
+	CreateFile(ctx context.Context, directoryID uint, name string, fileData []byte, userID uint) error
 	DeleteFile(ctx context.Context, fileID uint, userID uint) error
 }
 

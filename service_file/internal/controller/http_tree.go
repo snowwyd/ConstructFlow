@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -130,22 +131,35 @@ func (h *TreeHandler) UploadFile(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		DirectoryID uint   `json:"directory_id"`
-		Name        string `json:"name"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+	form, err := c.MultipartForm()
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid multipart form")
 		return
 	}
 
-	if req.Name == "" || req.DirectoryID == 0 {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "MISSING_FIELDS", "Name and directory_id are required")
+	files := form.File["file"]
+	if len(files) == 0 {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "MISSING_FILE", "No file uploaded")
+		return
+	}
+	file, err := files[0].Open()
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "FILE_READ_ERROR", err.Error())
+		return
+	}
+	defer file.Close()
+
+	fileData, err := io.ReadAll(file)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "FILE_READ_ERROR", err.Error())
 		return
 	}
 
-	err = h.fileUsecase.CreateFile(c.Request.Context(), req.DirectoryID, req.Name, userID)
+	directoryIDStr := form.Value["directory_id"][0]
+	directoryID, _ := strconv.Atoi(directoryIDStr)
+	name := form.Value["name"][0]
+
+	err = h.fileUsecase.CreateFile(c.Request.Context(), uint(directoryID), name, fileData, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrDirectoryNotFound):

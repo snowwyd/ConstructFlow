@@ -14,8 +14,9 @@ type Config struct {
 	StoragePath string `yaml:"storage_path" env-required:"true"`
 	HTTPServer  `yaml:"http_server"`
 	GRPCServer  `yaml:"grpc_server"`
-	Database    `yaml:"database"`
-	TokenTTL    time.Duration `yaml:"token_ttl" env-default:"10m"`
+	MinIOClient
+	Database `yaml:"database"`
+	TokenTTL time.Duration `yaml:"token_ttl" env-default:"10m"`
 
 	AppSecret string
 }
@@ -40,6 +41,13 @@ type Database struct {
 	SSLMode string `yaml:"ssl_mode"`
 
 	Password string
+}
+
+type MinIOClient struct {
+	Endpoint  string
+	AccessKey string
+	SecretKey string
+	UseSSL    bool
 }
 
 func MustLoad() *Config {
@@ -80,6 +88,24 @@ func MustLoad() *Config {
 	if cfg.Database.Password == "" {
 		log.Fatal("empty DB_PASSWORD")
 	}
+
+	// MinIO
+	cfg.MinIOClient.Endpoint = os.Getenv("MINIO_ENDPOINT")
+	if cfg.MinIOClient.Endpoint == "" {
+		log.Fatal("empty MINIO_ENDPOINT")
+	}
+
+	cfg.MinIOClient.AccessKey = os.Getenv("MINIO_ACCESS_KEY")
+	if cfg.MinIOClient.AccessKey == "" {
+		log.Fatal("empty MINIO_ACCESS_KEY")
+	}
+
+	cfg.MinIOClient.SecretKey = os.Getenv("MINIO_SECRET_KEY")
+	if cfg.MinIOClient.SecretKey == "" {
+		log.Fatal("empty MINIO_SECRET_KEY")
+	}
+
+	cfg.MinIOClient.UseSSL = false
 
 	return &cfg
 }

@@ -64,9 +64,26 @@ services:
     command: ["wait-for-it.sh", "postgres:5432", "--", "./migrator", "-reset", "-migrate", "-seed"]
     restart: "no"
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address :9001
+    networks:
+      - app-network
+    restart: always
+
 networks:
   app-network:
     external: true
 
 volumes:
   pgdata:
+  minio_data: 
