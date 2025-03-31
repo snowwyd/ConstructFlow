@@ -5,7 +5,6 @@ import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import {
 	alpha,
 	Box,
-	CircularProgress,
 	Paper,
 	Typography,
 	useTheme,
@@ -28,6 +27,8 @@ import {
 	closeContextMenu,
 	openContextMenu,
 } from '../store/Slices/contextMenuSlice';
+import ErrorState from './ErrorState';
+import LoadingState from './LoadingState';
 
 const getFolders = config.getFiles;
 const createFile = config.createFile;
@@ -312,65 +313,19 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 	// Отображение состояния загрузки
 	if (isLoading) {
 		return (
-			<Paper
-				elevation={2}
-				sx={{
-					display: 'flex',
-					justifyContent: 'center',
-					alignItems: 'center',
-					height: 300,
-					width: '100%',
-					borderRadius: 3,
-					backgroundColor: theme.palette.background.paper,
-					boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.12)}`,
-				}}
-			>
-				<CircularProgress
-					size={36}
-					color='primary'
-					sx={{
-						opacity: 0.8,
-					}}
-				/>
-			</Paper>
+			<LoadingState 
+				message={`Загрузка ${isArchive ? 'архивного' : 'рабочего'} хранилища...`}
+			/>
 		);
 	}
 
 	// Отображение ошибки
 	if (isError) {
 		return (
-			<Paper
-				elevation={2}
-				sx={{
-					display: 'flex',
-					flexDirection: 'column',
-					justifyContent: 'center',
-					alignItems: 'center',
-					height: 300,
-					width: '100%',
-					borderRadius: 3,
-					backgroundColor: alpha(theme.palette.error.light, 0.05),
-					borderLeft: `4px solid ${theme.palette.error.main}`,
-					p: 3,
-				}}
-			>
-				<Typography
-					color='error'
-					variant='subtitle1'
-					fontWeight={600}
-					align='center'
-				>
-					Ошибка загрузки данных
-				</Typography>
-				<Typography
-					color='text.secondary'
-					variant='body2'
-					align='center'
-					sx={{ mt: 1 }}
-				>
-					{error instanceof AxiosError ? error.message : 'Неизвестная ошибка'}
-				</Typography>
-			</Paper>
+			<ErrorState
+				error={error}
+				onRetry={refreshTree}
+			/>
 		);
 	}
 
