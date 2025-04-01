@@ -8,5 +8,5 @@
 	"createFile": "/files/upload",
 	"deleteFile": "/files",
 	"getInfoAboutFile": "/files",
-	"getApprovals": "/approvals"
+	"getApprovals": "/file-approvals"
 }

@@ -34,15 +34,6 @@ interface UserInfo {
 	role: string;
 }
 
-// Interface for approval items
-interface ApprovalItem {
-	id: number;
-	file_id: number;
-	file_name: string;
-	status: string;
-	workflow_order: number;
-}
-
 const Header = () => {
 	const theme = useTheme();
 	const location = useLocation();
@@ -98,48 +89,14 @@ const Header = () => {
 	 */
 	const fetchPendingApprovals = async () => {
 		try {
-			// TODO: Uncomment when backend is ready
-			// const response = await axiosFetching.get(config.getApprovals);
-			// const pendingCount = response.data.filter(
-			//   (approval: any) => approval.status === 'on approval'
-			// ).length;
-
-			// Mock implementation based on API documentation
-			const mockApprovals: ApprovalItem[] = [
-				{
-					id: 1,
-					file_id: 3,
-					file_name: 'File3',
-					status: 'on approval',
-					workflow_order: 1,
-				},
-				{
-					id: 2,
-					file_id: 4,
-					file_name: 'File4',
-					status: 'on approval',
-					workflow_order: 2,
-				},
-				// Random number of mock approvals (0-3 additional items)
-				...Array(Math.floor(Math.random() * 4))
-					.fill(0)
-					.map((_, index) => ({
-						id: 3 + index,
-						file_id: 5 + index,
-						file_name: `File${5 + index}`,
-						status: 'on approval',
-						workflow_order: 3 + index,
-					})),
-			];
-
-			// Count only items with status "on approval"
-			const pendingCount = mockApprovals.filter(
-				a => a.status === 'on approval'
+			const response = await axiosFetching.get(config.getApprovals);
+			const pendingCount = response.data.filter(
+			  (approval: any) => approval.status === 'on approval'
 			).length;
+
 			setPendingApprovals(pendingCount);
 
-			// Log mock data for development
-			console.debug('Mock approvals data:', mockApprovals);
+
 		} catch (error) {
 			console.error('Error fetching approvals:', error);
 			// Default to 0 in case of error
