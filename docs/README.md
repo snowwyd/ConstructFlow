@@ -7,7 +7,7 @@ Backend для системы управления файлами и папка�
 ## Обзор ConstructFlow API
 В ролке показан основной функционал ConstructFlow API и рассмотрены некоторые пользовательские сценарии при работе сервиса.
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/q1TcMKiZBGE?si=C2wT-CH1rlt20Wz4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[![ConstructFlow](https://img.youtube.com/vi/q1TcMKiZBGE/0.jpg)](https://youtu.be/q1TcMKiZBGE)
 
 
 ## Требования
