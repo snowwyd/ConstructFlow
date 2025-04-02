@@ -352,11 +352,12 @@ Authorization: Bearer <JWT_TOKEN>
 ```json
 [
 	{
-		"id": 1,
+		"approval_id": 1,
 		"file_id": 3,
 		"file_name": "File3",
 		"status": "on approval",
-		"workflow_order": 1
+		"workflow_order": 1,
+		"workflow_user_count": 3
 	}
 ]
 ```
