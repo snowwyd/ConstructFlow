@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net/url"
 	"path/filepath"
+	"service-file/internal/domain"
 	"strings"
 	"time"
 
@@ -53,13 +53,18 @@ func (m *MinIOClient) CreateBucket(ctx context.Context, bucketName string) error
 	return nil
 }
 
-func (m *MinIOClient) UploadFile(ctx context.Context, bucketName string, objectName string, data []byte) error {
+func (m *MinIOClient) UploadFile(ctx context.Context, bucketName string, objectName string, data []byte, contentType string) error {
 	_, err := m.client.PutObject(ctx, bucketName, objectName,
-		bytes.NewReader(data), int64(len(data)), minio.PutObjectOptions{})
+		bytes.NewReader(data),
+		int64(len(data)),
+		minio.PutObjectOptions{
+			ContentType: contentType,
+		},
+	)
 	return err
 }
 
-func (m *MinIOClient) UploadNewVersion(ctx context.Context, bucket string, baseKey string, data []byte) (string, error) {
+func (m *MinIOClient) UploadNewVersion(ctx context.Context, bucket string, baseKey string, data []byte, contentType string) (string, error) {
 	// Разделяем имя файла и расширение
 	ext := filepath.Ext(baseKey)
 	baseName := strings.TrimSuffix(baseKey, ext)
@@ -68,7 +73,7 @@ func (m *MinIOClient) UploadNewVersion(ctx context.Context, bucket string, baseK
 	newKey := fmt.Sprintf("%s_v%d%s", baseName, time.Now().Unix(), ext)
 
 	// Загружаем файл
-	err := m.UploadFile(ctx, bucket, newKey, data)
+	err := m.UploadFile(ctx, bucket, newKey, data, contentType)
 	if err != nil {
 		return "", err
 	}
@@ -76,15 +81,23 @@ func (m *MinIOClient) UploadNewVersion(ctx context.Context, bucket string, baseK
 	return newKey, nil
 }
 
-func (m *MinIOClient) GetFileURL(ctx context.Context, bucketName string, objectName string) (string, error) {
-	reqParams := make(url.Values)
-	reqParams.Set("response-content-disposition", "attachment")
-
-	presignedURL, err := m.client.PresignedGetObject(ctx, bucketName, objectName,
-		time.Second*24*60*60, reqParams)
+func (m *MinIOClient) GetFile(ctx context.Context, bucket string, key string) (*minio.Object, error) {
+	object, err := m.client.GetObject(ctx, bucket, key, minio.GetObjectOptions{})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return presignedURL.String(), nil
+	// Проверяем существование файла
+	stat, err := object.Stat()
+	if err != nil {
+		object.Close()
+		return nil, domain.ErrFileNotFound
+	}
+
+	if stat.Size == 0 {
+		object.Close()
+		return nil, fmt.Errorf("empty file in MinIO")
+	}
+
+	return object, nil
 }

@@ -3,6 +3,8 @@ package interfaces
 import (
 	"context"
 	"service-file/internal/domain"
+
+	"github.com/minio/minio-go/v7"
 )
 
 type DirectoryUsecase interface {
@@ -13,7 +15,8 @@ type DirectoryUsecase interface {
 
 type FileUsecase interface {
 	GetFileInfo(ctx context.Context, fileID uint, userID uint) (*domain.FileResponse, error)
-	CreateFile(ctx context.Context, directoryID uint, name string, fileData []byte, userID uint) error
+	CreateFile(ctx context.Context, directoryID uint, name string, fileData []byte, contentType string, userID uint) error
+	DownloadFileDirect(ctx context.Context, fileID uint, userID uint) (*domain.File, *minio.Object, error)
 	DeleteFile(ctx context.Context, fileID uint, userID uint) error
 	UpdateFile(ctx context.Context, fileID uint, newData []byte, userID uint) error
 }

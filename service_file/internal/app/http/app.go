@@ -75,7 +75,8 @@ func setupRoutes(router *gin.Engine, treeHandler *controller.TreeHandler, cfg *c
 		filesGroup.POST("/upload", treeHandler.UploadFile)
 		filesGroup.DELETE("", treeHandler.DeleteFile)
 		filesGroup.GET("/:file_id", treeHandler.GetFileInfo)
-		filesGroup.PUT("/files/:file_id", treeHandler.UpdateFile)
+		filesGroup.PUT("/:file_id", treeHandler.UpdateFile)
+		filesGroup.GET("/:file_id/download-direct", treeHandler.DownloadFileDirect)
 	}
 }
 

@@ -9,6 +9,8 @@ import (
 	"service-file/internal/domain/interfaces"
 	"service-file/pkg/logger/slogger"
 	"time"
+
+	"github.com/minio/minio-go/v7"
 )
 
 type FileUsecase struct {
@@ -59,7 +61,7 @@ func (u *FileUsecase) GetFileInfo(ctx context.Context, fileID uint, userID uint)
 	return response, nil
 }
 
-func (u *FileUsecase) CreateFile(ctx context.Context, directoryID uint, name string, fileData []byte, userID uint) (err error) {
+func (u *FileUsecase) CreateFile(ctx context.Context, directoryID uint, name string, fileData []byte, contentType string, userID uint) (err error) {
 	const op = "usecase.file.CreateFile"
 
 	log := u.log.With(slog.String("op", op), slog.Any("user_id", userID))
@@ -83,34 +85,61 @@ func (u *FileUsecase) CreateFile(ctx context.Context, directoryID uint, name str
 	}
 
 	log.Debug("uploading file into minio")
+
+	size := int64(len(fileData))
+
 	objectKey := fmt.Sprintf("files/%d/%s", directoryID, name)
-	if err := u.fileStorage.UploadFile(ctx, "files", objectKey, fileData); err != nil {
-		log.Error("failed to upload file into minio")
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	log.Debug("creating file")
-	status := "draft"
-	err = u.fileMetadataRepo.CreateFile(ctx, directoryID, name, status, userID, objectKey)
+	err = u.fileStorage.UploadFile(ctx, "files", objectKey, fileData, contentType)
 	if err != nil {
-		if errors.Is(err, domain.ErrFileAlreadyExists) {
-			log.Error("file already exists", slogger.Err(domain.ErrFileAlreadyExists))
-			return fmt.Errorf("%s: %w", op, domain.ErrFileAlreadyExists)
-		}
-		log.Error("failed to create file", slogger.Err(err))
-		return fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("minio upload failed: %w", err)
 	}
 
-	log.Info("file created successfully")
+	file := &domain.File{
+		DirectoryID:    directoryID,
+		Name:           name,
+		Status:         "draft",
+		MinioObjectKey: objectKey,
+		Size:           size,
+		ContentType:    contentType,
+	}
+
+	err = u.fileMetadataRepo.CreateFile(ctx, file.DirectoryID, file.Name, file.Status, userID, file.MinioObjectKey, file.Size, file.ContentType)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (u *FileUsecase) UpdateFile(
-	ctx context.Context,
-	fileID uint,
-	newData []byte,
-	userID uint,
-) error {
+func (u *FileUsecase) DownloadFileDirect(ctx context.Context, fileID uint, userID uint) (*domain.File, *minio.Object, error) {
+	const op = "usecase.file.DownloadFileDirect"
+	log := u.log.With(slog.String("op", op), slog.Any("file_id", fileID))
+
+	// 1. Получаем метаданные файла
+	file, err := u.fileMetadataRepo.GetFileByID(ctx, fileID)
+	if err != nil {
+		log.Error("failed to get file metadata", slogger.Err(err))
+		return nil, nil, fmt.Errorf("%s: %w", op, domain.ErrFileNotFound)
+	}
+
+	// 2. Проверяем доступ пользователя
+	hasAccess, err := u.directoryRepo.CheckUserDirectoryAccess(ctx, userID, file.DirectoryID)
+	if err != nil || !hasAccess {
+		log.Warn("access denied to file", slogger.Err(domain.ErrAccessDenied))
+		return nil, nil, fmt.Errorf("%s: %w", op, domain.ErrAccessDenied)
+	}
+
+	// 3. Получаем объект из MinIO
+	object, err := u.fileStorage.GetFile(ctx, "files", file.MinioObjectKey)
+	if err != nil {
+		log.Error("failed to retrieve file from MinIO", slogger.Err(err))
+		return nil, nil, fmt.Errorf("%s: %w", op, domain.ErrInternal)
+	}
+
+	return file, object, nil
+}
+
+func (u *FileUsecase) UpdateFile(ctx context.Context, fileID uint, newData []byte, userID uint) error {
 	const op = "usecase.file.UpdateFile"
 	log := u.log.With(slog.String("op", op), slog.Any("file_id", fileID))
 
@@ -137,7 +166,7 @@ func (u *FileUsecase) UpdateFile(
 	}
 
 	// 4. Загружаем новую версию в MinIO
-	newKey, err := u.fileStorage.UploadNewVersion(ctx, "files", file.MinioObjectKey, newData)
+	newKey, err := u.fileStorage.UploadNewVersion(ctx, "files", file.MinioObjectKey, newData, file.ContentType)
 	if err != nil {
 		log.Error("failed to upload new version", slogger.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
