@@ -3,7 +3,10 @@ package minio
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/url"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/minio/minio-go/v7"
@@ -54,6 +57,23 @@ func (m *MinIOClient) UploadFile(ctx context.Context, bucketName string, objectN
 	_, err := m.client.PutObject(ctx, bucketName, objectName,
 		bytes.NewReader(data), int64(len(data)), minio.PutObjectOptions{})
 	return err
+}
+
+func (m *MinIOClient) UploadNewVersion(ctx context.Context, bucket string, baseKey string, data []byte) (string, error) {
+	// Разделяем имя файла и расширение
+	ext := filepath.Ext(baseKey)
+	baseName := strings.TrimSuffix(baseKey, ext)
+
+	// Формируем новое имя с версией
+	newKey := fmt.Sprintf("%s_v%d%s", baseName, time.Now().Unix(), ext)
+
+	// Загружаем файл
+	err := m.UploadFile(ctx, bucket, newKey, data)
+	if err != nil {
+		return "", err
+	}
+
+	return newKey, nil
 }
 
 func (m *MinIOClient) GetFileURL(ctx context.Context, bucketName string, objectName string) (string, error) {

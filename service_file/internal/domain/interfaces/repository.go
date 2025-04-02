@@ -25,6 +25,7 @@ type FileMetadataRepository interface {
 	GetFileInfo(ctx context.Context, fileID uint, userID uint) (*domain.File, error)
 
 	CreateFile(ctx context.Context, directoryID uint, name string, status string, userID uint, minioKey string) error
+	UpdateFile(ctx context.Context, file *domain.File) error
 	UpdateFileStatus(ctx context.Context, fileID uint, status string, tx *gorm.DB) error
 	DeleteFile(ctx context.Context, fileID uint, userID uint) error
 
