@@ -3,76 +3,31 @@
 ## Описание проекта
 
 Backend для системы управления файлами и папками с аутентификацией и авторизацией.  
-Реализованы следующие методы:
 
-1. Взаимодействие с пользователями
+## Обзор ConstructFlow API
+В ролке показан основной функционал ConstructFlow API и рассмотрены некоторые пользовательские сценарии при работе сервиса.
 
-- Авторизация (`/auth/login [POST]`)
-- Регистрация (`/auth/register [POST]`)
-- Получение данных текущего пользователя (`/auth/me [GET]`)
-- Создание роли (`/auth/role [POST]`)
+[![ConstructFlow](https://img.youtube.com/vi/q1TcMKiZBGE/0.jpg)](https://youtu.be/q1TcMKiZBGE)
 
-2. Взаимодействие с файлами и папками
-
-- Создание директории (`/directories/create [POST]`)
-- Удаление директории (`/directories [DELETE]`)
-- Получение дерева файлов и директорий (`/directories [GET]`)
-
-- Загрузка файла (`/files/upload [POST]`)
-- Удаление файла (`/files [DELETE]`)
-- Получение информации о файле (`/files/:file_id [GET]`)
-
-1. Работа с процедурами согласования
-
-- Отправка файла на согласование (`/files/:file_id/approve [PUT]`)
-- Получение файлов на подписание для конкретного пользователя (`/approvals [GET]`)
-- Подписание файла (`/approvals/:approval_id/sign [PUT]`)
-- Отправка файла на доработку с аннотацией (`/approval/{approval_id}/annotate [PUT]`)
-- Завершение согласования (`/approval/{approval_id}/finalize [PUT]`)
-
-А также:
-
-- Swagger (`/swagger/index.html`)
-
----
 
 ## Требования
 
 - Docker и docker-compose
 - Go 1.20+ (для локальной разработки)
-- [go-task](https://taskfile.dev/) для выполнения часто используемых команд (опционально)
 
----
 
 ## Локальная разработка
 
-### 1. Установка зависимостей
-
-```bash
-# Установите go-task (https://taskfile.dev/install/)
-# Для macOS:
-brew install go-task
-
-# Для Linux:
-curl -sL https://taskfile.dev/install.sh | sh
-
-# Для Windows:
-# Скачайте .exe файл с https://github.com/go-task/task/releases
-```
-
-### 2. Запуск приложения через Docker
+### 1. Запуск приложения через Docker
 
 ```bash
 # Создайте .env файл в директории /backend
 
 # Запустите контейнеры (PostgreSQL + приложение)
-docker-compose up --build -d # если отсутствует go-task
-task build
+docker-compose up --build -d
 
 # Откатить контейнеры и очистить БД
-# Важно! При изменении данных в .env файле обязательно выполнить эту команду и потом запустить контейнеры
-docker-compose down -v # если отсутствует go-task
-task composedown
+docker-compose down -v
 ```
 
 Пример .env файла:
@@ -88,7 +43,7 @@ APP_PORT=8080
 
 configs/local.yaml обязательно такое значение, остальные на ваше усмотрение
 
-### 3. Примените миграции для тестирования
+### 2. Примените миграции для тестирования
 
 ```bash
 # Запуск в директории backend/
@@ -118,14 +73,6 @@ docker-compose run --rm migrator
 	"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
-
-**Ошибки:**
-
-- `400 Bad Request`: Некорректный формат запроса.
-- `401 Unauthorized`: Неверные логин или пароль.
-- `404 Not Found`: Пользователь не найден.
-- `500 Internal Server Error`: Ошибка сервера.
-
 ---
 
 ### 2. Регистрация (`POST /auth/register`)
@@ -140,20 +87,7 @@ docker-compose run --rm migrator
 }
 ```
 
-**Ответ (201 Created):**
-
-```json
-{
-	"user_id": 4
-}
-```
-
-**Ошибки:**
-
-- `400 Bad Request`: Некорректный формат запроса.
-- `404 Not Found`: Роль не найдена.
-- `409 Conflict`: Пользователь с таким логином уже существует.
-- `500 Internal Server Error`: Ошибка сервера.
+**Ответ (201 Created)**
 
 ---
 
@@ -174,13 +108,6 @@ Authorization: Bearer <JWT_TOKEN>
 	"role": "admin"
 }
 ```
-
-**Ошибки:**
-
-- `401 Unauthorized`: Токен отсутствует или неверен.
-- `404 Not Found`: Пользователь не найден.
-- `500 Internal Server Error`: Ошибка сервера.
-
 ---
 
 ### 4. Создание роли (`POST /auth/role`)
@@ -193,19 +120,7 @@ Authorization: Bearer <JWT_TOKEN>
 }
 ```
 
-**Ответ (201 Created):**
-
-```json
-{
-	"role_id": 3
-}
-```
-
-**Ошибки:**
-
-- `400 Bad Request`: Некорректный формат запроса.
-- `409 Conflict`: Роль с таким названием уже существует.
-- `500 Internal Server Error`: Ошибка сервера.
+**Ответ (201 Created)**
 
 ---
 
@@ -217,8 +132,6 @@ Authorization: Bearer <JWT_TOKEN>
 Authorization: Bearer <JWT_TOKEN>
 ```
 
-В заголовок вставьте токен, который был сгенерирован в п.1 по образцу (для snowwy)
-
 **Запрос:**
 
 ```json
@@ -228,20 +141,7 @@ Authorization: Bearer <JWT_TOKEN>
 }
 ```
 
-**Ответ (200 OK):**
-
-```json
-{
-	"id": 5
-}
-```
-
-**Ошибки:**
-
-- `400 Bad Request`: Некорректный формат запроса.
-- `401 Unauthorized`: Токен отсутствует или неверен.
-- `403 Forbidden`: У пользователя нет доступа к созданию директории.
-- `500 Internal Server Error`: Ошибка сервера.
+**Ответ (201 Created)**
 
 ---
 
@@ -253,8 +153,6 @@ Authorization: Bearer <JWT_TOKEN>
 Authorization: Bearer <JWT_TOKEN>
 ```
 
-В заголовок вставьте токен, который был сгенерирован в п.1 по образцу (для snowwy)
-
 **Запрос:**
 
 ```json
@@ -263,20 +161,7 @@ Authorization: Bearer <JWT_TOKEN>
 }
 ```
 
-**Ответ (200 OK):**
-
-```json
-{
-	"message": "Directory deleted successfully"
-}
-```
-
-**Ошибки:**
-
-- `400 Bad Request`: Некорректный формат запроса.
-- `401 Unauthorized`: Токен отсутствует или неверен.
-- `403 Forbidden`: У пользователя нет доступа к удалению директории.
-- `500 Internal Server Error`: Ошибка сервера.
+**Ответ (204 No content)**
 
 ---
 
@@ -287,8 +172,6 @@ Authorization: Bearer <JWT_TOKEN>
 ```http
 Authorization: Bearer <JWT_TOKEN>
 ```
-
-В заголовок вставьте токен, который был сгенерирован в п.1 по образцу (для snowwy)
 
 **Параметры запроса:**
 
@@ -373,13 +256,6 @@ Authorization: Bearer <JWT_TOKEN>
 	]
 }
 ```
-
-**Ошибки:**
-
-- `400 Bad Request`: Некорректный формат запроса.
-- `401 Unauthorized`: Токен отсутствует или неверен.
-- `500 Internal Server Error`: Ошибка сервера.
-
 ---
 
 ### 8. Создание файла (`POST /files/upload`)
@@ -390,8 +266,6 @@ Authorization: Bearer <JWT_TOKEN>
 Authorization: Bearer <JWT_TOKEN>
 ```
 
-В заголовок вставьте токен, который был сгенерирован в п.1 по образцу (для snowwy)
-
 **Запрос:**
 
 ```json
@@ -401,20 +275,7 @@ Authorization: Bearer <JWT_TOKEN>
 }
 ```
 
-**Ответ (200 OK):**
-
-```json
-{
-	"id": 7
-}
-```
-
-**Ошибки:**
-
-- `400 Bad Request`: Некорректный формат запроса.
-- `401 Unauthorized`: Токен отсутствует или неверен.
-- `403 Forbidden`: У пользователя нет доступа к созданию файла.
-- `500 Internal Server Error`: Ошибка сервера.
+**Ответ (201 Created)**
 
 ---
 
@@ -426,8 +287,6 @@ Authorization: Bearer <JWT_TOKEN>
 Authorization: Bearer <JWT_TOKEN>
 ```
 
-В заголовок вставьте токен, который был сгенерирован в п.1 по образцу (для snowwy)
-
 **Запрос:**
 
 ```json
@@ -436,20 +295,7 @@ Authorization: Bearer <JWT_TOKEN>
 }
 ```
 
-**Ответ (200 OK):**
-
-```json
-{
-	"message": "File deleted successfully"
-}
-```
-
-**Ошибки:**
-
-- `400 Bad Request`: Некорректный формат запроса.
-- `401 Unauthorized`: Токен отсутствует или неверен.
-- `403 Forbidden`: У пользователя нет доступа к удалению файла.
-- `500 Internal Server Error`: Ошибка сервера.
+**Ответ (204 No Content)**
 
 ---
 
@@ -460,8 +306,6 @@ Authorization: Bearer <JWT_TOKEN>
 ```http
 Authorization: Bearer <JWT_TOKEN>
 ```
-
-В заголовок вставьте токен, который был сгенерирован в п.1 по образцу (для snowwy)
 
 **Параметры пути:**
 
@@ -477,80 +321,49 @@ Authorization: Bearer <JWT_TOKEN>
 	"directory_id": 1
 }
 ```
-
-**Ошибки:**
-
-- `400 Bad Request`: Некорректный формат запроса.
-- `401 Unauthorized`: Токен отсутствует или неверен.
-- `403 Forbidden`: У пользователя нет доступа к файлу.
-- `404 Not Found`: Файл не найден.
-- `500 Internal Server Error`: Ошибка сервера.
-
 ---
 
-### 11. Отправка файла на согласование (`PUT /approval/{file_id}/approve`)
+### 11. Отправка файла на согласование (`PUT /files/:file_id/approve`)
 
 **Заголовки:**
 
 ```http
 Authorization: Bearer <JWT_TOKEN>
 ```
-
-В заголовок вставьте токен, который был сгенерирован при аутентификации.
 
 **Параметры пути:**
 
 - `file_id`: Идентификатор файла (например, 3).
 
-**Ответ (200 OK):**
-
-```json
-{
-	"message": "File sent for approval"
-}
-```
-
-**Ошибки:**
-
-- `400 Bad Request`: Некорректный ID файла или файл не находится в состоянии черновика.
-- `401 Unauthorized`: Токен отсутствует или неверен.
-- `404 Not Found`: Файл не найден.
-- `500 Internal Server Error`: Ошибка сервера.
+**Ответ (201 Created)**
 
 ---
 
-### 12. Получение файлов на подписание для конкретного пользователя (`GET /approvals`)
+### 12. Получение файлов на подписание для конкретного пользователя (`GET /file-approvals`)
 
 **Заголовки:**
 
 ```http
 Authorization: Bearer <JWT_TOKEN>
 ```
-
-В заголовок вставьте токен, который был сгенерирован при аутентификации.
 
 **Ответ (200 OK):**
 
 ```json
 [
 	{
-		"id": 1,
+		"approval_id": 1,
 		"file_id": 3,
 		"file_name": "File3",
 		"status": "on approval",
-		"workflow_order": 1
+		"workflow_order": 1,
+		"workflow_user_count": 3
 	}
 ]
 ```
-
-**Ошибки:**
-
-- `401 Unauthorized`: Токен отсутствует или неверен.
-- `500 Internal Server Error`: Ошибка сервера.
-
 ---
 
-### 13. Подписание файла (`PUT /approval/{approval_id}/sign`)
+### 13. Подписание файла (`PUT /file-approvals/:approval_id/sign`)
 
 **Заголовки:**
 
@@ -558,72 +371,39 @@ Authorization: Bearer <JWT_TOKEN>
 Authorization: Bearer <JWT_TOKEN>
 ```
 
-В заголовок вставьте токен, который был сгенерирован при аутентификации.
-
 **Параметры пути:**
 
-- `approval_id`: Идентификатор одобрения (например, 1).
+- `approval_id`: Идентификатор процесса процедуры согласования (например, 1). Этот id можно получить из п.12
 
-**Ответ (200 OK):**
-
-```json
-{
-	"message": "Approval signed successfully"
-}
-```
-
-**Ошибки:**
-
-- `400 Bad Request`: Некорректный ID одобрения.
-- `401 Unauthorized`: Токен отсутствует или неверен.
-- `403 Forbidden`: У пользователя нет прав для подписания или требуется завершение процесса.
-- `404 Not Found`: Одобрение не найдено.
-- `500 Internal Server Error`: Ошибка сервера.
+**Ответ (204 No Content)**
 
 ---
 
-### 14. Отправка файла на доработку с аннотацией (`PUT /approval/{approval_id}/annotate`)
+### 14. Отправка файла на доработку с аннотацией (`PUT /file-approvals/:approval_id/annotate`)
 
 **Заголовки:**
 
 ```http
 Authorization: Bearer <JWT_TOKEN>
-Content-Type: application/json
 ```
-
-В заголовок вставьте токен, который был сгенерирован при аутентификации.
 
 **Параметры пути:**
 
-- `approval_id`: Идентификатор одобрения (например, 1).
+- `approval_id`: взят =1 для примера
 
 **Тело запроса:**
 
 ```json
 {
-	"message": "This file requires additional review."
+	"message": "some message"
 }
 ```
 
-**Ответ (200 OK):**
-
-```json
-{
-	"message": "Approval annotated successfully"
-}
-```
-
-**Ошибки:**
-
-- `400 Bad Request`: Некорректный ID одобрения или тело запроса.
-- `401 Unauthorized`: Токен отсутствует или неверен.
-- `403 Forbidden`: У пользователя нет прав для добавления аннотации.
-- `404 Not Found`: Одобрение не найдено.
-- `500 Internal Server Error`: Ошибка сервера.
+**Ответ (204 No Content)**
 
 ---
 
-### 15. Завершение согласования (`PUT /approval/{approval_id}/finalize`)
+### 15. Завершение согласования (`PUT /file-approvals/:approval_id/finalize`)
 
 Работает только, когда ставится последняя подпись
 
@@ -633,53 +413,11 @@ Content-Type: application/json
 Authorization: Bearer <JWT_TOKEN>
 ```
 
-В заголовок вставьте токен, который был сгенерирован при аутентификации.
-
 **Параметры пути:**
 
-- `approval_id`: Идентификатор одобрения (например, 2).
+- `approval_id`
 
-**Ответ (200 OK):**
-
-```json
-{
-	"message": "Approval finalized successfully"
-}
-```
-
-**Ошибки:**
-
-- `400 Bad Request`: Некорректный ID одобрения.
-- `401 Unauthorized`: Токен отсутствует или неверен.
-- `403 Forbidden`: Только последний пользователь в цепочке может завершить процесс.
-- `404 Not Found`: Одобрение не найдено.
-- `500 Internal Server Error`: Ошибка сервера.
-
----
-
-### Общие ошибки и их описание:
-
-- **400 Bad Request**: Некорректный формат запроса или параметров.
-- **401 Unauthorized**: Токен отсутствует, истек или неверен.
-- **403 Forbidden**: У пользователя нет необходимых прав для выполнения операции.
-- **404 Not Found**: Запрашиваемый ресурс (файл, одобрение) не существует.
-- **500 Internal Server Error**: Произошла внутренняя ошибка сервера.
-
----
-
-Эта документация предоставляет полное описание всех эндпоинтов, включая примеры запросов и ответов, а также возможные ошибки.
-
-## Дополнительные возможности
-
-### Swagger UI
-
-Swagger-документация доступна по адресу:
-
-```
-/swagger/index.html
-```
-
----
+**Ответ (204 No Content)**
 
 ## Структура ошибок
 
