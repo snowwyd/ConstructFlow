@@ -79,13 +79,11 @@ func (r *FileMetadataRepository) GetFileInfo(ctx context.Context, fileID, userID
 	return &result.File, nil
 }
 
-func (r *FileMetadataRepository) CreateFile(ctx context.Context, directoryID uint, name string, status string, userID uint, minioKey string) error {
+func (r *FileMetadataRepository) CreateFile(ctx context.Context, directoryID uint, name string, status string, userID uint, minioKey string, size int64, contentType string) error {
 	const op = "infrastructure.postgresrepo.file.CreateFile"
 
-	// Начинаем транзакцию
 	tx := r.db.WithContext(ctx).Begin()
 	defer func() {
-		// Если транзакция не зафиксирована, откатываем
 		if r := recover(); r != nil {
 			tx.Rollback()
 		} else if tx.Error != nil {
@@ -93,12 +91,14 @@ func (r *FileMetadataRepository) CreateFile(ctx context.Context, directoryID uin
 		}
 	}()
 
-	// Создаем новый файл
 	newFile := domain.File{
 		DirectoryID:    directoryID,
 		Name:           name,
 		Status:         status,
 		MinioObjectKey: minioKey,
+		Size:           size,
+		ContentType:    contentType,
+		Version:        1,
 	}
 	if err := tx.Create(&newFile).Error; err != nil {
 		tx.Rollback()
@@ -131,13 +131,11 @@ func (r *FileMetadataRepository) UpdateFileStatus(ctx context.Context, fileID ui
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	// Обновляем статус файла
 	file.Status = status
 
-	// Используем явное условие для обновления
 	return tx.WithContext(ctx).
-		Model(&domain.File{}).   // Указываем модель, а не экземпляр
-		Where("id = ?", fileID). // Указываем условие для обновления
+		Model(&domain.File{}).
+		Where("id = ?", fileID).
 		Update("status", status).
 		Error
 }
@@ -146,7 +144,6 @@ func (r *FileMetadataRepository) UpdateFile(ctx context.Context, file *domain.Fi
 	const op = "infrastructure.postgresrepo.file.UpdateFile"
 	tx := r.db.WithContext(ctx).Begin()
 
-	// Обновляем метаданные
 	if err := tx.Model(&domain.File{}).
 		Where("id = ?", file.ID).
 		Updates(map[string]interface{}{
@@ -171,7 +168,6 @@ func (r *FileMetadataRepository) DeleteFile(ctx context.Context, fileID uint, us
 		}
 	}()
 
-	// Получаем файл и проверяем его существование
 	var file domain.File
 	if err := tx.First(&file, fileID).Error; err != nil {
 		tx.Rollback()
@@ -198,7 +194,6 @@ func (r *FileMetadataRepository) DeleteFile(ctx context.Context, fileID uint, us
 		return fmt.Errorf("%s: %w", op, domain.ErrAccessDenied)
 	}
 
-	// Проверяем, что файл находится в статусе "draft"
 	if file.Status != "draft" {
 		tx.Rollback()
 		return fmt.Errorf("%s: %w", op, domain.ErrCannotDeleteNonDraftFile)

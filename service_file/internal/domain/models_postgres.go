@@ -29,6 +29,10 @@ type File struct {
 	// Ссылка на MinIO
 	MinioObjectKey string `gorm:"not null"`
 
+	// Metadata
+	Size        int64  `gorm:"not null"` // Размер файла
+	ContentType string `gorm:"not null"` // MIME-тип (например, "application/pdf")
+
 	// Связь с директорией
 	Directory Directory `gorm:"foreignKey:DirectoryID"`
 }

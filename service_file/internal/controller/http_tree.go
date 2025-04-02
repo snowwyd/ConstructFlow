@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -131,20 +132,17 @@ func (h *TreeHandler) UploadFile(c *gin.Context) {
 		return
 	}
 
-	form, err := c.MultipartForm()
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid multipart form")
-		return
-	}
-
+	form, _ := c.MultipartForm()
 	files := form.File["file"]
 	if len(files) == 0 {
 		utils.SendErrorResponse(c, http.StatusBadRequest, "MISSING_FILE", "No file uploaded")
 		return
 	}
-	file, err := files[0].Open()
+
+	fileHeader := files[0]
+	file, err := fileHeader.Open()
 	if err != nil {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "FILE_READ_ERROR", err.Error())
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "FILE_READ_ERROR", err.Error())
 		return
 	}
 	defer file.Close()
@@ -155,11 +153,16 @@ func (h *TreeHandler) UploadFile(c *gin.Context) {
 		return
 	}
 
-	directoryIDStr := form.Value["directory_id"][0]
-	directoryID, _ := strconv.Atoi(directoryIDStr)
+	directoryID, _ := strconv.Atoi(form.Value["directory_id"][0])
 	name := form.Value["name"][0]
 
-	err = h.fileUsecase.CreateFile(c.Request.Context(), uint(directoryID), name, fileData, userID)
+	// Определяем MIME-тип
+	contentType := fileHeader.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = "application/octet-stream" // Значение по умолчанию
+	}
+
+	err = h.fileUsecase.CreateFile(c.Request.Context(), uint(directoryID), name, fileData, contentType, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrDirectoryNotFound):
@@ -175,6 +178,58 @@ func (h *TreeHandler) UploadFile(c *gin.Context) {
 	}
 
 	c.Status(http.StatusCreated)
+}
+
+func (h *TreeHandler) DownloadFileDirect(c *gin.Context) {
+	fileID, err := strconv.ParseUint(c.Param("file_id"), 10, 64)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "Invalid file ID")
+		return
+	}
+
+	userID, err := utils.ExtractUserID(c)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
+		return
+	}
+
+	fileMeta, fileObject, err := h.fileUsecase.DownloadFileDirect(c.Request.Context(), uint(fileID), userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrFileNotFound):
+			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "File not found")
+		case errors.Is(err, domain.ErrAccessDenied):
+			utils.SendErrorResponse(c, http.StatusForbidden, "ACCESS_DENIED", "No access to file")
+		default:
+			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to retrieve file")
+		}
+		return
+	}
+	defer fileObject.Close()
+
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileMeta.Name))
+	c.Header("Content-Type", fileMeta.ContentType)
+	c.Header("Content-Length", strconv.FormatInt(fileMeta.Size, 10))
+
+	// Потоковая передача файла
+	buf := make([]byte, 1024*1024) // 1MB буфер
+	c.Stream(func(w io.Writer) bool {
+		n, err := fileObject.Read(buf)
+		if n > 0 {
+			if _, writeErr := w.Write(buf[:n]); writeErr != nil {
+				c.Error(writeErr)
+				return false
+			}
+		}
+		if err != nil {
+			if err == io.EOF {
+				return false
+			}
+			c.Error(err)
+			return false
+		}
+		return true
+	})
 }
 
 func (h *TreeHandler) UpdateFile(c *gin.Context) {
