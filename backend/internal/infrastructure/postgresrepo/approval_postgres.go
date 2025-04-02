@@ -31,7 +31,8 @@ func (r *ApprovalRepository) FindApprovalsByUser(ctx context.Context, userID uin
             approvals.file_id,
             files.name AS file_name,
             approvals.status,
-            approvals.workflow_order
+            approvals.workflow_order,
+            (SELECT MAX(workflow_order) FROM workflows WHERE workflows.workflow_id = approvals.workflow_id) AS workflow_user_count
         `).
 		Joins("JOIN workflows ON workflows.workflow_id = approvals.workflow_id AND workflows.workflow_order = approvals.workflow_order").
 		Joins("JOIN files ON files.id = approvals.file_id").
