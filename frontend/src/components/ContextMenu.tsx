@@ -25,10 +25,12 @@ import axiosFetching from '../api/AxiosFetch';
 import config from '../constants/Configurations.json';
 import { closeContextMenu } from '../store/Slices/contextMenuSlice';
 import { RootState } from '../store/store';
+import { CheckCircleOutline } from '@mui/icons-material';
 
 const createFolder = config.createDirectory;
 const deleteFolder = config.deleteDirectory;
 const deleteFile = config.deleteFile;
+const sendFileToApprove = config.sendFileToApprove;
 
 type CreateFolderPayload = {
 	parent_path_id: number;
@@ -46,6 +48,7 @@ type DeleteFilePayload = {
 const ContextMenu = () => {
 	const theme = useTheme();
 	const dispatch = useDispatch();
+	const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [newName, setNewName] = useState('');
 	const treeRef = useRef<HTMLDivElement>(null);
@@ -121,6 +124,20 @@ const ContextMenu = () => {
 		},
 	});
 
+	const approveFileMutation = useMutation({
+		mutationFn: async (fileId: number) => {
+			const url = sendFileToApprove.replace(':file_id', String(fileId));
+			const response = await axiosFetching.put(url);
+			return response.data;
+		},
+		onSuccess: () => {
+			refreshCorrectTree();
+		},
+		onError: (error: AxiosError) => {
+			console.error('Error sending file for approval:', error);
+		},
+	});
+
 	const deleteFolderMutation = useMutation({
 		mutationFn: async (data: DeleteFolderPayload) => {
 			const response = await axiosFetching.delete(deleteFolder, { data });
@@ -156,6 +173,18 @@ const ContextMenu = () => {
 	const handleCreateFolder = () => {
 		setIsDialogOpen(true);
 		handleCloseMenu();
+	};
+
+	const handleSendForApproval = () => {
+		setIsConfirmDialogOpen(true); 
+		handleCloseMenu(); 
+	};
+
+	const handleConfirmApproval = () => {
+		if (!itemId) return;
+		const fileId = parseInt(itemId.replace('file-', ''), 10);
+		approveFileMutation.mutate(fileId); 
+		setIsConfirmDialogOpen(false); 
 	};
 
 	const handleCreateFile = () => {
@@ -281,6 +310,31 @@ const ContextMenu = () => {
 				<Typography variant='body2' color={theme.palette.error.main}>
 					Удалить файл
 				</Typography>
+			</MenuItem>
+		);
+	}
+
+	if (itemType === 'file') {
+		menuItems.push(
+			<MenuItem
+				key='send-for-approval'
+				onClick={handleSendForApproval}
+				sx={{
+					py: 1,
+					px: 2,
+					'&:hover': {
+						backgroundColor: alpha(theme.palette.primary.main, 0.08),
+					},
+				}}
+			>
+				<CheckCircleOutline
+					fontSize='small'
+					sx={{
+						mr: 1.5,
+						color: theme.palette.primary.main,
+					}}
+				/>
+				<Typography variant='body2'>Отправить на согласование</Typography>
 			</MenuItem>
 		);
 	}
@@ -419,6 +473,82 @@ const ContextMenu = () => {
 					</Button>
 				</DialogActions>
 			</Dialog>
+
+			<Dialog
+			open={isConfirmDialogOpen}
+			onClose={() => setIsConfirmDialogOpen(false)}
+			slotProps={{
+				paper: {
+					sx: {
+						borderRadius: 3,
+						boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.15)}`,
+						maxWidth: 450,
+						width: '100%',
+					},
+				},
+				}}
+			>
+			<DialogTitle
+			sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            pb: 2,
+		}}
+    >
+        <Box display='flex' alignItems='center' gap={1}>
+            <CheckCircleOutline color='primary' />
+            <Typography variant='h6' fontWeight={600}>
+                Подтверждение отправки
+            </Typography>
+        </Box>
+        <IconButton
+            onClick={() => setIsConfirmDialogOpen(false)}
+            size='small'
+            sx={{ color: theme.palette.text.secondary }}
+        >
+            <CloseIcon fontSize='small' />
+        </IconButton>
+    </DialogTitle>
+    <DialogContent sx={{ pt: 3, pb: 2 }}>
+        <Typography variant='body1'>
+            Вы уверены, что хотите отправить файл на согласование?
+        </Typography>
+    </DialogContent>
+    <DialogActions
+        sx={{
+            px: 3,
+            py: 2,
+            borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+        }}
+    >
+        <Button
+            onClick={() => setIsConfirmDialogOpen(false)}
+            variant='outlined'
+            sx={{
+                borderRadius: 2,
+                px: 3,
+                textTransform: 'none',
+            }}
+        >
+            Отмена
+        </Button>
+        <Button
+            onClick={handleConfirmApproval}
+            variant='contained'
+            sx={{
+                borderRadius: 2,
+                px: 3,
+                textTransform: 'none',
+                ml: 1,
+                boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+            }}
+        >
+            Принять
+        </Button>
+    </DialogActions>
+</Dialog>
 		</>
 	);
 };

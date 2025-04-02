@@ -1,17 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import config from '../constants/Configurations.json';
 import axiosFetching from "../api/AxiosFetch";
 import ErrorState from "./ErrorState";
 import LoadingState from "./LoadingState";
 import { useDispatch } from "react-redux";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircleOutline, CancelOutlined } from '@mui/icons-material';
 import { setPendingCount } from "../store/Slices/pendingApprovalsSlice";
-import { Box, IconButton, Tooltip } from "@mui/material";
+import { Box, IconButton, Snackbar, Tooltip, Dialog, DialogTitle, DialogContent, TextField, DialogActions, Button } from "@mui/material";
 
 const getApprovals = config.getApprovals;
+const approveDocument = config.approveDocument;
+const annotateDocument = config.annotateDocument;
 
-interface ResponseProps{
+interface ResponseProps {
     id: number,
     file_id: number,
     file_name: string,
@@ -20,36 +22,94 @@ interface ResponseProps{
 }
 
 export const ApprovalsPage = () => {
-    
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [isAnnotationModalOpen, setIsAnnotationModalOpen] = useState(false); 
+    const [annotationMessage, setAnnotationMessage] = useState('');
+    const [selectedFileId, setSelectedFileId] = useState<number | null>(null); 
+
     const dispatch = useDispatch();
     const isAdmin = true;
+
     const {
         data: apiResponse,
-		isLoading,
-		isError,
-	} = useQuery({
-		queryKey: ['approvals'],
-		queryFn: async () => {
-			const response = await axiosFetching.get(getApprovals);
-			return response.data;
-		},
-	});
+        isLoading,
+        isError,
+        refetch,
+    } = useQuery({
+        queryKey: ['approvals'],
+        queryFn: async () => {
+            const response = await axiosFetching.get(getApprovals);
+            return response.data;
+        },
+    });
 
     useEffect(() => {
         if (apiResponse) {
-          const pendingCount = apiResponse.filter(
-            (doc: ResponseProps) => doc.status === 'on approval'
-          ).length;
-          dispatch(setPendingCount(pendingCount)); 
+            const pendingCount = apiResponse.length;
+            dispatch(setPendingCount(pendingCount));
         }
-      }, [apiResponse, dispatch]);
+    }, [apiResponse, dispatch]);
 
-    if (isLoading){
-        return <LoadingState/>
+    const approveDocumentMutation = useMutation({
+        mutationFn: async (approvalId: number) => {
+            const url = approveDocument.replace(':approval_id', String(approvalId));
+            const response = await axiosFetching.put(url);
+            return response.data;
+        },
+        onSuccess: () => {
+            setSnackbarMessage('Документ был согласовон!');
+            setSnackbarOpen(true);
+            refetch();
+        },
+        onError: () => {
+            setSnackbarMessage('Ошибка при согласовании документа.');
+            setSnackbarOpen(true);
+        },
+    });
+
+    const annotateDocumentMutation = useMutation({
+        mutationFn: async ({ approvalId, message }: { approvalId: number; message: string }) => {
+            const url = annotateDocument.replace(':approval_id', String(approvalId));
+            const response = await axiosFetching.put(url, { message }); 
+            return response.data;
+        },
+        onSuccess: () => {
+            setSnackbarMessage('Документ был отправлен на аннотацию!');
+            setSnackbarOpen(true);
+            refetch();
+            setIsAnnotationModalOpen(false);
+            setAnnotationMessage(''); 
+        },
+        onError: () => {
+            setSnackbarMessage('Ошибка при аннотации документа.');
+            setSnackbarOpen(true);
+        },
+    });
+
+    const handleAnnotateClick = (fileId: number) => {
+        setSelectedFileId(fileId); 
+        setIsAnnotationModalOpen(true); 
     };
-    if(isError){
-        return <ErrorState/>
+
+    const handleAnnotationSubmit = () => {
+        if (selectedFileId && annotationMessage.trim()) {
+            annotateDocumentMutation.mutate({ approvalId: selectedFileId, message: annotationMessage });
+        }
     };
+
+    if (isLoading) {
+        return <LoadingState />;
+    }
+
+    if (isError) {
+        return <ErrorState />;
+    }
+
+    if (!apiResponse || !Array.isArray(apiResponse)) {
+        return <p>Нет документов на согласовании</p>;
+    }
+
     return (
         <div>
             <ul style={{ listStyle: 'none', padding: 0 }}>
@@ -68,39 +128,43 @@ export const ApprovalsPage = () => {
                     >
                         <div>
                             <h3>{document.file_name}</h3>
-                            <p>Status: {document.status}</p>
-                            <p>Workflow Order: {document.workflow_order}</p>
+                            <p>Статус: {document.status}</p>
+                            <p>Рабочий номер: {document.workflow_order}</p>
                         </div>
 
                         {isAdmin && (
                             <Box display="flex" gap={1}>
+                                {/* Кнопка "Approve" */}
                                 <Tooltip title="Approve">
                                     <IconButton
                                         sx={{
                                             border: '2px solid green',
                                             color: 'green',
                                             backgroundColor: 'transparent',
-                                            borderRadius: '50%',
+                                            borderRadius: '15%',
                                             '&:hover': {
                                                 backgroundColor: 'rgba(0, 255, 0, 0.1)',
                                             },
                                         }}
+                                        onClick={() => approveDocumentMutation.mutate(document.id)}
                                     >
                                         <CheckCircleOutline />
                                     </IconButton>
                                 </Tooltip>
 
-                                <Tooltip title="Reject">
+                                {/* Кнопка "Annotate" */}
+                                <Tooltip title="Annotate">
                                     <IconButton
                                         sx={{
                                             border: '2px solid red',
                                             color: 'red',
                                             backgroundColor: 'transparent',
-                                            borderRadius: '50%',
+                                            borderRadius: '15%',
                                             '&:hover': {
                                                 backgroundColor: 'rgba(255, 0, 0, 0.1)',
                                             },
                                         }}
+                                        onClick={() => handleAnnotateClick(document.id)}
                                     >
                                         <CancelOutlined />
                                     </IconButton>
@@ -110,6 +174,37 @@ export const ApprovalsPage = () => {
                     </li>
                 ))}
             </ul>
+
+            {/* Уведомление  */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={3000}
+                onClose={() => setSnackbarOpen(false)}
+                message={snackbarMessage}
+            />
+
+            {/* Модальное окно для аннотации */}
+            <Dialog open={isAnnotationModalOpen} onClose={() => setIsAnnotationModalOpen(false)}>
+                <DialogTitle>Аннотация Документа</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        label="Message"
+                        fullWidth
+                        value={annotationMessage}
+                        onChange={(e) => setAnnotationMessage(e.target.value)}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsAnnotationModalOpen(false)} color="primary">
+                        Отмена
+                    </Button>
+                    <Button onClick={handleAnnotationSubmit} color="primary" disabled={!annotationMessage.trim()}>
+                        Подтвердить
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </div>
     );
 };

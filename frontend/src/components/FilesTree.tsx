@@ -5,6 +5,7 @@ import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import {
 	alpha,
 	Box,
+	CircularProgress,
 	Paper,
 	Typography,
 	useTheme,
@@ -12,13 +13,7 @@ import {
 import { RichTreeView, TreeItem2, TreeItem2Props } from '@mui/x-tree-view';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import React, {
-	useCallback,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import axiosFetching from '../api/AxiosFetch';
 import config from '../constants/Configurations.json';
@@ -27,8 +22,6 @@ import {
 	closeContextMenu,
 	openContextMenu,
 } from '../store/Slices/contextMenuSlice';
-import ErrorState from './ErrorState';
-import LoadingState from './LoadingState';
 
 const getFolders = config.getFiles;
 const createFile = config.createFile;
@@ -43,20 +36,69 @@ interface ExtendedTreeItem2Props extends TreeItem2Props {
 	expansionState?: 'expanded' | 'collapsed' | 'loading';
 }
 
-// Расширяем интерфейс FilesTree добавляя onItemSelect
-interface FilesTreeProps {
-	isArchive: boolean;
-	onItemSelect?: (id: string, type: 'file' | 'directory', name: string) => void;
-}
-
-const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
+const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 	const theme = useTheme();
 	const dispatch = useDispatch();
-	const treeViewRef = useRef<HTMLUListElement>(null);
 	const [highlightedItemId, setHighlightedItemId] = useState<string | null>(
 		null
 	);
-	const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+
+	const {
+		data: apiResponse,
+		isLoading,
+		isError,
+		error,
+		refetch: refreshTree,
+	} = useQuery({
+		queryKey: ['directories', isArchive],
+		queryFn: async () => {
+			const response = await axiosFetching.post(getFolders, {
+				is_archive: isArchive,
+			});
+			return response.data;
+		},
+	});
+
+	const createFileMutation = useMutation({
+		mutationFn: async (data: FileUploadData) => {
+			const response = await axiosFetching.post(createFile, data);
+			return response.data;
+		},
+		onSuccess: () => {
+			refreshTree();
+		},
+		onError: (error: AxiosError<{ message?: string }>) => {
+			console.error('Error creating file:', error);
+		},
+	});
+
+	// Properly memoize handleContextMenu to avoid recreating on every render
+	const handleContextMenu = useCallback(
+		(
+			event: React.MouseEvent<Element>,
+			itemId: string,
+			itemType: 'directory' | 'file'
+		) => {
+			event.preventDefault();
+			event.stopPropagation();
+
+			dispatch(closeContextMenu());
+			dispatch(
+				openContextMenu({
+					mouseX: event.clientX,
+					mouseY: event.clientY,
+					itemId,
+					itemType,
+					treeType: isArchive ? 'archive' : 'work',
+				})
+			);
+		},
+		[dispatch, isArchive]
+	);
+
+	useEffect(() => {
+		refreshTree();
+	}, [refreshTree]); // Add refreshTree to dependencies
 
 	// Рекурсивная функция поиска элемента в дереве любой глубины вложенности
 	const findTreeItem = useCallback(
@@ -83,21 +125,27 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 		[]
 	);
 
-	const {
-		data: apiResponse,
-		isLoading,
-		isError,
-		error,
-		refetch: refreshTree,
-	} = useQuery({
-		queryKey: ['directories', isArchive],
-		queryFn: async () => {
-			const response = await axiosFetching.post(getFolders, {
-				is_archive: isArchive,
+	// Обернуть findFileInDirectory в useCallback
+	const findFileInDirectory = useCallback(
+		(items: TreeDataItem[], directoryId: number, fileName: string): boolean => {
+			const directory = findTreeItem(items, `dir-${directoryId}`);
+			if (!directory || !directory.children) return false;
+
+			const cleanFileName = fileName
+				.replace(/\s*\(draft\)\s*$/, '')
+				.trim()
+				.toLowerCase();
+
+			return directory.children.some(child => {
+				const childName = child.label
+					.replace(/\s*\(draft\)\s*$/, '')
+					.trim()
+					.toLowerCase();
+				return childName === cleanFileName;
 			});
-			return response.data;
 		},
-	});
+		[findTreeItem]
+	);
 
 	// Function to transform API data to tree format
 	const transformDataToTreeItems = useCallback(
@@ -145,101 +193,6 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 		[apiResponse, transformDataToTreeItems]
 	);
 
-	// Обработка поиска файла в директории (для Drag & Drop)
-	const findFileInDirectory = useCallback(
-		(items: TreeDataItem[], directoryId: number, fileName: string): boolean => {
-			const directory = findTreeItem(items, `dir-${directoryId}`);
-			if (!directory || !directory.children) return false;
-
-			const cleanFileName = fileName
-				.replace(/\s*\(draft\)\s*$/, '')
-				.trim()
-				.toLowerCase();
-
-			return directory.children.some(child => {
-				const childName = child.label
-					.replace(/\s*\(draft\)\s*$/, '')
-					.trim()
-					.toLowerCase();
-				return childName === cleanFileName;
-			});
-		},
-		[findTreeItem]
-	);
-
-	// Функция для снятия фокуса с элементов дерева
-	const clearTreeFocus = useCallback(() => {
-		// Находим все элементы с классом .Mui-focused и убираем этот класс
-		if (treeViewRef.current) {
-			const focusedElements =
-				treeViewRef.current.querySelectorAll('.Mui-focused');
-			focusedElements.forEach(el => {
-				el.classList.remove('Mui-focused');
-			});
-		}
-	}, []);
-
-	// Главная функция для обработки выбора элемента (универсальная)
-	const handleItemSelection = useCallback(
-		(itemId: string, itemType: 'directory' | 'file', label: string) => {
-			// Устанавливаем выбранный элемент
-			setSelectedItemId(itemId);
-
-			// Снимаем фокус со всех элементов
-			clearTreeFocus();
-
-			// Уведомляем родительский компонент о выборе
-			if (onItemSelect) {
-				onItemSelect(itemId, itemType, label);
-			}
-		},
-		[onItemSelect, clearTreeFocus]
-	);
-
-	// Обработчик правого клика (контекстное меню)
-	const handleContextMenu = useCallback(
-		(
-			event: React.MouseEvent<Element>,
-			itemId: string,
-			itemType: 'directory' | 'file',
-			label: string
-		) => {
-			event.preventDefault();
-			event.stopPropagation();
-
-			// Сначала выбираем элемент с помощью общей функции
-			handleItemSelection(itemId, itemType, label);
-
-			// Затем открываем контекстное меню
-			dispatch(closeContextMenu());
-			dispatch(
-				openContextMenu({
-					mouseX: event.clientX,
-					mouseY: event.clientY,
-					itemId,
-					itemType,
-					treeType: isArchive ? 'archive' : 'work',
-				})
-			);
-		},
-		[dispatch, isArchive, handleItemSelection]
-	);
-
-	// Обработка создания файла через mutation
-	const createFileMutation = useMutation({
-		mutationFn: async (data: FileUploadData) => {
-			const response = await axiosFetching.post(createFile, data);
-			return response.data;
-		},
-		onSuccess: () => {
-			refreshTree();
-		},
-		onError: (error: AxiosError<{ message?: string }>) => {
-			console.error('Error creating file:', error);
-		},
-	});
-
-	// Обработчик перетаскивания файлов (Drag & Drop)
 	const handleDrop = useCallback(
 		(event: React.DragEvent<HTMLDivElement>, directoryId: number) => {
 			event.preventDefault();
@@ -276,60 +229,69 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 		[createFileMutation, findFileInDirectory, treeItems]
 	);
 
-	// Глобальный обработчик кликов для снятия выделения
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			// Проверяем, был ли клик вне tree view
-			if (
-				treeViewRef.current &&
-				!treeViewRef.current.contains(event.target as Node)
-			) {
-				// Если клик был вне дерева и не на контекстном меню
-				const contextMenu = document.querySelector('.MuiMenu-paper');
-				if (!contextMenu || !contextMenu.contains(event.target as Node)) {
-					// Снимаем выделение
-					setSelectedItemId(null);
-				}
-			}
-		};
-
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => {
-			document.removeEventListener('mousedown', handleClickOutside);
-		};
-	}, []);
-
-	// Загрузка дерева при монтировании компонента
-	useEffect(() => {
-		refreshTree();
-	}, [refreshTree]);
-
-	// Сброс выбора при изменении типа хранилища
-	useEffect(() => {
-		setSelectedItemId(null);
-		clearTreeFocus();
-	}, [isArchive, clearTreeFocus]);
-
-	// Отображение состояния загрузки
 	if (isLoading) {
 		return (
-			<LoadingState 
-				message={`Загрузка ${isArchive ? 'архивного' : 'рабочего'} хранилища...`}
-			/>
+			<Paper
+				elevation={2}
+				sx={{
+					display: 'flex',
+					justifyContent: 'center',
+					alignItems: 'center',
+					height: 300,
+					width: '100%',
+					borderRadius: 3,
+					backgroundColor: theme.palette.background.paper,
+					boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.12)}`,
+				}}
+			>
+				<CircularProgress
+					size={36}
+					color='primary'
+					sx={{
+						opacity: 0.8,
+					}}
+				/>
+			</Paper>
 		);
 	}
 
-	// Отображение ошибки
 	if (isError) {
 		return (
-			<ErrorState
-				error={error}
-				onRetry={refreshTree}
-			/>
+			<Paper
+				elevation={2}
+				sx={{
+					display: 'flex',
+					flexDirection: 'column',
+					justifyContent: 'center',
+					alignItems: 'center',
+					height: 300,
+					width: '100%',
+					borderRadius: 3,
+					backgroundColor: alpha(theme.palette.error.light, 0.05),
+					borderLeft: `4px solid ${theme.palette.error.main}`,
+					p: 3,
+				}}
+			>
+				<Typography
+					color='error'
+					variant='subtitle1'
+					fontWeight={600}
+					align='center'
+				>
+					Ошибка загрузки данных
+				</Typography>
+				<Typography
+					color='text.secondary'
+					variant='body2'
+					align='center'
+					sx={{ mt: 1 }}
+				>
+					{error instanceof AxiosError ? error.message : 'Неизвестная ошибка'}
+				</Typography>
+			</Paper>
 		);
 	}
 
-	// Основной рендер компонента
 	return (
 		<Paper
 			elevation={2}
@@ -349,7 +311,6 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 				},
 			}}
 		>
-			{/* Заголовок хранилища */}
 			<Box
 				sx={{
 					bgcolor: isArchive
@@ -364,7 +325,6 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 					display: 'flex',
 					alignItems: 'center',
 					gap: 1,
-					height: '57px', // Фиксированная высота для соответствия заголовку предпросмотра
 				}}
 			>
 				{isArchive ? (
@@ -397,20 +357,17 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 				</Typography>
 			</Box>
 
-			{/* Контейнер для дерева */}
 			<Box sx={{ p: 2, maxHeight: 600, overflowY: 'auto' }}>
 				<RichTreeView
-					ref={treeViewRef}
 					items={treeItems}
 					defaultExpandedItems={['dir-1']}
-					// Отключаем стандартную навигацию по клавиатуре и автофокус
-					disableSelection={true}
-					autoFocus={false}
 					slots={{
 						item: (props: ExtendedTreeItem2Props) => {
+							// Используем более строгую типизацию
 							const { itemId = '', label, expansionState, ...rest } = props;
 
-							// Поиск данных элемента
+							// Используем обычный вызов функции поиска вместо useMemo
+							// внутри функции, которая не является компонентом React
 							const itemData =
 								treeItems.length > 0
 									? findTreeItem(treeItems, itemId)
@@ -423,49 +380,26 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 							}
 
 							const isHighlighted = highlightedItemId === itemId;
-							const isSelected = selectedItemId === itemId;
 							const isDirectory = itemData.type === 'directory';
 							const isArchiveItem = itemData.status === 'archive';
+
+							// Проверяем наличие expansionState
 							const isExpanded = expansionState === 'expanded';
 
 							return (
 								<TreeItem2
 									{...rest}
 									itemId={itemId}
-									className={`tree-item-component ${
-										isSelected ? 'custom-selected' : ''
-									}`}
-									// Отключаем стандартную обработку клавиш навигации
-									tabIndex={-1}
-									// Обработчик правого клика для контекстного меню
+									className='tree-item-component'
 									onContextMenu={event => {
-										handleContextMenu(
-											event,
-											itemId,
-											itemData.type,
-											itemData.label
-										);
+										handleContextMenu(event, itemId, itemData.type);
 										return false;
-									}}
-									// Убираем стандартный onClick
-									onClick={e => {
-										e.preventDefault();
-										e.stopPropagation();
 									}}
 									label={
 										<Box
 											display='flex'
 											alignItems='center'
 											gap={1.5}
-											// Ключевое изменение: обработчик клика для всех элементов
-											onClick={e => {
-												e.stopPropagation(); // Остановка всплытия для предотвращения двойной обработки
-												handleItemSelection(
-													itemId,
-													itemData.type,
-													itemData.label
-												);
-											}}
 											sx={{
 												py: 0.5,
 												width: '100%',
@@ -474,10 +408,8 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 												margin: '2px 0',
 												borderRadius: 1.5,
 												transition: 'all 0.2s ease',
-												backgroundColor: isSelected
+												backgroundColor: isHighlighted
 													? alpha(theme.palette.primary.main, 0.12)
-													: isHighlighted
-													? alpha(theme.palette.primary.main, 0.08)
 													: 'transparent',
 												'&:hover': {
 													backgroundColor: alpha(
@@ -485,8 +417,13 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 														0.06
 													),
 												},
+												'&.Mui-focused, &.Mui-selected': {
+													backgroundColor: alpha(
+														theme.palette.primary.main,
+														0.12
+													),
+												},
 											}}
-											// Обработчики перетаскивания файлов (только для директорий)
 											onDragOver={
 												isDirectory
 													? event => event.preventDefault()
@@ -520,7 +457,6 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 													: undefined
 											}
 										>
-											{/* Иконка элемента */}
 											{isDirectory ? (
 												isArchiveItem ? (
 													<ArchiveIcon
@@ -552,7 +488,6 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 													}}
 												/>
 											)}
-											{/* Название элемента */}
 											<Typography
 												variant='body2'
 												sx={{
@@ -576,7 +511,6 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 					}}
 					sx={{
 						width: '100%',
-						// Стили для визуального оформления дерева
 						'& .MuiTreeItem-root': {
 							position: 'relative',
 							'&::before': {
@@ -591,20 +525,6 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 							},
 							'&:has(.MuiTreeItem-group)::before': {
 								display: 'block',
-							},
-							// Важно: переопределяем стили для фокуса
-							'&.Mui-focused': {
-								outline: 'none !important',
-								backgroundColor: 'transparent !important',
-							},
-							// Важно: стили для .Mui-selected тоже переопределяем
-							'&.Mui-selected': {
-								backgroundColor: 'transparent !important',
-								outline: 'none !important',
-							},
-							// Элементы с нашим собственным классом выбора
-							'&.custom-selected > .MuiTreeItem-content': {
-								backgroundColor: 'transparent !important',
 							},
 						},
 						'& .MuiTreeItem-group': {
@@ -625,13 +545,6 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 								fontSize: '1rem',
 								color: theme.palette.action.active,
 							},
-						},
-						// Важно: убираем синий фокус с элементов
-						'& .MuiTreeItem-content.Mui-focused': {
-							backgroundColor: 'transparent !important',
-						},
-						'& .MuiTreeItem-content.Mui-selected': {
-							backgroundColor: 'transparent !important',
 						},
 					}}
 				/>
