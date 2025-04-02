@@ -177,6 +177,60 @@ func (h *TreeHandler) UploadFile(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
+func (h *TreeHandler) UpdateFile(c *gin.Context) {
+	fileIDStr := c.Param("file_id")
+	fileID, err := strconv.ParseUint(fileIDStr, 10, 64)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid file ID")
+		return
+	}
+
+	userID, err := utils.ExtractUserID(c)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
+		return
+	}
+
+	form, err := c.MultipartForm()
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid multipart form")
+		return
+	}
+
+	files := form.File["file"]
+	if len(files) == 0 {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "MISSING_FILE", "No file uploaded")
+		return
+	}
+	file, err := files[0].Open()
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "FILE_READ_ERROR", err.Error())
+		return
+	}
+	defer file.Close()
+
+	fileData, err := io.ReadAll(file)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "FILE_READ_ERROR", err.Error())
+		return
+	}
+
+	err = h.fileUsecase.UpdateFile(c.Request.Context(), uint(fileID), fileData, userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrFileNotFound):
+			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "File not found")
+		case errors.Is(err, domain.ErrAccessDenied):
+			utils.SendErrorResponse(c, http.StatusForbidden, "ACCESS_DENIED", "No access to file")
+		default:
+			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to update file")
+		}
+		return
+	}
+
+	c.Status(http.StatusCreated)
+}
+
 func (h *TreeHandler) DeleteDirectory(c *gin.Context) {
 	userID, err := utils.ExtractUserID(c)
 	if err != nil {

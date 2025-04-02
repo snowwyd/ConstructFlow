@@ -142,6 +142,25 @@ func (r *FileMetadataRepository) UpdateFileStatus(ctx context.Context, fileID ui
 		Error
 }
 
+func (r *FileMetadataRepository) UpdateFile(ctx context.Context, file *domain.File) error {
+	const op = "infrastructure.postgresrepo.file.UpdateFile"
+	tx := r.db.WithContext(ctx).Begin()
+
+	// Обновляем метаданные
+	if err := tx.Model(&domain.File{}).
+		Where("id = ?", file.ID).
+		Updates(map[string]interface{}{
+			"minio_object_key": file.MinioObjectKey,
+			"version":          file.Version,
+			"updated_at":       file.UpdatedAt,
+		}).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return tx.Commit().Error
+}
+
 func (r *FileMetadataRepository) DeleteFile(ctx context.Context, fileID uint, userID uint) error {
 	const op = "infrastructure.postgresrepo.file.DeleteFile"
 
