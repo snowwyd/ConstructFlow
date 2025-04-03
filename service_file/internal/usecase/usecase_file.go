@@ -165,8 +165,10 @@ func (u *FileUsecase) UpdateFile(ctx context.Context, fileID uint, newData []byt
 		return fmt.Errorf("%s: %w", op, domain.ErrAccessDenied)
 	}
 
+	newVersion := file.Version + 1
+
 	// 4. Загружаем новую версию в MinIO
-	newKey, err := u.fileStorage.UploadNewVersion(ctx, "files", file.MinioObjectKey, newData, file.ContentType)
+	newKey, err := u.fileStorage.UploadNewVersion(ctx, "files", file.MinioObjectKey, newData, file.ContentType, newVersion)
 	if err != nil {
 		log.Error("failed to upload new version", slogger.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
@@ -174,7 +176,8 @@ func (u *FileUsecase) UpdateFile(ctx context.Context, fileID uint, newData []byt
 
 	// 5. Обновляем метаданные файла
 	file.MinioObjectKey = newKey
-	file.Version++
+	file.Version = newVersion
+	file.Size = int64(len(newData))
 	file.UpdatedAt = time.Now()
 
 	// 6. Сохраняем изменения в БД

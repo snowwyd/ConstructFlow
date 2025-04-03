@@ -33,7 +33,8 @@ func (r *ApprovalRepository) FindApprovalsByUser(ctx context.Context, userID uin
             approvals.id,
             approvals.file_id,
             approvals.status,
-            approvals.workflow_order
+            approvals.workflow_order,
+            (SELECT MAX(workflow_order) FROM workflows WHERE workflows.workflow_id = approvals.workflow_id) AS workflow_user_count
         `).
 		Joins("JOIN workflows ON workflows.workflow_id = approvals.workflow_id AND workflows.workflow_order = approvals.workflow_order").
 		Where("workflows.user_id = ?", userID).
@@ -98,11 +99,17 @@ func (r *ApprovalRepository) IsLastUserInWorkflow(ctx context.Context, approvalI
 func (r *ApprovalRepository) IncrementApprovalOrder(ctx context.Context, approvalID uint) error {
 	const op = "infrastructure.postgresrepo.approval.IncrementApprovalOrder"
 
-	return fmt.Errorf("%s: %w", op, r.db.WithContext(ctx).
+	err := r.db.WithContext(ctx).
 		Model(&domain.Approval{}).
 		Where("id = ?", approvalID).
 		Update("workflow_order", gorm.Expr("workflow_order + 1")).
-		Error)
+		Error
+
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }
 
 // AnnotateApproval обновляет Approval
@@ -125,7 +132,6 @@ func (r *ApprovalRepository) AnnotateApproval(ctx context.Context, approvalID ui
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	// Обновляем Approval
 	approval.Status = "annotated"
 	approval.AnnotationText = message
 	if err := tx.Save(&approval).Error; err != nil {
@@ -133,7 +139,11 @@ func (r *ApprovalRepository) AnnotateApproval(ctx context.Context, approvalID ui
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	return fmt.Errorf("%s: %w", op, tx.Commit().Error)
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }
 
 // FinalizeApproval обновляет Approval и связанный File
@@ -163,5 +173,9 @@ func (r *ApprovalRepository) FinalizeApproval(ctx context.Context, approvalID ui
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	return fmt.Errorf("%s: %w", op, tx.Commit().Error)
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }
