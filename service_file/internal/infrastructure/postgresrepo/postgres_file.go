@@ -46,9 +46,15 @@ func (r *FileMetadataRepository) GetFileByID(ctx context.Context, fileID uint) (
 }
 
 func (r *FileMetadataRepository) GetFilesByID(ctx context.Context, fileIDs []uint32, files *[]domain.File) error {
-	return r.db.WithContext(ctx).
+	const op = "infrastructure.postgresrepo.file.GetFilesByID"
+
+	if err := r.db.WithContext(ctx).
 		Where("id IN (?)", fileIDs).
-		Find(files).Error
+		Find(files).Error; err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }
 
 func (r *FileMetadataRepository) GetFileInfo(ctx context.Context, fileID, userID uint) (*domain.File, error) {
@@ -133,11 +139,15 @@ func (r *FileMetadataRepository) UpdateFileStatus(ctx context.Context, fileID ui
 
 	file.Status = status
 
-	return tx.WithContext(ctx).
+	if err := tx.WithContext(ctx).
 		Model(&domain.File{}).
 		Where("id = ?", fileID).
 		Update("status", status).
-		Error
+		Error; err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }
 
 func (r *FileMetadataRepository) UpdateFile(ctx context.Context, file *domain.File) error {
@@ -155,7 +165,11 @@ func (r *FileMetadataRepository) UpdateFile(ctx context.Context, file *domain.Fi
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	return tx.Commit().Error
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }
 
 func (r *FileMetadataRepository) DeleteFile(ctx context.Context, fileID uint, userID uint) error {

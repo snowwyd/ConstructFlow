@@ -20,11 +20,12 @@ type ErrorResponse struct {
 // ApprovalResponse godoc
 // @Description Информация о процессе одобрения файла
 type ApprovalResponse struct {
-	ID            uint   `json:"id" example:"101"`
-	FileID        uint   `json:"file_id" example:"789"`
-	FileName      string `json:"file_name" example:"report.pdf"`
-	Status        string `json:"status" example:"on approval"`
-	WorkflowOrder int    `json:"workflow_order" example:"2"`
+	ID                uint   `json:"approval_id" example:"101"`
+	FileID            uint   `json:"file_id" example:"789"`
+	FileName          string `json:"file_name" example:"report.pdf"`
+	Status            string `json:"status" example:"on approval"`
+	WorkflowOrder     int    `json:"workflow_order" example:"2"`
+	WorkflowUserCount int    `json:"workflow_user_count"`
 }
 
 // Directory модель

@@ -25,6 +25,7 @@ var (
 
 var (
 	ErrFileNotFound                   = errors.New("file not found")
+	ErrEmptyFile                      = errors.New("empty file in MinIO")
 	ErrInvalidFileStatus              = errors.New("file is not in a draft state")
 	ErrDirectoryContainsNonDraftFiles = errors.New("directory contains files with status other than 'draft'")
 	ErrCannotDeleteNonDraftFile       = errors.New("cannot delete file with status other than 'draft'")

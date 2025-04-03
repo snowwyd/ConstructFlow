@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"path/filepath"
 	"service-file/internal/domain"
-	"strings"
-	"time"
+	"service-file/pkg/utils"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -41,9 +39,11 @@ func NewMinIOClient(cfg *Config) (*MinIOClient, error) {
 }
 
 func (m *MinIOClient) CreateBucket(ctx context.Context, bucketName string) error {
+	const op = "infrastructure.minio.client.CreateBucket"
+
 	exists, err := m.client.BucketExists(ctx, bucketName)
 	if err != nil {
-		return err
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	if !exists {
@@ -54,6 +54,8 @@ func (m *MinIOClient) CreateBucket(ctx context.Context, bucketName string) error
 }
 
 func (m *MinIOClient) UploadFile(ctx context.Context, bucketName string, objectName string, data []byte, contentType string) error {
+	const op = "infrastructure.minio.client.UploadFile"
+
 	_, err := m.client.PutObject(ctx, bucketName, objectName,
 		bytes.NewReader(data),
 		int64(len(data)),
@@ -61,42 +63,49 @@ func (m *MinIOClient) UploadFile(ctx context.Context, bucketName string, objectN
 			ContentType: contentType,
 		},
 	)
-	return err
+
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+
+	}
+	return nil
 }
 
-func (m *MinIOClient) UploadNewVersion(ctx context.Context, bucket string, baseKey string, data []byte, contentType string) (string, error) {
-	// Разделяем имя файла и расширение
-	ext := filepath.Ext(baseKey)
-	baseName := strings.TrimSuffix(baseKey, ext)
+func (m *MinIOClient) UploadNewVersion(ctx context.Context, bucket string, baseKey string, data []byte, contentType string, version int) (string, error) {
+	const op = "infrastructure.minio.client.UploadNewVersion"
+
+	base, ext := utils.ParseBaseName(baseKey)
 
 	// Формируем новое имя с версией
-	newKey := fmt.Sprintf("%s_v%d%s", baseName, time.Now().Unix(), ext)
+	newKey := fmt.Sprintf("%s_v%d%s", base, version, ext)
 
 	// Загружаем файл
 	err := m.UploadFile(ctx, bucket, newKey, data, contentType)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	return newKey, nil
 }
 
 func (m *MinIOClient) GetFile(ctx context.Context, bucket string, key string) (*minio.Object, error) {
+	const op = "infrastructure.minio.client.GetFile"
+
 	object, err := m.client.GetObject(ctx, bucket, key, minio.GetObjectOptions{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	// Проверяем существование файла
 	stat, err := object.Stat()
 	if err != nil {
 		object.Close()
-		return nil, domain.ErrFileNotFound
+		return nil, fmt.Errorf("%s: %w", op, domain.ErrFileNotFound)
 	}
 
 	if stat.Size == 0 {
 		object.Close()
-		return nil, fmt.Errorf("empty file in MinIO")
+		return nil, fmt.Errorf("%s: %w", op, domain.ErrEmptyFile)
 	}
 
 	return object, nil
