@@ -2,6 +2,7 @@
 
 ## Описание проекта
 
+
 Backend для системы управления файлами и папками с аутентификацией и авторизацией.  
 Реализованы следующие методы:
 
@@ -38,11 +39,10 @@ Backend для системы управления файлами и папка�
 
 ## Требования
 
+
 - Docker и docker-compose
 - Go 1.20+ (для локальной разработки)
-- [go-task](https://taskfile.dev/) для выполнения часто используемых команд (опционально)
 
----
 
 ## Локальная разработка
 
@@ -70,12 +70,12 @@ docker-compose up --build -d # если отсутствует go-task
 task build
 
 # Откатить контейнеры и очистить БД
-# Важно! При изменении данных в .env файле обязательно выполнить эту команду и потом запустить контейнеры
-docker-compose down -v # если отсутствует go-task
-task composedown
+docker-compose down -v
 ```
 
+
 Пример .env файла:
+
 
 ```
 APP_SECRET = your_app_secret
@@ -85,6 +85,7 @@ CONFIG_PATH = configs/local.yaml
 
 APP_PORT=8080
 ```
+
 
 configs/local.yaml обязательно такое значение, остальные на ваше усмотрение
 
@@ -102,10 +103,15 @@ docker-compose run --rm migrator
 
 ### 1. Авторизация (`POST /auth/login`)
 
+### 1. Авторизация (`POST /auth/login`)
+
 **Запрос:**
+
 
 ```json
 {
+	"login": "user3",
+	"password": "12345678"
 	"login": "user3",
 	"password": "12345678"
 }
@@ -113,8 +119,10 @@ docker-compose run --rm migrator
 
 **Ответ (200 OK):**
 
+
 ```json
 {
+	"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 	"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
@@ -130,10 +138,16 @@ docker-compose run --rm migrator
 
 ### 2. Регистрация (`POST /auth/register`)
 
+### 2. Регистрация (`POST /auth/register`)
+
 **Запрос:**
+
 
 ```json
 {
+	"login": "new_user",
+	"password": "secure_password",
+	"role_id": 2
 	"login": "new_user",
 	"password": "secure_password",
 	"role_id": 2
@@ -159,7 +173,10 @@ docker-compose run --rm migrator
 
 ### 3. Получение данных текущего пользователя (`GET /auth/me`)
 
+### 3. Получение данных текущего пользователя (`GET /auth/me`)
+
 **Заголовки:**
+
 
 ```http
 Authorization: Bearer <JWT_TOKEN>
@@ -167,8 +184,12 @@ Authorization: Bearer <JWT_TOKEN>
 
 **Ответ (200 OK):**
 
+
 ```json
 {
+	"id": 3,
+	"login": "user3",
+	"role": "admin"
 	"id": 3,
 	"login": "user3",
 	"role": "admin"
@@ -185,10 +206,14 @@ Authorization: Bearer <JWT_TOKEN>
 
 ### 4. Создание роли (`POST /auth/role`)
 
+### 4. Создание роли (`POST /auth/role`)
+
 **Запрос:**
+
 
 ```json
 {
+	"role_name": "new_role"
 	"role_name": "new_role"
 }
 ```
@@ -211,7 +236,10 @@ Authorization: Bearer <JWT_TOKEN>
 
 ### 5. Создание директории (`POST /directories/create`)
 
+### 5. Создание директории (`POST /directories/create`)
+
 **Заголовки:**
+
 
 ```http
 Authorization: Bearer <JWT_TOKEN>
@@ -221,8 +249,11 @@ Authorization: Bearer <JWT_TOKEN>
 
 **Запрос:**
 
+
 ```json
 {
+	"parent_path_id": 1,
+	"name": "Test project"
 	"parent_path_id": 1,
 	"name": "Test project"
 }
@@ -247,7 +278,10 @@ Authorization: Bearer <JWT_TOKEN>
 
 ### 6. Удаление директории (`DELETE /directories`)
 
+### 6. Удаление директории (`DELETE /directories`)
+
 **Заголовки:**
+
 
 ```http
 Authorization: Bearer <JWT_TOKEN>
@@ -257,8 +291,10 @@ Authorization: Bearer <JWT_TOKEN>
 
 **Запрос:**
 
+
 ```json
 {
+	"directory_id": 5
 	"directory_id": 5
 }
 ```
@@ -282,7 +318,10 @@ Authorization: Bearer <JWT_TOKEN>
 
 ### 7. Получение дерева файлов и директорий (`POST /directories`)
 
+### 7. Получение дерева файлов и директорий (`POST /directories`)
+
 **Заголовки:**
+
 
 ```http
 Authorization: Bearer <JWT_TOKEN>
@@ -292,16 +331,88 @@ Authorization: Bearer <JWT_TOKEN>
 
 **Параметры запроса:**
 
+
 ```json
 {
+	"is_archive": false
 	"is_archive": false
 }
 ```
 
 **Ответ (200 OK):**
 
+
 ```json
 {
+	"data": [
+		{
+			"id": 1,
+			"name_folder": "ROOT",
+			"status": "",
+			"files": [
+				{
+					"id": 1,
+					"name_file": "File1",
+					"status": "draft",
+					"directory_id": 1
+				},
+				{
+					"id": 2,
+					"name_file": "File2",
+					"status": "draft",
+					"directory_id": 1
+				}
+			]
+		},
+		{
+			"id": 2,
+			"name_folder": "Folder1",
+			"status": "",
+			"parent_path_id": 1,
+			"files": [
+				{
+					"id": 3,
+					"name_file": "File3",
+					"status": "draft",
+					"directory_id": 2
+				}
+			]
+		},
+		{
+			"id": 3,
+			"name_folder": "Folder2",
+			"status": "",
+			"parent_path_id": 1,
+			"files": [
+				{
+					"id": 4,
+					"name_file": "File4",
+					"status": "draft",
+					"directory_id": 3
+				}
+			]
+		},
+		{
+			"id": 4,
+			"name_folder": "Folder3",
+			"status": "",
+			"parent_path_id": 2,
+			"files": [
+				{
+					"id": 5,
+					"name_file": "File5",
+					"status": "draft",
+					"directory_id": 4
+				},
+				{
+					"id": 6,
+					"name_file": "File6",
+					"status": "draft",
+					"directory_id": 4
+				}
+			]
+		}
+	]
 	"data": [
 		{
 			"id": 1,
@@ -384,7 +495,10 @@ Authorization: Bearer <JWT_TOKEN>
 
 ### 8. Создание файла (`POST /files/upload`)
 
+### 8. Создание файла (`POST /files/upload`)
+
 **Заголовки:**
+
 
 ```http
 Authorization: Bearer <JWT_TOKEN>
@@ -394,8 +508,11 @@ Authorization: Bearer <JWT_TOKEN>
 
 **Запрос:**
 
+
 ```json
 {
+	"directory_id": 1,
+	"name": "New File.txt"
 	"directory_id": 1,
 	"name": "New File.txt"
 }
@@ -420,7 +537,10 @@ Authorization: Bearer <JWT_TOKEN>
 
 ### 9. Удаление файла (`DELETE /files`)
 
+### 9. Удаление файла (`DELETE /files`)
+
 **Заголовки:**
+
 
 ```http
 Authorization: Bearer <JWT_TOKEN>
@@ -430,8 +550,10 @@ Authorization: Bearer <JWT_TOKEN>
 
 **Запрос:**
 
+
 ```json
 {
+	"file_id": 7
 	"file_id": 7
 }
 ```
@@ -455,7 +577,10 @@ Authorization: Bearer <JWT_TOKEN>
 
 ### 10. Получение информации о файле (`GET /files/:file_id`)
 
+### 10. Получение информации о файле (`GET /files/:file_id`)
+
 **Заголовки:**
+
 
 ```http
 Authorization: Bearer <JWT_TOKEN>
@@ -465,12 +590,18 @@ Authorization: Bearer <JWT_TOKEN>
 
 **Параметры пути:**
 
+
 - `file_id`: Идентификатор файла (например, 1).
 
 **Ответ (200 OK):**
 
+
 ```json
 {
+	"id": 1,
+	"name_file": "File1",
+	"status": "draft",
+	"directory_id": 1
 	"id": 1,
 	"name_file": "File1",
 	"status": "draft",
@@ -492,6 +623,7 @@ Authorization: Bearer <JWT_TOKEN>
 
 **Заголовки:**
 
+
 ```http
 Authorization: Bearer <JWT_TOKEN>
 ```
@@ -499,6 +631,7 @@ Authorization: Bearer <JWT_TOKEN>
 В заголовок вставьте токен, который был сгенерирован при аутентификации.
 
 **Параметры пути:**
+
 
 - `file_id`: Идентификатор файла (например, 3).
 
@@ -523,6 +656,7 @@ Authorization: Bearer <JWT_TOKEN>
 
 **Заголовки:**
 
+
 ```http
 Authorization: Bearer <JWT_TOKEN>
 ```
@@ -530,6 +664,7 @@ Authorization: Bearer <JWT_TOKEN>
 В заголовок вставьте токен, который был сгенерирован при аутентификации.
 
 **Ответ (200 OK):**
+
 
 ```json
 [
@@ -553,6 +688,7 @@ Authorization: Bearer <JWT_TOKEN>
 ### 13. Подписание файла (`PUT /approval/{approval_id}/sign`)
 
 **Заголовки:**
+
 
 ```http
 Authorization: Bearer <JWT_TOKEN>
@@ -586,9 +722,9 @@ Authorization: Bearer <JWT_TOKEN>
 
 **Заголовки:**
 
+
 ```http
 Authorization: Bearer <JWT_TOKEN>
-Content-Type: application/json
 ```
 
 В заголовок вставьте токен, который был сгенерирован при аутентификации.
@@ -628,6 +764,7 @@ Content-Type: application/json
 Работает только, когда ставится последняя подпись
 
 **Заголовки:**
+
 
 ```http
 Authorization: Bearer <JWT_TOKEN>
@@ -683,10 +820,16 @@ Swagger-документация доступна по адресу:
 
 ## Структура ошибок
 
+
 Все ошибки возвращаются в формате (пример для invalid credentials):
+
 
 ```json
 {
+	"error": {
+		"code": "INVALID_CREDENTIALS",
+		"message": "Invalid login or password"
+	}
 	"error": {
 		"code": "INVALID_CREDENTIALS",
 		"message": "Invalid login or password"
@@ -695,6 +838,7 @@ Swagger-документация доступна по адресу:
 ```
 
 ## Структура проекта
+
 
 ```
 /backend
@@ -713,6 +857,8 @@ Swagger-документация доступна по адресу:
 
 ## Контакты
 
+
 По вопросам обращайтесь к **[Дане](https://github.com/snowwyd)** 😏
 
 <img src ="https://media.giphy.com/media/7dHKAiRnGDvbSAbT54/giphy.gif" />
+
