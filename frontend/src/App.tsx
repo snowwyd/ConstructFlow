@@ -7,6 +7,7 @@ import NavigationWrapper from './NavigationWrapper';
 import ApprovalEditorPage from './components/ApprovalEditorPage';
 import Auth from './components/Auth';
 import MainPage from './components/MainPage';
+import UsersPermissionsPage from './components/UsersPermissionsPage';
 import { store } from './store/store';
 import theme from './theme';
 
@@ -35,31 +36,6 @@ const ApprovalsPage = () => (
 	</Box>
 );
 
-// Placeholder component for Users management page
-const UsersPage = () => (
-	<Box sx={{ p: 4 }}>
-		<Paper
-			elevation={2}
-			sx={{
-				p: 4,
-				borderRadius: 3,
-				textAlign: 'center',
-				maxWidth: 800,
-				mx: 'auto',
-				bgcolor: theme => alpha(theme.palette.warning.light, 0.05),
-			}}
-		>
-			<Typography variant='h4' gutterBottom>
-				Управление правами и пользователями
-			</Typography>
-			<Typography variant='body1' color='text.secondary'>
-				Эта страница находится в разработке. Здесь будет отображаться список
-				пользователей и функции для управления их учетными записями и правами.
-			</Typography>
-		</Paper>
-	</Box>
-);
-
 const App = () => {
 	return (
 		<Provider store={store}>
@@ -70,9 +46,8 @@ const App = () => {
 						<Routes>
 							<Route path='/' element={<Auth />} />
 							<Route path='/main' element={<MainPage />} />
-							{/* Added routes for approvals, users management, and approval editor */}
 							<Route path='/approvals' element={<ApprovalsPage />} />
-							<Route path='/users' element={<UsersPage />} />
+							<Route path='/users' element={<UsersPermissionsPage />} />
 							<Route path='/approval-editor' element={<ApprovalEditorPage />} />
 						</Routes>
 					</NavigationWrapper>
