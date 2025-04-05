@@ -2,34 +2,36 @@ package http
 
 import (
 	"errors"
-	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 
 	"service-file/internal/domain"
-	"service-file/internal/domain/interfaces"
 	"service-file/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
-type TreeHandler struct {
-	directoryUsecase interfaces.DirectoryUsecase
-	fileUsecase      interfaces.FileUsecase
+type getTreeInput struct {
+	IsArchive bool `json:"is_archive"`
 }
 
-func NewTreeHandler(directoryUsecase interfaces.DirectoryUsecase, fileUsecase interfaces.FileUsecase) *TreeHandler {
-	return &TreeHandler{
-		directoryUsecase: directoryUsecase,
-		fileUsecase:      fileUsecase,
-	}
-}
-
+// GetTree godoc
+//
+//	@Summary		Получить файловое дерево
+//	@Description	Отдает дерево файлов, доступных конкретному пользователю. Если флаг isArchive = true, отдает полностью дерево с статусом "archive".
+//	@Tags			tree
+//	@Security		ApiKeyAuth
+//	@Param			input	body	getTreeInput	true	"Параметры для получения дерева (например, флаг isArchive)"
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	domain.FileResponse		"Дерево файлов успешно отображено"
+//	@Failure		400	{object}	domain.ErrorResponse	"Невалидный запрос"
+//	@Failure		401	{object}	domain.ErrorResponse	"Пользователь не авторизован"
+//	@Failure		403	{object}	domain.ErrorResponse	"Доступ к репозиторию запрещен"
+//	@Failure		500	{object}	domain.ErrorResponse	"Ошибка при получении дерева файлов"
+//	@Router			/directories [post]
 func (h *TreeHandler) GetTree(c *gin.Context) {
-	var req struct {
-		IsArchive bool `json:"is_archive"`
-	}
+	var req getTreeInput
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
@@ -56,6 +58,22 @@ func (h *TreeHandler) GetTree(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// GetFileInfo godoc
+//
+//	@Summary		Получить информацию о файле
+//	@Description	Отдает подробную информацию о файле по его ID. Если файл не найден – возвращает 404, если пользователь не имеет доступа – 403.
+//	@Tags			file
+//	@Security		ApiKeyAuth
+//	@Param			file_id	path	string	true	"ID файла (например, 123)"
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	domain.FileResponse		"Информация о файле"
+//	@Failure		400	{object}	domain.ErrorResponse	"Невалидный ID файла"
+//	@Failure		401	{object}	domain.ErrorResponse	"Пользователь не авторизован"
+//	@Failure		403	{object}	domain.ErrorResponse	"Доступ к файлу запрещен"
+//	@Failure		404	{object}	domain.ErrorResponse	"Файл не найден"
+//	@Failure		500	{object}	domain.ErrorResponse	"Ошибка при получении информации о файле"
+//	@Router			/files/{file_id} [get]
 func (h *TreeHandler) GetFileInfo(c *gin.Context) {
 	userID, err := utils.ExtractUserID(c)
 	if err != nil {
@@ -86,16 +104,35 @@ func (h *TreeHandler) GetFileInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, fileInfo)
 }
 
+type createDirectoryInput struct {
+	ParentPathID *uint  `json:"parent_path_id"`
+	Name         string `json:"name"`
+}
+
+// CreateDirectory godoc
+//
+//	@Summary		Создать директорию
+//	@Description	Создает новую директорию в файловой системе для пользователя. Обязательны поля parent_path_id и name.
+//	@Tags			directory
+//	@Security		ApiKeyAuth
+//	@Accept			json
+//	@Produce		json
+//	@Param			input	body		createDirectoryInput	true	"Параметры для создания директории"
+//	@Success		201		{string}	string					"Директория успешно создана"
+//	@Failure		400		{object}	domain.ErrorResponse	"Невалидный запрос или отсутствуют обязательные поля"
+//	@Failure		401		{object}	domain.ErrorResponse	"Пользователь не авторизован"
+//	@Failure		403		{object}	domain.ErrorResponse	"Доступ к директории запрещен"
+//	@Failure		404		{object}	domain.ErrorResponse	"Родительская директория не найдена"
+//	@Failure		409		{object}	domain.ErrorResponse	"Директория уже существует"
+//	@Failure		500		{object}	domain.ErrorResponse	"Ошибка при создании директории"
+//	@Router			/directories/create [post]
 func (h *TreeHandler) CreateDirectory(c *gin.Context) {
 	userID, err := utils.ExtractUserID(c)
 	if err != nil {
 		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
 		return
 	}
-	var req struct {
-		ParentPathID *uint  `json:"parent_path_id"`
-		Name         string `json:"name"`
-	}
+	var req createDirectoryInput
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
@@ -125,167 +162,27 @@ func (h *TreeHandler) CreateDirectory(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
-func (h *TreeHandler) UploadFile(c *gin.Context) {
-	userID, err := utils.ExtractUserID(c)
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
-		return
-	}
-
-	form, _ := c.MultipartForm()
-	files := form.File["file"]
-	if len(files) == 0 {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "MISSING_FILE", "No file uploaded")
-		return
-	}
-
-	fileHeader := files[0]
-	file, err := fileHeader.Open()
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusInternalServerError, "FILE_READ_ERROR", err.Error())
-		return
-	}
-	defer file.Close()
-
-	fileData, err := io.ReadAll(file)
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusInternalServerError, "FILE_READ_ERROR", err.Error())
-		return
-	}
-
-	directoryID, _ := strconv.Atoi(form.Value["directory_id"][0])
-	name := form.Value["name"][0]
-
-	// Определяем MIME-тип
-	contentType := fileHeader.Header.Get("Content-Type")
-	if contentType == "" {
-		contentType = "application/octet-stream" // Значение по умолчанию
-	}
-
-	err = h.fileUsecase.CreateFile(c.Request.Context(), uint(directoryID), name, fileData, contentType, userID)
-	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrDirectoryNotFound):
-			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "Directory not found")
-		case errors.Is(err, domain.ErrAccessDenied):
-			utils.SendErrorResponse(c, http.StatusForbidden, "ACCESS_DENIED", "User has no access to this directory")
-		case errors.Is(err, domain.ErrFileAlreadyExists):
-			utils.SendErrorResponse(c, http.StatusConflict, "CONFLICT", "File already exists")
-		default:
-			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to upload file")
-		}
-		return
-	}
-
-	c.Status(http.StatusCreated)
+type deleteDirectoryInput struct {
+	DirectoryID uint `json:"directory_id"`
 }
 
-func (h *TreeHandler) DownloadFileDirect(c *gin.Context) {
-	fileID, err := strconv.ParseUint(c.Param("file_id"), 10, 64)
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "Invalid file ID")
-		return
-	}
-
-	userID, err := utils.ExtractUserID(c)
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
-		return
-	}
-
-	fileMeta, fileObject, err := h.fileUsecase.DownloadFileDirect(c.Request.Context(), uint(fileID), userID)
-	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrFileNotFound):
-			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "File not found")
-		case errors.Is(err, domain.ErrAccessDenied):
-			utils.SendErrorResponse(c, http.StatusForbidden, "ACCESS_DENIED", "No access to file")
-		default:
-			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to retrieve file")
-		}
-		return
-	}
-	defer fileObject.Close()
-
-	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileMeta.Name))
-	c.Header("Content-Type", fileMeta.ContentType)
-	c.Header("Content-Length", strconv.FormatInt(fileMeta.Size, 10))
-
-	// Потоковая передача файла
-	buf := make([]byte, 1024*1024) // 1MB буфер
-	c.Stream(func(w io.Writer) bool {
-		n, err := fileObject.Read(buf)
-		if n > 0 {
-			if _, writeErr := w.Write(buf[:n]); writeErr != nil {
-				c.Error(writeErr)
-				return false
-			}
-		}
-		if err != nil {
-			if err == io.EOF {
-				return false
-			}
-			c.Error(err)
-			return false
-		}
-		return true
-	})
-}
-
-func (h *TreeHandler) UpdateFile(c *gin.Context) {
-	fileIDStr := c.Param("file_id")
-	fileID, err := strconv.ParseUint(fileIDStr, 10, 64)
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid file ID")
-		return
-	}
-
-	userID, err := utils.ExtractUserID(c)
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
-		return
-	}
-
-	form, err := c.MultipartForm()
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid multipart form")
-		return
-	}
-
-	files := form.File["file"]
-	if len(files) == 0 {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "MISSING_FILE", "No file uploaded")
-		return
-	}
-	file, err := files[0].Open()
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "FILE_READ_ERROR", err.Error())
-		return
-	}
-	defer file.Close()
-
-	fileData, err := io.ReadAll(file)
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusInternalServerError, "FILE_READ_ERROR", err.Error())
-		return
-	}
-
-	err = h.fileUsecase.UpdateFile(c.Request.Context(), uint(fileID), fileData, userID)
-	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrFileNotFound):
-			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "File not found")
-		case errors.Is(err, domain.ErrAccessDenied):
-			utils.SendErrorResponse(c, http.StatusForbidden, "ACCESS_DENIED", "No access to file")
-		default:
-			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to update file")
-		}
-		return
-	}
-
-	c.Status(http.StatusCreated)
-}
-
+// DeleteDirectory godoc
+//
+//	@Summary		Удалить директорию
+//	@Description	Удаляет директорию по её ID, переданному в теле запроса. Если директория не найдена, содержит недопустимые файлы или доступ запрещен – возвращает ошибку.
+//	@Tags			directory
+//	@Security		ApiKeyAuth
+//	@Accept			json
+//	@Produce		json
+//	@Param			input	body		deleteDirectoryInput	true	"Параметры для удаления директории"
+//	@Success		204		{string}	string					"Директория успешно удалена"
+//	@Failure		400		{object}	domain.ErrorResponse	"Невалидный запрос или отсутствуют обязательные поля"
+//	@Failure		401		{object}	domain.ErrorResponse	"Пользователь не авторизован"
+//	@Failure		403		{object}	domain.ErrorResponse	"Доступ к директории запрещен"
+//	@Failure		404		{object}	domain.ErrorResponse	"Директория не найдена"
+//	@Failure		409		{object}	domain.ErrorResponse	"Директория содержит файлы, не соответствующие черновикам"
+//	@Failure		500		{object}	domain.ErrorResponse	"Ошибка при удалении директории"
+//	@Router			/directories [delete]
 func (h *TreeHandler) DeleteDirectory(c *gin.Context) {
 	userID, err := utils.ExtractUserID(c)
 	if err != nil {
@@ -293,9 +190,7 @@ func (h *TreeHandler) DeleteDirectory(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		DirectoryID uint `json:"directory_id"`
-	}
+	var req deleteDirectoryInput
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
@@ -325,6 +220,27 @@ func (h *TreeHandler) DeleteDirectory(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+type deleteFileInput struct {
+	FileID uint `json:"file_id"`
+}
+
+// DeleteFile godoc
+//
+//	@Summary		Удалить файл
+//	@Description	Удаляет файл по его ID, переданному в теле запроса. Если файл не найден или доступ запрещен – возвращает ошибку.
+//	@Tags			file
+//	@Security		ApiKeyAuth
+//	@Accept			json
+//	@Produce		json
+//	@Param			input	body		deleteFileInput			true	"Параметры для удаления файла"
+//	@Success		204		{string}	string					"Файл успешно удален"
+//	@Failure		400		{object}	domain.ErrorResponse	"Невалидный запрос или отсутствуют обязательные поля"
+//	@Failure		401		{object}	domain.ErrorResponse	"Пользователь не авторизован"
+//	@Failure		403		{object}	domain.ErrorResponse	"Доступ к файлу запрещен"
+//	@Failure		404		{object}	domain.ErrorResponse	"Файл не найден"
+//	@Failure		409		{object}	domain.ErrorResponse	"Нельзя удалить файл, не являющийся черновиком"
+//	@Failure		500		{object}	domain.ErrorResponse	"Ошибка при удалении файла"
+//	@Router			/files [delete]
 func (h *TreeHandler) DeleteFile(c *gin.Context) {
 	userID, err := utils.ExtractUserID(c)
 	if err != nil {
@@ -332,9 +248,7 @@ func (h *TreeHandler) DeleteFile(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		FileID uint `json:"file_id"`
-	}
+	var req deleteFileInput
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
@@ -362,31 +276,4 @@ func (h *TreeHandler) DeleteFile(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
-}
-
-func (h *TreeHandler) ConvertSTPToGLTF(c *gin.Context) {
-	fileID, err := strconv.ParseUint(c.Param("file_id"), 10, 64)
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "Invalid file ID")
-		return
-	}
-
-	userID, err := utils.ExtractUserID(c)
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
-		return
-	}
-
-	outputPath, err := h.fileUsecase.ConvertSTPToGLTF(c.Request.Context(), uint(fileID), userID)
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusInternalServerError, "CONVERSION_ERROR", err.Error())
-		return
-	}
-
-	// Устанавливаем заголовки для GLB-файла
-	c.Header("Content-Type", "model/gltf-binary")
-	c.Header("Content-Disposition", "inline; filename=\"model.glb\"")
-
-	// Отдаём файл
-	c.File(outputPath)
 }

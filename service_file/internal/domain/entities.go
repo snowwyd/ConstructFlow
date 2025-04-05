@@ -19,6 +19,8 @@ type FileResponse struct {
 	DirectoryID uint   `json:"directory_id" example:"123"`
 }
 
+// ErrorResponse godoc
+// @Description Стандартизированный ответ при ошибке API
 type ErrorResponse struct {
 	Error struct {
 		Code    string `json:"code" example:"NOT_FOUND"`

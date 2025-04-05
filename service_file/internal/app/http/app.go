@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type App struct {
@@ -63,6 +65,8 @@ func (a *App) Run() error {
 }
 
 func setupRoutes(router *gin.Engine, treeHandler *controller.TreeHandler, cfg *config.Config) {
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	directoriesGroup := router.Group("/directories", middleware.AuthMiddleware(cfg))
 	{
 		directoriesGroup.POST("/create", treeHandler.CreateDirectory)

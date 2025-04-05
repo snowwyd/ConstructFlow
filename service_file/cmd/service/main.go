@@ -8,7 +8,17 @@ import (
 	"service-file/pkg/config"
 	"service-file/pkg/logger"
 	"syscall"
+
+	_ "service-file/docs"
 )
+
+//	@title			Constructflow File Microservice
+//	@version		0.2
+//	@description	API File Microservice for Constructflow
+
+//	@securityDefinitions.apiKey	ApiKeyAuth
+//	@in							header
+//	@name						Authorization
 
 func main() {
 	cfg := config.MustLoad()
