@@ -319,10 +319,10 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 		if (!apiResponse?.data) return false;
 
 		return apiResponse.data.some(
-			directory =>
+			(directory: Directory) =>
 				directory.parent_path_id &&
 				!apiResponse.data.some(
-					parentDir => parentDir.id === directory.parent_path_id
+					(parentDir: Directory) => parentDir.id === directory.parent_path_id
 				)
 		);
 	}, [apiResponse]);
@@ -475,13 +475,14 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 
 									const directoryId = parseInt(itemId.replace('dir-', ''), 10);
 									const directory = apiResponse?.data?.find(
-										dir => dir.id === directoryId
+										(dir: Directory) => dir.id === directoryId
 									);
 
 									return (
 										directory?.parent_path_id &&
 										!apiResponse?.data?.some(
-											parentDir => parentDir.id === directory.parent_path_id
+											(parentDir: Directory) =>
+												parentDir.id === directory.parent_path_id
 										)
 									);
 								})();
