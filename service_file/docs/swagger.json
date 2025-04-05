@@ -1,0 +1,729 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API File Microservice for Constructflow",
+        "title": "Constructflow File Microservice",
+        "contact": {},
+        "version": "0.2"
+    },
+    "paths": {
+        "/directories": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Отдает дерево файлов, доступных конкретному пользователю. Если флаг isArchive = true, отдает полностью дерево с статусом \"archive\".",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tree"
+                ],
+                "summary": "Получить файловое дерево",
+                "parameters": [
+                    {
+                        "description": "Параметры для получения дерева (например, флаг isArchive)",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller.getTreeInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Дерево файлов успешно отображено",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.FileResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный запрос",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ к репозиторию запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при получении дерева файлов",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Удаляет директорию по её ID, переданному в теле запроса. Если директория не найдена, содержит недопустимые файлы или доступ запрещен – возвращает ошибку.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "directory"
+                ],
+                "summary": "Удалить директорию",
+                "parameters": [
+                    {
+                        "description": "Параметры для удаления директории",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller.deleteDirectoryInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Директория успешно удалена",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный запрос или отсутствуют обязательные поля",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ к директории запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Директория не найдена",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Директория содержит файлы, не соответствующие черновикам",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при удалении директории",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/directories/create": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Создает новую директорию в файловой системе для пользователя. Обязательны поля parent_path_id и name.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "directory"
+                ],
+                "summary": "Создать директорию",
+                "parameters": [
+                    {
+                        "description": "Параметры для создания директории",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller.createDirectoryInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Директория успешно создана",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный запрос или отсутствуют обязательные поля",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ к директории запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Родительская директория не найдена",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Директория уже существует",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при создании директории",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/files": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Удаляет файл по его ID, переданному в теле запроса. Если файл не найден или доступ запрещен – возвращает ошибку.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "file"
+                ],
+                "summary": "Удалить файл",
+                "parameters": [
+                    {
+                        "description": "Параметры для удаления файла",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controller.deleteFileInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Файл успешно удален",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный запрос или отсутствуют обязательные поля",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ к файлу запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Файл не найден",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Нельзя удалить файл, не являющийся черновиком",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при удалении файла",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/files/upload": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Загружает файл в указанную директорию. Данные передаются в формате multipart/form-data: файл (file), ID директории (directory_id) и имя файла (name).",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "file"
+                ],
+                "summary": "Загрузить файл",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Файл для загрузки",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID директории, куда загружается файл",
+                        "name": "directory_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Имя файла",
+                        "name": "name",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Файл успешно загружен",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Нет файла или переданы некорректные данные",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ к директории запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Директория не найдена",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Файл с таким именем уже существует",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при загрузке файла",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/files/{file_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Отдает подробную информацию о файле по его ID. Если файл не найден – возвращает 404, если пользователь не имеет доступа – 403.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "file"
+                ],
+                "summary": "Получить информацию о файле",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID файла (например, 123)",
+                        "name": "file_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Информация о файле",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.FileResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный ID файла",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ к файлу запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Файл не найден",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при получении информации о файле",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Обновляет содержимое файла, переданное через multipart/form-data. Если файл не найден или нет доступа – возвращает соответствующую ошибку.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "file"
+                ],
+                "summary": "Обновить файл",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID файла (например, 123)",
+                        "name": "file_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Новый файл для загрузки",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Файл успешно обновлен",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный ID файла или данные формы",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ к файлу запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Файл не найден",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при обновлении файла",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/files/{file_id}/convert/gltf": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Конвертирует файл STP в формат GLTF и возвращает GLB-файл. Если конвертация завершается ошибкой – возвращает сообщение об ошибке.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "file"
+                ],
+                "summary": "Конвертировать STP в GLTF",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID исходного STP файла (например, 123)",
+                        "name": "file_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "GLB-файл для просмотра",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный ID файла",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при конвертации файла",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/files/{file_id}/download-direct": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Отдает файл для скачивания в виде потока. Если файл не найден – возвращает 404, а при отсутствии доступа – 403.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "file"
+                ],
+                "summary": "Скачать файл напрямую",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID файла (например, 123)",
+                        "name": "file_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Файл для скачивания",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный ID файла",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не авторизован",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ к файлу запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Файл не найден",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при получении файла",
+                        "schema": {
+                            "$ref": "#/definitions/service-file_internal_domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "internal_controller.createDirectoryInput": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "parent_path_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_controller.deleteDirectoryInput": {
+            "type": "object",
+            "properties": {
+                "directory_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_controller.deleteFileInput": {
+            "type": "object",
+            "properties": {
+                "file_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_controller.getTreeInput": {
+            "type": "object",
+            "properties": {
+                "is_archive": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "service-file_internal_domain.ErrorResponse": {
+            "description": "Стандартизированный ответ при ошибке API",
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "object",
+                    "properties": {
+                        "code": {
+                            "type": "string",
+                            "example": "NOT_FOUND"
+                        },
+                        "message": {
+                            "type": "string",
+                            "example": "Resource not found"
+                        }
+                    }
+                }
+            }
+        },
+        "service-file_internal_domain.FileResponse": {
+            "type": "object",
+            "properties": {
+                "directory_id": {
+                    "type": "integer",
+                    "example": 123
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 789
+                },
+                "name_file": {
+                    "type": "string",
+                    "example": "report.pdf"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "draft"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

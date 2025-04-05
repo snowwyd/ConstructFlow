@@ -12,6 +12,14 @@ import (
 	_ "service-core/docs"
 )
 
+// @title Constructflow Core
+// @version 0.2
+// @description API Core Microservice for Constructflow
+
+// @securityDefinitions.apiKey ApiKeyAuth
+// @in header
+// @name Authorization
+
 func main() {
 	cfg := config.MustLoad()
 

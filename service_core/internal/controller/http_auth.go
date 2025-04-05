@@ -20,25 +20,26 @@ func NewAuthHandler(usecase interfaces.AuthUsecase) *AuthHandler {
 	return &AuthHandler{usecase: usecase}
 }
 
+type loginInput struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+}
+
 // Login godoc
 // @Summary Аутентификация пользователя
 // @Description Возвращает JWT токен при успешной аутентификации
 // @Tags auth
-// @Param login body string true "Логин для входа"
-// @Param password body string true "Пароль для входа"
 // @Accept json
 // @Produce json
+// @Param input body loginInput true "Данные для входа"
 // @Success 200 {object} map[string]string "Токен доступа"
 // @Failure 400 {object} domain.ErrorResponse "Неверный запрос"
 // @Failure 401 {object} domain.ErrorResponse "Неверные учетные данные"
 // @Failure 404 {object} domain.ErrorResponse "Пользователь не найден"
 // @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера"
-// @Router /api/v1/auth/login [post]
+// @Router /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
-	var req struct {
-		Login    string `json:"login"`
-		Password string `json:"password"`
-	}
+	var req loginInput
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
@@ -78,27 +79,27 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
+type registerInput struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+	RoleID   uint   `json:"role_id"`
+}
+
 // RegisterUser godoc
 // @Summary Регистрация нового пользователя
-// @Description Регистрирует нового пользователя и возвращает его ID
+// @Description Регистрирует нового пользователя на основе предоставленных данных (логин, пароль, ID роли) и возвращает HTTP статус 201 при успешной регистрации.
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param login body string true "Логин пользователя"
-// @Param password body string true "Пароль пользователя"
-// @Param role_id body uint true "ID роли, назначенной пользователю"
-// @Success 201 {object} map[string]uint "ID созданного пользователя"
-// @Failure 400 {object} domain.ErrorResponse "Неверный запрос"
-// @Failure 409 {object} domain.ErrorResponse "Пользователь с таким логином уже существует"
-// @Failure 404 {object} domain.ErrorResponse "Роль не найдена"
-// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера"
-// @Router /api/v1/auth/register [post]
+// @Param input body registerInput true "Данные для регистрации пользователя"
+// @Success 201 {object} nil "Пользователь успешно зарегистрирован. Тело ответа пустое."
+// @Failure 400 {object} domain.ErrorResponse "Неверный запрос: отсутствуют обязательные поля или некорректный формат данных."
+// @Failure 409 {object} domain.ErrorResponse "Конфликт: пользователь с таким логином уже существует."
+// @Failure 404 {object} domain.ErrorResponse "Роль с указанным ID не найдена."
+// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера: не удалось зарегистрировать пользователя."
+// @Router /auth/register [post]
 func (h *AuthHandler) RegisterUser(c *gin.Context) {
-	var req struct {
-		Login    string `json:"login"`
-		Password string `json:"password"`
-		RoleID   uint   `json:"role_id"`
-	}
+	var req registerInput
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
@@ -129,15 +130,15 @@ func (h *AuthHandler) RegisterUser(c *gin.Context) {
 
 // GetCurrentUser godoc
 // @Summary Получение информации о текущем пользователе
-// @Description Возвращает информацию о пользователе на основе JWT токена
+// @Description Возвращает информацию о пользователе на основе JWT токена, извлеченного из заголовка Authorization.
 // @Tags auth
-// @Security JWT
+// @Security ApiKeyAuth
 // @Produce json
 // @Success 200 {object} domain.GetCurrentUserResponse "Информация о пользователе"
-// @Failure 401 {object} domain.ErrorResponse "Не авторизован"
-// @Failure 404 {object} domain.ErrorResponse "Пользователь не найден"
-// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера"
-// @Router /api/v1/auth/me [get]
+// @Failure 401 {object} domain.ErrorResponse "Не авторизован: отсутствует или недействителен JWT токен."
+// @Failure 404 {object} domain.ErrorResponse "Пользователь не найден: пользователь с указанным ID в токене не существует."
+// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера: не удалось получить информацию о пользователе."
+// @Router /auth/me [get]
 func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 	userID, err := utils.ExtractUserID(c)
 	if err != nil {
@@ -160,22 +161,24 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 	c.JSON(http.StatusOK, userResponse)
 }
 
+type registerRoleInput struct {
+	RoleName string `json:"role_name"`
+}
+
 // RegisterRole godoc
 // @Summary Регистрация новой роли
-// @Description Регистрирует новую роль и возвращает её ID
+// @Description Регистрирует новую роль на основе предоставленного названия и возвращает HTTP статус 201 при успешной регистрации.
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param role_name body string true "Название роли"
+// @Param input body registerRoleInput true "Название роли"
 // @Success 201 {object} map[string]uint "ID созданной роли"
-// @Failure 400 {object} domain.ErrorResponse "Неверный запрос"
-// @Failure 409 {object} domain.ErrorResponse "Роль с таким названием уже существует"
-// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера"
-// @Router /api/v1/auth/role [post]
+// @Failure 400 {object} domain.ErrorResponse "Неверный запрос: отсутствует название роли или некорректный формат данных."
+// @Failure 409 {object} domain.ErrorResponse "Конфликт: роль с таким названием уже существует."
+// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера: не удалось зарегистрировать роль."
+// @Router /auth/role [post]
 func (h *AuthHandler) RegisterRole(c *gin.Context) {
-	var req struct {
-		RoleName string `json:"role_name"`
-	}
+	var req registerRoleInput
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")

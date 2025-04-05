@@ -22,17 +22,18 @@ func NewApprovalHandler(usecase interfaces.ApprovalUsecase) *ApprovalHandler {
 }
 
 // ApproveFile godoc
-// @Summary Одобрить файл
-// @Description Отправляет файл на одобрение
+// @Summary Отправить файл на согласование
+// @Description Переводит файл в статус "на согласовании". Файл должен находиться в состоянии черновика.
 // @Tags approval
-// @Param file_id path uint true "ID файла"
+// @Security ApiKeyAuth
+// @Param file_id path string true "ID файла (числовой формат, например: 123)"
 // @Accept json
 // @Produce json
-// @Success 200 {object} map[string]string "Файл отправлен на одобрение"
-// @Failure 400 {object} domain.ErrorResponse "Неверный ID файла или файл не в состоянии черновика"
-// @Failure 404 {object} domain.ErrorResponse "Файл не найден"
-// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера"
-// @Router /api/v1/approval/{file_id}/approve [post]
+// @Success 201 {object} nil "Файл успешно отправлен на согласование"
+// @Failure 400 {object} domain.ErrorResponse "Невалидный ID файла или файл не в статусе 'черновик'"
+// @Failure 404 {object} domain.ErrorResponse "Файл с указанным ID не найден"
+// @Failure 500 {object} domain.ErrorResponse "Ошибка при изменении статуса файла"
+// @Router /files/{file_id}/approve [put]
 func (h *ApprovalHandler) ApproveFile(c *gin.Context) {
 	fileIDStr := c.Param("file_id")
 	fileID, err := strconv.ParseUint(fileIDStr, 10, 64)
@@ -58,15 +59,16 @@ func (h *ApprovalHandler) ApproveFile(c *gin.Context) {
 }
 
 // GetApprovalsByUser godoc
-// @Summary Получить одобрения пользователя
-// @Description Возвращает список одобрений для текущего пользователя
+// @Summary Получить список согласований пользователя
+// @Description Возвращает все согласования, в которых участвует текущий пользователь
 // @Tags approval
+// @Security ApiKeyAuth
 // @Accept json
 // @Produce json
-// @Success 200 {array} domain.Approval "Список одобрений"
-// @Failure 401 {object} domain.ErrorResponse "Пользователь не аутентифицирован"
-// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера"
-// @Router /api/v1/approvals [get]
+// @Success 200 {array} domain.Approval "Список согласований"
+// @Failure 401 {object} domain.ErrorResponse "Отсутствует/недействителен API-ключ"
+// @Failure 500 {object} domain.ErrorResponse "Ошибка при получении данных"
+// @Router /file-approvals [get]
 func (h *ApprovalHandler) GetApprovalsByUser(c *gin.Context) {
 	userID, err := utils.ExtractUserID(c)
 	if err != nil {
@@ -84,19 +86,20 @@ func (h *ApprovalHandler) GetApprovalsByUser(c *gin.Context) {
 }
 
 // SignApproval godoc
-// @Summary Подписать одобрение
-// @Description Подписание одобрения указанным пользователем
+// @Summary Подписать согласование
+// @Description Подтверждает согласование текущим пользователем. Пользователь должен иметь права на подписание.
 // @Tags approval
-// @Param approval_id path uint true "ID одобрения"
+// @Security ApiKeyAuth
+// @Param approval_id path string true "ID согласования (числовой формат, например: 456)"
 // @Accept json
 // @Produce json
-// @Success 200 {object} map[string]string "Одобрение подписано успешно"
-// @Failure 400 {object} domain.ErrorResponse "Неверный ID одобрения"
-// @Failure 401 {object} domain.ErrorResponse "Пользователь не аутентифицирован"
-// @Failure 403 {object} domain.ErrorResponse "Нет прав для подписания или требуется завершение"
-// @Failure 404 {object} domain.ErrorResponse "Одобрение не найдено"
-// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера"
-// @Router /api/v1/approval/{approval_id}/sign [post]
+// @Success 204 {object} nil "Согласование успешно подписано"
+// @Failure 400 {object} domain.ErrorResponse "Невалидный ID согласования"
+// @Failure 401 {object} domain.ErrorResponse "Отсутствует/недействителен API-ключ"
+// @Failure 403 {object} domain.ErrorResponse "Недостаточно прав или требуется завершение согласования"
+// @Failure 404 {object} domain.ErrorResponse "Согласование не найдено"
+// @Failure 500 {object} domain.ErrorResponse "Ошибка при обработке подписи"
+// @Router /file-approvals/{approval_id}/sign [put]
 func (h *ApprovalHandler) SignApproval(c *gin.Context) {
 	approvalIDStr := c.Param("approval_id")
 	approvalID, err := strconv.ParseUint(approvalIDStr, 10, 64)
@@ -127,21 +130,26 @@ func (h *ApprovalHandler) SignApproval(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+type annotateApprovalInput struct {
+	Message string `json:"message"`
+}
+
 // AnnotateApproval godoc
-// @Summary Добавить аннотацию к одобрению
-// @Description Добавляет сообщение (аннотацию) к одобрению
+// @Summary Добавить комментарий к согласованию
+// @Description Добавляет примечание к согласованию. Пользователь должен участвовать в этом согласовании.
 // @Tags approval
-// @Param approval_id path uint true "ID одобрения"
-// @Param message body string true "Текст аннотации"
+// @Security ApiKeyAuth
+// @Param approval_id path string true "ID согласования (числовой формат)"
+// @Param message body annotateApprovalInput true "Текст примечания"
 // @Accept json
 // @Produce json
-// @Success 200 {object} map[string]string "Аннотация добавлена успешно"
-// @Failure 400 {object} domain.ErrorResponse "Неверный ID одобрения или тело запроса"
-// @Failure 401 {object} domain.ErrorResponse "Пользователь не аутентифицирован"
-// @Failure 403 {object} domain.ErrorResponse "Нет прав для добавления аннотации"
-// @Failure 404 {object} domain.ErrorResponse "Одобрение не найдено"
-// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера"
-// @Router /api/v1/approval/{approval_id}/annotate [post]
+// @Success 204 {object} nil "Примечание добавлено"
+// @Failure 400 {object} domain.ErrorResponse "Невалидный ID или тело запроса"
+// @Failure 401 {object} domain.ErrorResponse "Отсутствует/недействителен API-ключ"
+// @Failure 403 {object} domain.ErrorResponse "Пользователь не участвует в согласовании"
+// @Failure 404 {object} domain.ErrorResponse "Согласование не найдено"
+// @Failure 500 {object} domain.ErrorResponse "Ошибка при добавлении примечания"
+// @Router /file-approvals/{approval_id}/annotate [put]
 func (h *ApprovalHandler) AnnotateApproval(c *gin.Context) {
 	approvalIDStr := c.Param("approval_id")
 	approvalID, err := strconv.ParseUint(approvalIDStr, 10, 64)
@@ -150,9 +158,7 @@ func (h *ApprovalHandler) AnnotateApproval(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		Message string `json:"message"`
-	}
+	var req annotateApprovalInput
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
 		return
@@ -180,19 +186,20 @@ func (h *ApprovalHandler) AnnotateApproval(c *gin.Context) {
 }
 
 // FinalizeApproval godoc
-// @Summary Завершить одобрение
-// @Description Завершает процесс одобрения для указанного одобрения
+// @Summary Завершить согласование
+// @Description Завершает процесс согласования. Доступно только последнему участнику в цепочке.
 // @Tags approval
-// @Param approval_id path uint true "ID одобрения"
+// @Security ApiKeyAuth
+// @Param approval_id path string true "ID согласования (числовой формат)"
 // @Accept json
 // @Produce json
-// @Success 200 {object} map[string]string "Одобрение завершено успешно"
-// @Failure 400 {object} domain.ErrorResponse "Неверный ID одобрения"
-// @Failure 401 {object} domain.ErrorResponse "Пользователь не аутентифицирован"
-// @Failure 403 {object} domain.ErrorResponse "Только последний пользователь может завершить"
-// @Failure 404 {object} domain.ErrorResponse "Одобрение не найдено"
-// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера"
-// @Router /api/v1/approval/{approval_id}/finalize [post]
+// @Success 204 {object} nil "Согласование завершено"
+// @Failure 400 {object} domain.ErrorResponse "Невалидный ID согласования"
+// @Failure 401 {object} domain.ErrorResponse "Отсутствует/недействителен API-ключ"
+// @Failure 403 {object} domain.ErrorResponse "Только последний участник может завершить согласование"
+// @Failure 404 {object} domain.ErrorResponse "Согласование не найдено"
+// @Failure 500 {object} domain.ErrorResponse "Ошибка при завершении согласования"
+// @Router /file-approvals/{approval_id}/finalize [put]
 func (h *ApprovalHandler) FinalizeApproval(c *gin.Context) {
 	approvalIDStr := c.Param("approval_id")
 	approvalID, err := strconv.ParseUint(approvalIDStr, 10, 64)

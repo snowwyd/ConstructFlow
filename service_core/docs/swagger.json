@@ -1,305 +1,13 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "API Core Microservice for Constructflow",
+        "title": "Constructflow Core",
+        "contact": {},
+        "version": "0.2"
     },
     "paths": {
-        "/api/v1/approval/{approval_id}/annotate": {
-            "post": {
-                "description": "Добавляет сообщение (аннотацию) к одобрению",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "approval"
-                ],
-                "summary": "Добавить аннотацию к одобрению",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID одобрения",
-                        "name": "approval_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Текст аннотации",
-                        "name": "message",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Аннотация добавлена успешно",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный ID одобрения или тело запроса",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Пользователь не аутентифицирован",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Нет прав для добавления аннотации",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Одобрение не найдено",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/approval/{approval_id}/finalize": {
-            "post": {
-                "description": "Завершает процесс одобрения для указанного одобрения",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "approval"
-                ],
-                "summary": "Завершить одобрение",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID одобрения",
-                        "name": "approval_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Одобрение завершено успешно",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный ID одобрения",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Пользователь не аутентифицирован",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Только последний пользователь может завершить",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Одобрение не найдено",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/approval/{approval_id}/sign": {
-            "post": {
-                "description": "Подписание одобрения указанным пользователем",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "approval"
-                ],
-                "summary": "Подписать одобрение",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID одобрения",
-                        "name": "approval_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Одобрение подписано успешно",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный ID одобрения",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Пользователь не аутентифицирован",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Нет прав для подписания или требуется завершение",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Одобрение не найдено",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/approval/{file_id}/approve": {
-            "post": {
-                "description": "Отправляет файл на одобрение",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "approval"
-                ],
-                "summary": "Одобрить файл",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID файла",
-                        "name": "file_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Файл отправлен на одобрение",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный ID файла или файл не в состоянии черновика",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Файл не найден",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/approvals": {
-            "get": {
-                "description": "Возвращает список одобрений для текущего пользователя",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "approval"
-                ],
-                "summary": "Получить одобрения пользователя",
-                "responses": {
-                    "200": {
-                        "description": "Список одобрений",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/domain.Approval"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Пользователь не аутентифицирован",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/auth/login": {
+        "/auth/login": {
             "post": {
                 "description": "Возвращает JWT токен при успешной аутентификации",
                 "consumes": [
@@ -314,21 +22,12 @@
                 "summary": "Аутентификация пользователя",
                 "parameters": [
                     {
-                        "description": "Логин для входа",
-                        "name": "login",
+                        "description": "Данные для входа",
+                        "name": "input",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "Пароль для входа",
-                        "name": "password",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/internal_controller.loginInput"
                         }
                     }
                 ],
@@ -345,38 +44,38 @@
                     "400": {
                         "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Неверные учетные данные",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Пользователь не найден",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Внутренняя ошибка сервера",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/api/v1/auth/me": {
+        "/auth/me": {
             "get": {
                 "security": [
                     {
-                        "JWT": []
+                        "ApiKeyAuth": []
                     }
                 ],
-                "description": "Возвращает информацию о пользователе на основе JWT токена",
+                "description": "Возвращает информацию о пользователе на основе JWT токена, извлеченного из заголовка Authorization.",
                 "produces": [
                     "application/json"
                 ],
@@ -388,33 +87,33 @@
                     "200": {
                         "description": "Информация о пользователе",
                         "schema": {
-                            "$ref": "#/definitions/domain.GetCurrentUserResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.GetCurrentUserResponse"
                         }
                     },
                     "401": {
-                        "description": "Не авторизован",
+                        "description": "Не авторизован: отсутствует или недействителен JWT токен.",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Пользователь не найден",
+                        "description": "Пользователь не найден: пользователь с указанным ID в токене не существует.",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Внутренняя ошибка сервера",
+                        "description": "Внутренняя ошибка сервера: не удалось получить информацию о пользователе.",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/api/v1/auth/register": {
+        "/auth/register": {
             "post": {
-                "description": "Регистрирует нового пользователя и возвращает его ID",
+                "description": "Регистрирует нового пользователя на основе предоставленных данных (логин, пароль, ID роли) и возвращает HTTP статус 201 при успешной регистрации.",
                 "consumes": [
                     "application/json"
                 ],
@@ -427,73 +126,49 @@
                 "summary": "Регистрация нового пользователя",
                 "parameters": [
                     {
-                        "description": "Логин пользователя",
-                        "name": "login",
+                        "description": "Данные для регистрации пользователя",
+                        "name": "input",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "Пароль пользователя",
-                        "name": "password",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "ID роли, назначенной пользователю",
-                        "name": "role_id",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
+                            "$ref": "#/definitions/internal_controller.registerInput"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "ID созданного пользователя",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "integer"
-                            }
-                        }
+                        "description": "Пользователь успешно зарегистрирован. Тело ответа пустое."
                     },
                     "400": {
-                        "description": "Неверный запрос",
+                        "description": "Неверный запрос: отсутствуют обязательные поля или некорректный формат данных.",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Роль не найдена",
+                        "description": "Роль с указанным ID не найдена.",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "409": {
-                        "description": "Пользователь с таким логином уже существует",
+                        "description": "Конфликт: пользователь с таким логином уже существует.",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Внутренняя ошибка сервера",
+                        "description": "Внутренняя ошибка сервера: не удалось зарегистрировать пользователя.",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/api/v1/auth/role": {
+        "/auth/role": {
             "post": {
-                "description": "Регистрирует новую роль и возвращает её ID",
+                "description": "Регистрирует новую роль на основе предоставленного названия и возвращает HTTP статус 201 при успешной регистрации.",
                 "consumes": [
                     "application/json"
                 ],
@@ -507,11 +182,11 @@
                 "parameters": [
                     {
                         "description": "Название роли",
-                        "name": "role_name",
+                        "name": "input",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/internal_controller.registerRoleInput"
                         }
                     }
                 ],
@@ -526,85 +201,34 @@
                         }
                     },
                     "400": {
-                        "description": "Неверный запрос",
+                        "description": "Неверный запрос: отсутствует название роли или некорректный формат данных.",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "409": {
-                        "description": "Роль с таким названием уже существует",
+                        "description": "Конфликт: роль с таким названием уже существует.",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Внутренняя ошибка сервера",
+                        "description": "Внутренняя ошибка сервера: не удалось зарегистрировать роль.",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/api/v1/directories": {
+        "/file-approvals": {
             "get": {
                 "security": [
                     {
-                        "JWT": []
+                        "ApiKeyAuth": []
                     }
                 ],
-                "description": "Возвращает структуру файлов и директорий для пользователя",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "directories"
-                ],
-                "summary": "Получить дерево файлов и директорий",
-                "parameters": [
-                    {
-                        "description": "Фильтр архивных элементов",
-                        "name": "is_archive",
-                        "in": "body",
-                        "schema": {
-                            "type": "boolean"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/domain.GetFileTreeResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный запрос",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Не авторизован",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "JWT": []
-                    }
-                ],
-                "description": "Удаляет директорию и все её связи",
+                "description": "Возвращает все согласования, в которых участвует текущий пользователь",
                 "consumes": [
                     "application/json"
                 ],
@@ -612,65 +236,42 @@
                     "application/json"
                 ],
                 "tags": [
-                    "directories"
+                    "approval"
                 ],
-                "summary": "Удалить директорию",
-                "parameters": [
-                    {
-                        "description": "ID директории для удаления",
-                        "name": "directory_id",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
+                "summary": "Получить список согласований пользователя",
                 "responses": {
                     "200": {
-                        "description": "Сообщение об успехе",
+                        "description": "Список согласований",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/service-core_internal_domain.Approval"
                             }
                         }
                     },
-                    "400": {
-                        "description": "Неверный запрос",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
                     "401": {
-                        "description": "Не авторизован",
+                        "description": "Отсутствует/недействителен API-ключ",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Нет доступа",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Внутренняя ошибка",
+                        "description": "Ошибка при получении данных",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/api/v1/directories/upload": {
-            "post": {
+        "/file-approvals/{approval_id}/annotate": {
+            "put": {
                 "security": [
                     {
-                        "JWT": []
+                        "ApiKeyAuth": []
                     }
                 ],
-                "description": "Создает директорию и связывает её с пользователем",
+                "description": "Добавляет примечание к согласованию. Пользователь должен участвовать в этом согласовании.",
                 "consumes": [
                     "application/json"
                 ],
@@ -678,146 +279,72 @@
                     "application/json"
                 ],
                 "tags": [
-                    "directories"
+                    "approval"
                 ],
-                "summary": "Создать новую директорию",
+                "summary": "Добавить комментарий к согласованию",
                 "parameters": [
                     {
-                        "description": "ID родительской директории (null для корня)",
-                        "name": "parent_path_id",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
+                        "type": "string",
+                        "description": "ID согласования (числовой формат)",
+                        "name": "approval_id",
+                        "in": "path",
+                        "required": true
                     },
                     {
-                        "description": "Название директории",
-                        "name": "name",
+                        "description": "Текст примечания",
+                        "name": "message",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/internal_controller.annotateApprovalInput"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "ID созданной директории",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "integer"
-                            }
-                        }
+                    "204": {
+                        "description": "Примечание добавлено"
                     },
                     "400": {
-                        "description": "Неверный запрос",
+                        "description": "Невалидный ID или тело запроса",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Не авторизован",
+                        "description": "Отсутствует/недействителен API-ключ",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Нет доступа",
+                        "description": "Пользователь не участвует в согласовании",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/files": {
-            "delete": {
-                "security": [
-                    {
-                        "JWT": []
-                    }
-                ],
-                "description": "Удаляет файл и все его связи",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "files"
-                ],
-                "summary": "Удалить файл",
-                "parameters": [
-                    {
-                        "description": "ID файла для удаления",
-                        "name": "file_id",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Сообщение об успехе",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный запрос",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Не авторизован",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Нет доступа",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Файл не найден",
+                        "description": "Согласование не найдено",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Внутренняя ошибка",
+                        "description": "Ошибка при добавлении примечания",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/api/v1/files/upload": {
-            "post": {
+        "/file-approvals/{approval_id}/finalize": {
+            "put": {
                 "security": [
                     {
-                        "JWT": []
+                        "ApiKeyAuth": []
                     }
                 ],
-                "description": "Создает файл и связывает его с пользователем",
+                "description": "Завершает процесс согласования. Доступно только последнему участнику в цепочке.",
                 "consumes": [
                     "application/json"
                 ],
@@ -825,125 +352,166 @@
                     "application/json"
                 ],
                 "tags": [
-                    "files"
+                    "approval"
                 ],
-                "summary": "Загрузить файл",
+                "summary": "Завершить согласование",
                 "parameters": [
                     {
-                        "description": "ID директории",
-                        "name": "directory_id",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "description": "Имя файла",
-                        "name": "name",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
+                        "type": "string",
+                        "description": "ID согласования (числовой формат)",
+                        "name": "approval_id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "ID созданного файла",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "integer"
-                            }
-                        }
+                    "204": {
+                        "description": "Согласование завершено"
                     },
                     "400": {
-                        "description": "Неверный запрос",
+                        "description": "Невалидный ID согласования",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "Не авторизован",
+                        "description": "Отсутствует/недействителен API-ключ",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Нет доступа",
+                        "description": "Только последний участник может завершить согласование",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Согласование не найдено",
+                        "schema": {
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Внутренняя ошибка",
+                        "description": "Ошибка при завершении согласования",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/api/v1/files/{file_id}": {
-            "get": {
+        "/file-approvals/{approval_id}/sign": {
+            "put": {
                 "security": [
                     {
-                        "JWT": []
+                        "ApiKeyAuth": []
                     }
                 ],
-                "description": "Возвращает детали файла по его ID",
+                "description": "Подтверждает согласование текущим пользователем. Пользователь должен иметь права на подписание.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "files"
+                    "approval"
                 ],
-                "summary": "Получить информацию о файле",
+                "summary": "Подписать согласование",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "ID файла",
+                        "type": "string",
+                        "description": "ID согласования (числовой формат, например: 456)",
+                        "name": "approval_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Согласование успешно подписано"
+                    },
+                    "400": {
+                        "description": "Невалидный ID согласования",
+                        "schema": {
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Отсутствует/недействителен API-ключ",
+                        "schema": {
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Недостаточно прав или требуется завершение согласования",
+                        "schema": {
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Согласование не найдено",
+                        "schema": {
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при обработке подписи",
+                        "schema": {
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/files/{file_id}/approve": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Переводит файл в статус \"на согласовании\". Файл должен находиться в состоянии черновика.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "approval"
+                ],
+                "summary": "Отправить файл на согласование",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID файла (числовой формат, например: 123)",
                         "name": "file_id",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/domain.FileResponse"
-                        }
+                    "201": {
+                        "description": "Файл успешно отправлен на согласование"
                     },
                     "400": {
-                        "description": "Неверный запрос",
+                        "description": "Невалидный ID файла или файл не в статусе 'черновик'",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Не авторизован",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Нет доступа",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Файл не найден",
+                        "description": "Файл с указанным ID не найден",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Внутренняя ошибка",
+                        "description": "Ошибка при изменении статуса файла",
                         "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
+                            "$ref": "#/definitions/service-core_internal_domain.ErrorResponse"
                         }
                     }
                 }
@@ -951,7 +519,60 @@
         }
     },
     "definitions": {
-        "domain.Approval": {
+        "gorm.DeletedAt": {
+            "type": "object",
+            "properties": {
+                "time": {
+                    "type": "string"
+                },
+                "valid": {
+                    "description": "Valid is true if Time is not NULL",
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_controller.annotateApprovalInput": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_controller.loginInput": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_controller.registerInput": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "role_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_controller.registerRoleInput": {
+            "type": "object",
+            "properties": {
+                "role_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "service-core_internal_domain.Approval": {
             "type": "object",
             "properties": {
                 "annotation_text": {
@@ -962,9 +583,6 @@
                 },
                 "deletedAt": {
                     "$ref": "#/definitions/gorm.DeletedAt"
-                },
-                "file": {
-                    "$ref": "#/definitions/domain.File"
                 },
                 "file_id": {
                     "type": "integer"
@@ -986,83 +604,7 @@
                 }
             }
         },
-        "domain.Directory": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "deletedAt": {
-                    "$ref": "#/definitions/gorm.DeletedAt"
-                },
-                "files": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.File"
-                    }
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "parentPath": {
-                    "$ref": "#/definitions/domain.Directory"
-                },
-                "parent_path_id": {
-                    "description": "Указатель для NULL",
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "users": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.User"
-                    }
-                },
-                "version": {
-                    "type": "integer"
-                },
-                "workflow_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "domain.DirectoryResponse": {
-            "description": "Детальная информация о директории",
-            "type": "object",
-            "properties": {
-                "files": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.FileResponse"
-                    }
-                },
-                "id": {
-                    "type": "integer",
-                    "example": 123
-                },
-                "name_folder": {
-                    "type": "string",
-                    "example": "Documents"
-                },
-                "parent_path_id": {
-                    "type": "integer",
-                    "example": 456
-                },
-                "status": {
-                    "type": "string",
-                    "example": "active"
-                }
-            }
-        },
-        "domain.ErrorResponse": {
+        "service-core_internal_domain.ErrorResponse": {
             "description": "Стандартизированный ответ при ошибке API",
             "type": "object",
             "properties": {
@@ -1081,67 +623,7 @@
                 }
             }
         },
-        "domain.File": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "deletedAt": {
-                    "$ref": "#/definitions/gorm.DeletedAt"
-                },
-                "directory": {
-                    "$ref": "#/definitions/domain.Directory"
-                },
-                "directory_id": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "users": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.User"
-                    }
-                },
-                "version": {
-                    "type": "integer"
-                }
-            }
-        },
-        "domain.FileResponse": {
-            "description": "Детальная информация о файле",
-            "type": "object",
-            "properties": {
-                "directory_id": {
-                    "type": "integer",
-                    "example": 123
-                },
-                "id": {
-                    "type": "integer",
-                    "example": 789
-                },
-                "name_file": {
-                    "type": "string",
-                    "example": "report.pdf"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "draft"
-                }
-            }
-        },
-        "domain.GetCurrentUserResponse": {
+        "service-core_internal_domain.GetCurrentUserResponse": {
             "description": "Информация о текущем пользователе",
             "type": "object",
             "properties": {
@@ -1158,71 +640,13 @@
                     "example": "user"
                 }
             }
-        },
-        "domain.GetFileTreeResponse": {
-            "description": "Ответ с древовидной структурой файлов и директорий",
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.DirectoryResponse"
-                    }
-                }
-            }
-        },
-        "domain.User": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "deletedAt": {
-                    "$ref": "#/definitions/gorm.DeletedAt"
-                },
-                "directories": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.Directory"
-                    }
-                },
-                "files": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.File"
-                    }
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "login": {
-                    "type": "string"
-                },
-                "pass_hash": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "roleID": {
-                    "type": "integer"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "gorm.DeletedAt": {
-            "type": "object",
-            "properties": {
-                "time": {
-                    "type": "string"
-                },
-                "valid": {
-                    "description": "Valid is true if Time is not NULL",
-                    "type": "boolean"
-                }
-            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }
