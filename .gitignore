@@ -1,11 +1,7 @@
 .env
 
-service_core/tmp
-service_core/wait-for-it.sh
-service_core/Taskfile.yaml
-
-
-service_file/wait-for-it.sh
-service_file/Taskfile.yaml
+tmp
+wait-for-it.sh
+Taskfile.yaml
 
 docs/openapi.yaml
