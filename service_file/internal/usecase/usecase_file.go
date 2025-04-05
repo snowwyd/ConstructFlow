@@ -4,7 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"service-file/internal/domain"
 	"service-file/internal/domain/interfaces"
 	"service-file/pkg/logger/slogger"
@@ -214,4 +218,49 @@ func (u *FileUsecase) DeleteFile(ctx context.Context, fileID uint, userID uint) 
 
 	log.Info("file deleted successfully")
 	return nil
+}
+
+func (u *FileUsecase) ConvertSTPToGLTF(ctx context.Context, fileID uint, userID uint) (string, error) {
+	const op = "usecase.file.ConvertSTPToGLTF"
+
+	// Получаем метаданные и файл из MinIO
+	fileMeta, fileObj, err := u.DownloadFileDirect(ctx, fileID, userID)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+	defer fileObj.Close()
+
+	// Сохраняем STP временно на диск
+	// Изменим tmpDir, используя MinioObjectKey без расширения
+	tmpDir := filepath.Join(os.TempDir(), fileMeta.MinioObjectKey)
+	tmpInput := tmpDir
+	tmpOutput := tmpInput + ".gltf"
+
+	// Создаем директорию, если она не существует
+	err = os.MkdirAll(filepath.Dir(tmpInput), os.ModePerm) // Создаем только родительскую директорию
+	if err != nil {
+		return "", fmt.Errorf("%s: failed to create temp directory: %w", op, err)
+	}
+
+	outFile, err := os.Create(tmpInput) // Создаем файл по пути tmpInput
+	if err != nil {
+		return "", fmt.Errorf("%s: failed to create temp file: %w", op, err)
+	}
+	defer os.Remove(tmpInput)
+	defer outFile.Close()
+
+	_, err = io.Copy(outFile, fileObj)
+	if err != nil {
+		return "", fmt.Errorf("%s: failed to copy file: %w", op, err)
+	}
+
+	// Вызываем python-скрипт
+	cmd := exec.Command("python3", "/app/scripts/convert_stp_to_glb.py", tmpInput, tmpOutput)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("%s: script error: %s\n%s", op, err, string(output))
+	}
+
+	// Можно загрузить tmpOutput обратно в MinIO и отдать ссылку
+	return tmpOutput, nil
 }

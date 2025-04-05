@@ -17,8 +17,9 @@ services:
       - SSL_MODE=disable
     depends_on:
       - postgres
-    volumes:
-      - .:/app
+    # Убираем volumes, чтобы не затирать содержимое /app в контейнере
+    # volumes:
+    #   - .:/app
     ports:
       - "${APP_PORT:-8081}:8080"
       - "${GRPC_PORT-50051}:50051"
@@ -61,7 +62,7 @@ services:
       - postgres
     networks:
       - app-network
-    command: ["wait-for-it.sh", "postgres:5432", "--", "./migrator", "-reset", "-migrate", "-seed"]
+    command: ["/app/migrator", "-reset", "-migrate", "-seed"]
     restart: "no"
 
   minio:

@@ -77,6 +77,8 @@ func setupRoutes(router *gin.Engine, treeHandler *controller.TreeHandler, cfg *c
 		filesGroup.GET("/:file_id", treeHandler.GetFileInfo)
 		filesGroup.PUT("/:file_id", treeHandler.UpdateFile)
 		filesGroup.GET("/:file_id/download-direct", treeHandler.DownloadFileDirect)
+		filesGroup.GET("/:file_id/convert/gltf", treeHandler.ConvertSTPToGLTF)
+
 	}
 }
 

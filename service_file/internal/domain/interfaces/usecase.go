@@ -19,6 +19,8 @@ type FileUsecase interface {
 	DownloadFileDirect(ctx context.Context, fileID uint, userID uint) (*domain.File, *minio.Object, error)
 	DeleteFile(ctx context.Context, fileID uint, userID uint) error
 	UpdateFile(ctx context.Context, fileID uint, newData []byte, userID uint) error
+
+	ConvertSTPToGLTF(ctx context.Context, fileID uint, userID uint) (string, error)
 }
 
 type GRPCUsecase interface {

@@ -1,26 +1,54 @@
+# -----------------------------
+# Этап сборки Go-приложения
+# -----------------------------
 FROM golang:1.23.4 AS build
 
 WORKDIR /app
 
+# Копируем зависимости и загружаем их
 COPY go.mod go.sum ./
 RUN go mod download
 
+# Копируем весь проект и собираем бинарники
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o app ./cmd/service/main.go
 RUN CGO_ENABLED=0 GOOS=linux go build -o migrator ./cmd/migrator/main.go
 
-FROM debian:latest
+# -----------------------------
+# Финальный образ (runtime)
+# -----------------------------
+FROM python:3.11-slim AS runtime
 
-WORKDIR /root/
+# Устанавливаем рабочий каталог
+WORKDIR /app
 
-COPY --from=build /app/app .
-COPY --from=build /app/migrator .
+# Устанавливаем системные зависимости, включая ICU (libicu-dev)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libgl1-mesa-glx \
+    libicu-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY configs/ configs
+# Создаем виртуальное окружение Python и добавляем его в PATH
+RUN python3 -m venv /venv
+ENV PATH="/venv/bin:$PATH"
 
-COPY wait-for-it.sh /usr/local/bin/wait-for-it.sh
-RUN chmod +x /usr/local/bin/wait-for-it.sh
+# Включаем режим инвариантной глобализации для .NET
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+
+# Копируем Go-бинарники из этапа сборки
+COPY --from=build /app/app /app/app
+COPY --from=build /app/migrator /app/migrator
+
+# Копируем остальные необходимые файлы и каталоги
+COPY configs/ /app/configs/
+COPY scripts/ /app/scripts/
+COPY requirements.txt /app/requirements.txt
+
+# Устанавливаем Python-зависимости (например, aspose-cad)
+RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 8080 50051
 
-CMD ["wait-for-it.sh", "postgres_file:5432", "--", "./app"]
+# Запускаем Go-приложение
+CMD ["/app/app"]

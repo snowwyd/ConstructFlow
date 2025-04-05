@@ -8,22 +8,6 @@ var (
 )
 
 var (
-	ErrUserNotFound = errors.New("user not found")
-
-	ErrUserAlreadyExists = errors.New("user already exists")
-)
-
-var (
-	ErrRoleNotFound = errors.New("role not found")
-
-	ErrRoleAlreadyExists = errors.New("role already exists")
-)
-
-var (
-	ErrInvalidCredentials = errors.New("invalid login or password")
-)
-
-var (
 	ErrFileNotFound                   = errors.New("file not found")
 	ErrEmptyFile                      = errors.New("empty file in MinIO")
 	ErrInvalidFileStatus              = errors.New("file is not in a draft state")
@@ -42,4 +26,9 @@ var (
 var (
 	ErrApprovalNotFound = errors.New("approval not found")
 	ErrNoPermission     = errors.New("user has no permission to sign this approval")
+)
+
+var (
+	ErrUnsupportedFormat = errors.New("unsupported file format")
+	ErrConversionFailed  = errors.New("conversion failed")
 )

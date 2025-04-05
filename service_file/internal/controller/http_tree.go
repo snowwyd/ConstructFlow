@@ -363,3 +363,30 @@ func (h *TreeHandler) DeleteFile(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func (h *TreeHandler) ConvertSTPToGLTF(c *gin.Context) {
+	fileID, err := strconv.ParseUint(c.Param("file_id"), 10, 64)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "Invalid file ID")
+		return
+	}
+
+	userID, err := utils.ExtractUserID(c)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
+		return
+	}
+
+	outputPath, err := h.fileUsecase.ConvertSTPToGLTF(c.Request.Context(), uint(fileID), userID)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "CONVERSION_ERROR", err.Error())
+		return
+	}
+
+	// Устанавливаем заголовки для GLB-файла
+	c.Header("Content-Type", "model/gltf-binary")
+	c.Header("Content-Disposition", "inline; filename=\"model.glb\"")
+
+	// Отдаём файл
+	c.File(outputPath)
+}
