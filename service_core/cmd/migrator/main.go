@@ -52,6 +52,8 @@ func main() {
 			&domain.Workflow{}, // Явное указание связующих таблиц
 		)
 
+		db.Exec("CREATE SEQUENCE IF NOT EXISTS workflows_workflow_id_seq")
+
 		if err != nil {
 			log.Error("failed to auto migrate", slog.String("error", err.Error()))
 			return
@@ -114,23 +116,26 @@ func seedData(db *gorm.DB) {
 	// 3. Создаем workflows
 	workflows := []domain.Workflow{
 		// Workflow 1: user1 (order 1), user2 (order 2), user3 (order 3)
-		{WorkflowID: 1, UserID: users[0].ID, WorkflowOrder: 1},
-		{WorkflowID: 1, UserID: users[1].ID, WorkflowOrder: 2},
-		{WorkflowID: 1, UserID: users[2].ID, WorkflowOrder: 3},
+		{WorkflowID: 1, UserID: users[0].ID, WorkflowOrder: 1, WorkflowName: "Процедура согласования 1"},
+		{WorkflowID: 1, UserID: users[1].ID, WorkflowOrder: 2, WorkflowName: "Процедура согласования 1"},
+		{WorkflowID: 1, UserID: users[2].ID, WorkflowOrder: 3, WorkflowName: "Процедура согласования 1"},
 
 		// Workflow 2: user2 (order 1), user2 (order 2), user3 (order 3)
-		{WorkflowID: 2, UserID: users[1].ID, WorkflowOrder: 1},
-		{WorkflowID: 2, UserID: users[1].ID, WorkflowOrder: 2},
-		{WorkflowID: 2, UserID: users[2].ID, WorkflowOrder: 3},
+		{WorkflowID: 2, UserID: users[1].ID, WorkflowOrder: 1, WorkflowName: "Процедура согласования 2"},
+		{WorkflowID: 2, UserID: users[1].ID, WorkflowOrder: 2, WorkflowName: "Процедура согласования 2"},
+		{WorkflowID: 2, UserID: users[2].ID, WorkflowOrder: 3, WorkflowName: "Процедура согласования 2"},
 
 		// Workflow 3: user3 (order 1, 2, 3)
-		{WorkflowID: 3, UserID: users[2].ID, WorkflowOrder: 1},
-		{WorkflowID: 3, UserID: users[2].ID, WorkflowOrder: 2},
-		{WorkflowID: 3, UserID: users[2].ID, WorkflowOrder: 3},
+		{WorkflowID: 3, UserID: users[2].ID, WorkflowOrder: 1, WorkflowName: "Тестовая процедура согласования"},
+		{WorkflowID: 3, UserID: users[2].ID, WorkflowOrder: 2, WorkflowName: "Тестовая процедура согласования"},
+		{WorkflowID: 3, UserID: users[2].ID, WorkflowOrder: 3, WorkflowName: "Тестовая процедура согласования"},
 	}
 	if err := db.Create(&workflows).Error; err != nil {
 		log.Fatalf("Failed to create workflows: %v", err)
 	}
+
+	db.Exec("SELECT setval('workflows_workflow_id_seq', (SELECT MAX(workflow_id) FROM workflows))")
+
 }
 
 func setupLogger() *slog.Logger {

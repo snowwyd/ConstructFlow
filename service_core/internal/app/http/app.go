@@ -19,15 +19,17 @@ type App struct {
 	log             *slog.Logger
 	authHandler     *controller.AuthHandler
 	approvalHandler *controller.ApprovalHandler
+	workflowHandler *controller.WorkflowlHandler
 	cfg             *config.Config
 	server          *http.Server
 }
 
-func New(log *slog.Logger, authHandler *controller.AuthHandler, approvalHandler *controller.ApprovalHandler, cfg *config.Config) *App {
+func New(log *slog.Logger, authHandler *controller.AuthHandler, approvalHandler *controller.ApprovalHandler, workflowHandler *controller.WorkflowlHandler, cfg *config.Config) *App {
 	return &App{
 		log:             log,
 		authHandler:     authHandler,
 		approvalHandler: approvalHandler,
+		workflowHandler: workflowHandler,
 		cfg:             cfg,
 	}
 }
@@ -49,7 +51,7 @@ func (a *App) Run() error {
 	router := gin.Default()
 	router.Use(gin.Recovery(), middleware.CORSMiddleware())
 
-	setupRoutes(router, a.authHandler, a.approvalHandler, a.cfg)
+	setupRoutes(router, a.authHandler, a.approvalHandler, a.workflowHandler, a.cfg)
 
 	port := a.cfg.HTTPServer.Address
 	log.Info("starting HTTP server", slog.String("port", port))
@@ -66,7 +68,7 @@ func (a *App) Run() error {
 	return nil
 }
 
-func setupRoutes(router *gin.Engine, authHandler *controller.AuthHandler, approvalHandler *controller.ApprovalHandler, cfg *config.Config) {
+func setupRoutes(router *gin.Engine, authHandler *controller.AuthHandler, approvalHandler *controller.ApprovalHandler, workflowHandler *controller.WorkflowlHandler, cfg *config.Config) {
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	authGroup := router.Group("/auth")
@@ -89,6 +91,13 @@ func setupRoutes(router *gin.Engine, authHandler *controller.AuthHandler, approv
 		approvalsGroup.PUT("/:approval_id/sign", approvalHandler.SignApproval)
 		approvalsGroup.PUT("/:approval_id/annotate", approvalHandler.AnnotateApproval)
 		approvalsGroup.PUT("/:approval_id/finalize", approvalHandler.FinalizeApproval)
+	}
+
+	workflowsGroup := router.Group("/workflows", middleware.AuthMiddleware(cfg))
+	{
+		workflowsGroup.GET("", workflowHandler.GetWorkflows)
+		workflowsGroup.POST("", workflowHandler.CreateWorkflow)
+		workflowsGroup.DELETE("", workflowHandler.DeleteWorkflow)
 	}
 }
 

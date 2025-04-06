@@ -21,3 +21,10 @@ type ApprovalUsecase interface {
 	AnnotateApproval(ctx context.Context, approvalID, userID uint, message string) error
 	FinalizeApproval(ctx context.Context, approvalID, userID uint) error
 }
+
+type WorkflowUsecase interface {
+	GetWorkflows(ctx context.Context, userID uint) (workflows []domain.WorkflowResponse, err error)
+	CreateWorkflow(ctx context.Context, name string, stages []domain.WorkflowStage, userID uint) error
+	UpdateWorkflow(ctx context.Context, workflowInfo []domain.Workflow, userID uint) error
+	DeleteWorkflow(ctx context.Context, workflowID uint, userID uint) error
+}

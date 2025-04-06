@@ -9,9 +9,11 @@ import (
 type UserRepository interface {
 	GetUserByID(ctx context.Context, userID uint) (user domain.User, err error)
 	GetUserByLogin(ctx context.Context, login string) (user domain.User, err error)
+	GetUserRole(ctx context.Context, userID uint) (role string, err error)
 
 	// Админские ручки для создания/изменения пользователей
 	SaveUser(ctx context.Context, login string, passHash []byte, roleID uint) (err error)
+	CheckUsersExist(ctx context.Context, userIDs []uint) (bool, error)
 }
 
 // Для вызова методов слоя БД для работы с ролями
@@ -31,4 +33,10 @@ type ApprovalRepository interface {
 	IncrementApprovalOrder(ctx context.Context, approvalID uint) error
 	AnnotateApproval(ctx context.Context, approvalID uint, message string) error
 	FinalizeApproval(ctx context.Context, approvalID uint) error
+}
+
+type WorkflowRepository interface {
+	GetWorkflows(ctx context.Context) (workflows []domain.WorkflowResponse, err error)
+	CreateWorkflow(ctx context.Context, name string, stages []domain.WorkflowStage) error
+	DeleteWorkflow(ctx context.Context, workflowID uint) error
 }

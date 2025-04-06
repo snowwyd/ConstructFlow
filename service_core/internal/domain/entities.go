@@ -28,6 +28,12 @@ type ApprovalResponse struct {
 	WorkflowUserCount int    `json:"workflow_user_count"`
 }
 
+type WorkflowResponse struct {
+	WorkflowID     uint   `json:"workflow_id"`
+	WorkflowName   string `json:"workflow_name"`
+	WorkflowLength int    `json:"workflow_length"`
+}
+
 // Directory модель
 type Directory struct {
 	ID           uint
@@ -50,4 +56,9 @@ type File struct {
 	Version     int
 
 	Directory *Directory
+}
+
+type WorkflowStage struct {
+	UserID uint `json:"user_id"`
+	Order  int  `json:"order"`
 }
