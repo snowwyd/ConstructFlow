@@ -84,6 +84,7 @@ func AuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServe
 	expectedAPIKey := os.Getenv("GRPC_KEY")
 
 	apiKeys := md.Get("x-api-key")
+	fmt.Println(apiKeys)
 	if len(apiKeys) == 0 || apiKeys[0] != expectedAPIKey {
 		return nil, status.Error(codes.Unauthenticated, "invalid API key")
 	}

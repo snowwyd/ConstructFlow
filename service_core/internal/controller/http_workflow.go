@@ -29,7 +29,6 @@ func (workflowHandler *WorkflowlHandler) GetWorkflows(c *gin.Context) {
 
 	workflows, err := workflowHandler.usecase.GetWorkflows(c.Request.Context(), userID)
 	if err != nil {
-		// TODO: custom errors
 		switch {
 		case errors.Is(err, domain.ErrAccessDenied):
 			utils.SendErrorResponse(c, http.StatusForbidden, "FORBIDDEN", "User has no access")
@@ -63,10 +62,11 @@ func (workflowHandler *WorkflowlHandler) CreateWorkflow(c *gin.Context) {
 
 	err = workflowHandler.usecase.CreateWorkflow(c.Request.Context(), req.WorkflowName, req.Stages, userID)
 	if err != nil {
-		// TODO: custom errors
 		switch {
 		case errors.Is(err, domain.ErrAccessDenied):
 			utils.SendErrorResponse(c, http.StatusForbidden, "FORBIDDEN", "User has no access")
+		case errors.Is(err, domain.ErrUserNotFound):
+			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "Some users are not found")
 		default:
 			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to get workflows")
 		}
@@ -97,10 +97,13 @@ func (workflowHandler *WorkflowlHandler) DeleteWorkflow(c *gin.Context) {
 
 	err = workflowHandler.usecase.DeleteWorkflow(c.Request.Context(), req.WorkflowID, userID)
 	if err != nil {
-		// TODO: custom errors
 		switch {
 		case errors.Is(err, domain.ErrAccessDenied):
 			utils.SendErrorResponse(c, http.StatusForbidden, "FORBIDDEN", "User has no access")
+		case errors.Is(err, domain.ErrWorkflowNotFound):
+			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "Workflow not found")
+		case errors.Is(err, domain.ErrWorkflowInUse):
+			utils.SendErrorResponse(c, http.StatusConflict, "CONFILCT", "Workflow is in use")
 		default:
 			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to delete workflow")
 		}
@@ -134,10 +137,13 @@ func (workflowlHandler *WorkflowlHandler) UpdateWorkflow(c *gin.Context) {
 
 	err = workflowlHandler.usecase.UpdateWorkflow(c.Request.Context(), uint(workflowID), req.WorkflowName, req.Stages, userID)
 	if err != nil {
-		// TODO: custom errors
 		switch {
 		case errors.Is(err, domain.ErrAccessDenied):
 			utils.SendErrorResponse(c, http.StatusForbidden, "FORBIDDEN", "User has no access")
+		case errors.Is(err, domain.ErrWorkflowNotFound):
+			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "Workflow not found")
+		case errors.Is(err, domain.ErrUserNotFound):
+			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "Some users are not found")
 		default:
 			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to update workflow")
 		}

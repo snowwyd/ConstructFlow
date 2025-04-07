@@ -22,7 +22,7 @@ func New(cfg *config.Config, logger *slog.Logger) (*App, error) {
 		return nil, err
 	}
 
-	grpcClient, err := grpc.NewFileGRPCClient(cfg.GRPCAddress)
+	grpcClient, err := grpc.NewFileGRPCClient(cfg)
 	if err != nil {
 		log.Fatalf("Failed to create gRPC client: %v", err)
 	}
