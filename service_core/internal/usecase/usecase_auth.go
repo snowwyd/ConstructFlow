@@ -54,7 +54,7 @@ func (u *AuthUsecase) Login(ctx context.Context, login, password string) (string
 	}
 
 	log.Debug("generating JWT")
-	token, err := utils.GenerateJWT(user, u.cfg.AppSecret, u.cfg.TokenTTL)
+	token, err := utils.GenerateJWT(user, u.cfg.SecretKeys.KeyJwt, u.cfg.SecretKeys.TokenTTL)
 	if err != nil {
 		u.log.Error("failed to generate jwt", slogger.Err(err))
 		return "", fmt.Errorf("%s: %w", op, err)

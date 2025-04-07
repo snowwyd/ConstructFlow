@@ -77,6 +77,7 @@ func (s *GRPCServer) GetFilesInfo(ctx context.Context, req *pb.GetFilesRequest) 
 
 	files, err := s.usecase.GetFilesByID(ctx, fileIDs)
 	if err != nil {
+		// TODO: custom errors
 		return nil, status.Errorf(codes.Internal, "failed to get files: %v", err)
 	}
 
@@ -88,4 +89,14 @@ func (s *GRPCServer) GetFilesInfo(ctx context.Context, req *pb.GetFilesRequest) 
 	return &pb.GetFilesResponse{
 		FileNames: fileNames,
 	}, nil
+}
+
+func (s *GRPCServer) CheckWorkflow(ctx context.Context, req *pb.CheckWorkflowRequest) (*pb.CheckWorkflowResponse, error) {
+	exists, err := s.usecase.CheckWorkflow(ctx, uint(req.WorkflowId))
+	if err != nil {
+		// TODO: custom errors
+		return nil, status.Errorf(codes.Internal, "failed to check workflow id")
+	}
+
+	return &pb.CheckWorkflowResponse{Exists: exists}, nil
 }

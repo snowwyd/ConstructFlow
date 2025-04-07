@@ -237,3 +237,19 @@ func (r *DirectoryRepository) CheckUserDirectoryAccess(ctx context.Context, user
 
 	return exists, nil
 }
+
+func (directoryRepository *DirectoryRepository) CheckWorkflow(ctx context.Context, workflowID uint) (bool, error) {
+	const op = "infrastructure.postgresrepo.directory.CheckWorkflowExists"
+
+	var count int64
+	err := directoryRepository.db.WithContext(ctx).
+		Model(&domain.Directory{}).
+		Where("workflow_id = ?", workflowID).
+		Count(&count).Error
+
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return count > 0, nil
+}

@@ -30,15 +30,19 @@ func New(cfg *config.Config, logger *slog.Logger) (*App, error) {
 	userRepo := postgresrepo.NewUserRepository(db)
 	roleRepo := postgresrepo.NewRoleRepository(db)
 	approvalRepo := postgresrepo.NewApprovalRepository(db)
+	workflowRepo := postgresrepo.NewWorkflowRepository(db)
+
 	fileService := grpc.NewFileService(grpcClient)
 
 	authUsecase := usecase.NewAuthUsecase(userRepo, roleRepo, cfg, logger)
 	approvalUsecase := usecase.NewApprovalUsecase(approvalRepo, fileService, logger)
+	workflowUsecase := usecase.NewWorkflowUsecase(workflowRepo, userRepo, fileService, logger)
 
 	authHandler := http.NewAuthHandler(authUsecase)
 	approvalHandler := http.NewApprovalHandler(approvalUsecase)
+	workflowHandler := http.NewWorkflowHandler(workflowUsecase)
 
-	httpApp := httpapp.New(logger, authHandler, approvalHandler, cfg)
+	httpApp := httpapp.New(logger, authHandler, approvalHandler, workflowHandler, cfg)
 
 	return &App{
 		HTTPSrv: httpApp,

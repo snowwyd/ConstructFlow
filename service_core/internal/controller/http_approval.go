@@ -35,6 +35,12 @@ func NewApprovalHandler(usecase interfaces.ApprovalUsecase) *ApprovalHandler {
 // @Failure 500 {object} domain.ErrorResponse "Ошибка при изменении статуса файла"
 // @Router /files/{file_id}/approve [put]
 func (h *ApprovalHandler) ApproveFile(c *gin.Context) {
+	_, err := utils.ExtractUserID(c)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		return
+	}
+
 	fileIDStr := c.Param("file_id")
 	fileID, err := strconv.ParseUint(fileIDStr, 10, 64)
 	if err != nil {

@@ -21,7 +21,7 @@ func main() {
 	seedFlag := flag.Bool("seed", false, "Заполнить тестовыми данными")
 	flag.Parse()
 
-	cfg := config.MustLoad()
+	cfg := config.MustLoadEnv()
 	log := setupLogger()
 
 	// Подключение к БД

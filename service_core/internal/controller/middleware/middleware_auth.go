@@ -28,7 +28,7 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 		}
 
 		// Проверка JWT
-		claims, err := utils.ParseJWT(tokenString, cfg.AppSecret)
+		claims, err := utils.ParseJWT(tokenString, cfg.SecretKeys.KeyJwt)
 		if err != nil {
 			switch {
 			case errors.Is(err, jwt.ErrTokenExpired):

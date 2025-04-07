@@ -1,79 +1,120 @@
 package config
 
 import (
+	"flag"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
-	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Env         string `yaml:"env" env-default:"local"`
-	StoragePath string `yaml:"storage_path" env-required:"true"`
-	HTTPServer  `yaml:"http_server"`
-	Database    `yaml:"database"`
-	TokenTTL    time.Duration `yaml:"token_ttl" env-default:"10m"`
-	GRPCAddress string        `yaml:"grpc_address"`
+	Env         string `env:"ENV"`
+	GRPCAddress string `env:"GRPC_ADDRESS"`
 
-	AppSecret string
-}
-
-type HTTPServer struct {
-	Address     string        `yaml:"address" env-default:"0.0.0.0:8080"`
-	Timeout     time.Duration `yaml:"timeout" env-default:"4s"`
-	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
+	SecretKeys SecretKeys
+	HTTPServer HTTPServer
+	Database   Database
 }
 
 type Database struct {
-	Host    string `yaml:"host"`
-	Port    int    `yaml:"port"`
-	User    string `yaml:"user"`
-	Name    string `yaml:"name"`
-	SSLMode string `yaml:"ssl_mode"`
-
-	Password string
+	Host     string `env:"DB_HOST"`
+	Port     int    `env:"DB_PORT"`
+	Name     string `env:"DB_NAME"`
+	User     string `env:"DB_USER"`
+	Password string `env:"DB_PASSWORD"`
 }
 
-func MustLoad() *Config {
-	// Загружаем переменные окружения из .env файла
-	if err := godotenv.Load(); err != nil {
-		log.Println(".env file not found", err)
+type SecretKeys struct {
+	KeyJwt   string        `env:"KeyJwt"`
+	KeyGrpc  string        `env:"KeyGrpc"`
+	TokenTTL time.Duration `env:"TokenTTL"`
+}
+
+type HTTPServer struct {
+	Address string `env:"HTTP_ADDERSS"`
+}
+
+func MustLoadEnv() *Config {
+	envFile := flag.String("env", "dev", "Env to use dev or prod")
+	flag.Parse()
+
+	var envPath string
+	println(envFile)
+	switch *envFile {
+	case "dev":
+		envPath = "../../.env_dev"
+	case "prod":
+		envPath = "../../.env_prod"
+	default:
+		envPath = "../../.env_dev"
 	}
 
-	// Получаем путь к YAML-конфигу из переменной окружения
-	configPath := os.Getenv("CONFIG_PATH")
-	if configPath == "" {
-		log.Fatal("CONFIG_PATH is not set")
+	if err := godotenv.Load(envPath); err != nil {
+		log.Printf("Warning .env file not found:")
+		if err := godotenv.Load(); err != nil {
+			log.Printf("Warning .env file not found: %v", err)
+		}
 	}
 
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		log.Fatalf("config file %s does not exist", configPath)
+	cfg := &Config{
+		GRPCAddress: getEnvParams("GRPC_ADDRESS", "GRPC_ADDRESS"),
+		SecretKeys: SecretKeys{
+			KeyJwt:   getEnvParams("KeyJwt", "0"),
+			KeyGrpc:  getEnvParams("KeyGrpc", "0"),
+			TokenTTL: getTimeEnvParams("TokenTTL", "12h"),
+		},
+		HTTPServer: HTTPServer{
+			Address: getEnvParams("HTTP_ADDRESS", "0.0.0.0:8080"),
+		},
+		Database: Database{
+			Host:     getEnvParams("DB_HOST", "localhost"),
+			Port:     getIntEnvParams("DB_PORT", 5432),
+			Name:     getEnvParams("DB_NAME", "constructflow"),
+			User:     getEnvParams("DB_USER", "postgres"),
+			Password: getEnvParams("DB_PASSWORD", "postgres"),
+		},
 	}
 
-	var cfg Config
+	return cfg
+}
 
-	// Читаем YAML-конфиг
-	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-		log.Fatalf("cannot read config: %s", err)
+func getEnvParams(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+func getIntEnvParams(key string, defaultValue int) int {
+	valueStr := os.Getenv(key)
+	if valueStr == "" {
+		return defaultValue
 	}
 
-	// Получаем обязательные переменные окружения
-	cfg.AppSecret = os.Getenv("APP_SECRET")
-	if cfg.AppSecret == "" {
-		log.Fatal("empty APP_SECRET")
+	value, err := strconv.Atoi(valueStr)
+	if err != nil {
+		log.Printf("Warning: Could not parse %s as integer, using default value: %v", key, err)
+		return defaultValue
 	}
 
-	cfg.Database.User = os.Getenv("DB_USER")
-	if cfg.Database.User == "" {
-		log.Fatal("empty DB_USER")
+	return value
+}
+
+func getTimeEnvParams(key string, defaultValue string) time.Duration {
+	value := os.Getenv(key)
+	if value == "" {
+		val, err := time.ParseDuration(defaultValue)
+		if err != nil {
+			log.Printf("Warning: Could not parse %s as duration, using default value: %v", key, err)
+			return 0
+		}
+		return val
 	}
 
-	cfg.Database.Password = os.Getenv("DB_PASSWORD")
-	if cfg.Database.Password == "" {
-		log.Fatal("empty DB_PASSWORD")
-	}
-
-	return &cfg
+	duration, _ := time.ParseDuration(value)
+	return duration
 }

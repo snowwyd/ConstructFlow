@@ -29,7 +29,8 @@ type Approval struct {
 // Workflow модель
 type Workflow struct {
 	gorm.Model
-	WorkflowID    uint `json:"workflow_id" gorm:"not null"`
-	UserID        uint `json:"user_id" gorm:"not null;index"`
-	WorkflowOrder int  `json:"workflow_order" gorm:"not null"`
+	WorkflowID    uint   `json:"workflow_id" gorm:"primaryKey;autoIncrement:true"`
+	WorkflowName  string `json:"workflow_name" gorm:"not null"`
+	UserID        uint   `json:"user_id" gorm:"not null;index"`
+	WorkflowOrder int    `json:"workflow_order" gorm:"not null"`
 }

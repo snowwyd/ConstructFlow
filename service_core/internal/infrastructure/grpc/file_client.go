@@ -97,6 +97,21 @@ func (c *FileGRPCClient) GetFilesInfo(ctx context.Context, fileIDs []uint32) (ma
 	return resp.FileNames, nil
 }
 
+func (c *FileGRPCClient) CheckWorkflow(ctx context.Context, workflowID uint) (bool, error) {
+	const op = "infrastructure.grpc.fileclient.CheckWorkflow"
+
+	req := &pb.CheckWorkflowRequest{
+		WorkflowId: uint32(workflowID),
+	}
+
+	resp, err := c.client.CheckWorkflow(ctx, req)
+	if err != nil {
+		return false, nil
+	}
+
+	return resp.Exists, nil
+}
+
 func uintPtrOrNil(value uint32) *uint {
 	if value == 0 {
 		return nil

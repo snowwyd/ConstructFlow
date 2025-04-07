@@ -30,7 +30,6 @@ var (
 	ErrCannotDeleteNonDraftFile       = errors.New("cannot delete file with status other than 'draft'")
 
 	ErrDirectoryNotFound = errors.New("directory not found")
-
 )
 
 var (
@@ -40,4 +39,9 @@ var (
 var (
 	ErrApprovalNotFound = errors.New("approval not found")
 	ErrNoPermission     = errors.New("user has no permission to sign this approval")
+)
+
+var (
+	ErrWorkflowNotFound = errors.New("workflow not found")
+	ErrWorkflowInUse    = errors.New("this workflow in use")
 )

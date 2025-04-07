@@ -26,3 +26,7 @@ func (r *FileRepositoryImpl) UpdateFileStatus(ctx context.Context, fileID uint, 
 func (r *FileRepositoryImpl) GetFilesInfo(ctx context.Context, fileIDs []uint32) (map[uint32]string, error) {
 	return r.client.GetFilesInfo(ctx, fileIDs)
 }
+
+func (r *FileRepositoryImpl) CheckWorkflow(ctx context.Context, workflowID uint) (bool, error) {
+	return r.client.CheckWorkflow(ctx, workflowID)
+}

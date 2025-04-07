@@ -1,71 +1,41 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: constructflow
-    env_file:
-      - .env
-    environment:
-      - APP_SECRET=${APP_SECRET}
-      - CONFIG_PATH=configs/docker.yaml
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=constructflow
-      - SSL_MODE=disable
-    depends_on:
-      - postgres
-    volumes:
-      - .:/app
-    ports:
-      - "${APP_PORT:-8080}:8080"
-    networks:
-      - app-network
-    restart: always
 
-  postgres:
-    image: postgres
-    container_name: postgres
+  db_postgres:
+    image: postgres:16
+    container_name: db_postgres
     env_file:
-      - .env
-    environment:
-      - POSTGRES_DB=constructflow
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_HOST_AUTH_METHOD=trust
+      - .env_prod
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "${POSTGRES_PORT:-5433}:5432"
+      - "5432:5432"
     networks:
       - app-network
-    restart: always
-
-  migrator:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-U", "root"]
+    
+  constructflow_app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: migrator
+    container_name: constructflow_app
     env_file:
-      - .env
-    environment:
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=constructflow
-    depends_on:
-      - postgres
+      - .env_prod
+    command: sh -c "go run cmd/api/main.go"
+    ports:
+      - "8080:8080"
+    volumes:
+      - app:/app
     networks:
       - app-network
-    command: ["wait-for-it.sh", "postgres:5432", "--", "./migrator", "-reset", "-migrate", "-seed"]
-    restart: "no"
+    restart: always
+    depends_on:
+      db_postgres:
+          condition: service_healthy
 
 networks:
   app-network:
-    external: true
 
 volumes:
+  app:
   pgdata:

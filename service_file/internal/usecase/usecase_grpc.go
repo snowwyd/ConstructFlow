@@ -12,12 +12,14 @@ import (
 
 type GRPCUsecase struct {
 	fileMetadataRepo interfaces.FileMetadataRepository
+	directoryRepo    interfaces.DirectoryRepository
 	log              *slog.Logger
 }
 
-func NewGRPCUsecase(fileMetadataRepo interfaces.FileMetadataRepository, log *slog.Logger) *GRPCUsecase {
+func NewGRPCUsecase(fileMetadataRepo interfaces.FileMetadataRepository, directoryRepo interfaces.DirectoryRepository, log *slog.Logger) *GRPCUsecase {
 	return &GRPCUsecase{
 		fileMetadataRepo: fileMetadataRepo,
+		directoryRepo:    directoryRepo,
 		log:              log,
 	}
 }
@@ -87,4 +89,21 @@ func (u *GRPCUsecase) GetFilesByID(ctx context.Context, fileIDs []uint32) ([]dom
 
 	log.Info("files by id got successfully")
 	return files, nil
+}
+
+func (grpcUsecase *GRPCUsecase) CheckWorkflow(ctx context.Context, workflowID uint) (bool, error) {
+	const op = "usecases.grpc.CheckWorkflow"
+
+	log := grpcUsecase.log.With(slog.String("op", op))
+	log.Info("checking workflow existence")
+
+	log.Debug("checking database")
+	exists, err := grpcUsecase.directoryRepo.CheckWorkflow(ctx, workflowID)
+	if err != nil {
+		log.Error("failed to check workflow existence", slogger.Err(err))
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("workflow existence checked successfully")
+	return exists, err
 }
