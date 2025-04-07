@@ -39,6 +39,7 @@ func (r *ApprovalRepository) FindApprovalsByUser(ctx context.Context, userID uin
 		Joins("JOIN workflows ON workflows.workflow_id = approvals.workflow_id AND workflows.workflow_order = approvals.workflow_order").
 		Where("workflows.user_id = ?", userID).
 		Where("approvals.status = ?", "on approval").
+		Where("workflows.deleted_at IS NULL").
 		Scan(&approvals).Error
 
 	if err != nil {

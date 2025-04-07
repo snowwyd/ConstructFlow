@@ -9,7 +9,9 @@ option go_package = "service-file/proto;pb";
 service FileService {
   rpc GetFileByID(GetFileRequest) returns (FileResponse);
   rpc UpdateFileStatus(UpdateFileStatusRequest) returns (google.protobuf.Empty);
-  rpc GetFilesInfo(GetFilesRequest) returns (GetFilesResponse); // Новый метод
+  rpc GetFilesInfo(GetFilesRequest) returns (GetFilesResponse);
+
+  rpc CheckWorkflow(CheckWorkflowRequest) returns (CheckWorkflowResponse);
 
   // TODO: остальные методы
 }
@@ -46,4 +48,12 @@ message GetFilesRequest {
 
 message GetFilesResponse {
   map<uint32, string> file_names = 1;
+}
+
+message CheckWorkflowRequest {
+  uint32 workflow_id = 1;
+}
+
+message CheckWorkflowResponse {
+  bool exists = 1;
 }

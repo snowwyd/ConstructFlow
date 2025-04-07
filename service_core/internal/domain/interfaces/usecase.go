@@ -25,6 +25,6 @@ type ApprovalUsecase interface {
 type WorkflowUsecase interface {
 	GetWorkflows(ctx context.Context, userID uint) (workflows []domain.WorkflowResponse, err error)
 	CreateWorkflow(ctx context.Context, name string, stages []domain.WorkflowStage, userID uint) error
-	UpdateWorkflow(ctx context.Context, workflowInfo []domain.Workflow, userID uint) error
+	UpdateWorkflow(ctx context.Context, workflowID uint, name string, stages []domain.WorkflowStage, userID uint) error
 	DeleteWorkflow(ctx context.Context, workflowID uint, userID uint) error
 }

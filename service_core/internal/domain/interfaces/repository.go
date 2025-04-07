@@ -38,5 +38,7 @@ type ApprovalRepository interface {
 type WorkflowRepository interface {
 	GetWorkflows(ctx context.Context) (workflows []domain.WorkflowResponse, err error)
 	CreateWorkflow(ctx context.Context, name string, stages []domain.WorkflowStage) error
+	UpdateWorkflow(ctx context.Context, workflowID uint, name string, stages []domain.WorkflowStage) error
 	DeleteWorkflow(ctx context.Context, workflowID uint) error
+	CheckWorkflow(ctx context.Context, workflowID uint) (bool, error)
 }

@@ -69,7 +69,10 @@ func (a *App) Run() error {
 }
 
 func setupRoutes(router *gin.Engine, authHandler *controller.AuthHandler, approvalHandler *controller.ApprovalHandler, workflowHandler *controller.WorkflowlHandler, cfg *config.Config) {
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	router.GET("/docs", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/docs/index.html")
+	})
+	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	authGroup := router.Group("/auth")
 	{
@@ -98,6 +101,7 @@ func setupRoutes(router *gin.Engine, authHandler *controller.AuthHandler, approv
 		workflowsGroup.GET("", workflowHandler.GetWorkflows)
 		workflowsGroup.POST("", workflowHandler.CreateWorkflow)
 		workflowsGroup.DELETE("", workflowHandler.DeleteWorkflow)
+		workflowsGroup.PUT("/:workflow_id", workflowHandler.UpdateWorkflow)
 	}
 }
 

@@ -43,4 +43,5 @@ var (
 
 var (
 	ErrWorkflowNotFound = errors.New("workflow not found")
+	ErrWorkflowInUse    = errors.New("this workflow in use")
 )

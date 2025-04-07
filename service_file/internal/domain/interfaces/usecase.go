@@ -27,4 +27,5 @@ type GRPCUsecase interface {
 	GetFileByID(ctx context.Context, fileID uint) (*domain.File, error)
 	UpdateFileStatus(ctx context.Context, fileID uint, status string) error
 	GetFilesByID(ctx context.Context, fileIDs []uint32) ([]domain.File, error)
+	CheckWorkflow(ctx context.Context, workflowID uint) (bool, error)
 }

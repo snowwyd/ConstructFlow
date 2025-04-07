@@ -23,6 +23,7 @@ const (
 	FileService_GetFileByID_FullMethodName      = "/file.FileService/GetFileByID"
 	FileService_UpdateFileStatus_FullMethodName = "/file.FileService/UpdateFileStatus"
 	FileService_GetFilesInfo_FullMethodName     = "/file.FileService/GetFilesInfo"
+	FileService_CheckWorkflow_FullMethodName    = "/file.FileService/CheckWorkflow"
 )
 
 // FileServiceClient is the client API for FileService service.
@@ -32,6 +33,7 @@ type FileServiceClient interface {
 	GetFileByID(ctx context.Context, in *GetFileRequest, opts ...grpc.CallOption) (*FileResponse, error)
 	UpdateFileStatus(ctx context.Context, in *UpdateFileStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetFilesInfo(ctx context.Context, in *GetFilesRequest, opts ...grpc.CallOption) (*GetFilesResponse, error)
+	CheckWorkflow(ctx context.Context, in *CheckWorkflowRequest, opts ...grpc.CallOption) (*CheckWorkflowResponse, error)
 }
 
 type fileServiceClient struct {
@@ -72,6 +74,16 @@ func (c *fileServiceClient) GetFilesInfo(ctx context.Context, in *GetFilesReques
 	return out, nil
 }
 
+func (c *fileServiceClient) CheckWorkflow(ctx context.Context, in *CheckWorkflowRequest, opts ...grpc.CallOption) (*CheckWorkflowResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckWorkflowResponse)
+	err := c.cc.Invoke(ctx, FileService_CheckWorkflow_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServiceServer is the server API for FileService service.
 // All implementations must embed UnimplementedFileServiceServer
 // for forward compatibility.
@@ -79,6 +91,7 @@ type FileServiceServer interface {
 	GetFileByID(context.Context, *GetFileRequest) (*FileResponse, error)
 	UpdateFileStatus(context.Context, *UpdateFileStatusRequest) (*emptypb.Empty, error)
 	GetFilesInfo(context.Context, *GetFilesRequest) (*GetFilesResponse, error)
+	CheckWorkflow(context.Context, *CheckWorkflowRequest) (*CheckWorkflowResponse, error)
 	mustEmbedUnimplementedFileServiceServer()
 }
 
@@ -97,6 +110,9 @@ func (UnimplementedFileServiceServer) UpdateFileStatus(context.Context, *UpdateF
 }
 func (UnimplementedFileServiceServer) GetFilesInfo(context.Context, *GetFilesRequest) (*GetFilesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFilesInfo not implemented")
+}
+func (UnimplementedFileServiceServer) CheckWorkflow(context.Context, *CheckWorkflowRequest) (*CheckWorkflowResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckWorkflow not implemented")
 }
 func (UnimplementedFileServiceServer) mustEmbedUnimplementedFileServiceServer() {}
 func (UnimplementedFileServiceServer) testEmbeddedByValue()                     {}
@@ -173,6 +189,24 @@ func _FileService_GetFilesInfo_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileService_CheckWorkflow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckWorkflowRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).CheckWorkflow(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_CheckWorkflow_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).CheckWorkflow(ctx, req.(*CheckWorkflowRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FileService_ServiceDesc is the grpc.ServiceDesc for FileService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -191,6 +225,10 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFilesInfo",
 			Handler:    _FileService_GetFilesInfo_Handler,
+		},
+		{
+			MethodName: "CheckWorkflow",
+			Handler:    _FileService_CheckWorkflow_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

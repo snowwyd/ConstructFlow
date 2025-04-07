@@ -1,5 +1,7 @@
 package domain
 
+// TODO: refactor
+
 // GetCurrentUserResponse godoc
 // @Description Информация о текущем пользователе
 type GetCurrentUserResponse struct {

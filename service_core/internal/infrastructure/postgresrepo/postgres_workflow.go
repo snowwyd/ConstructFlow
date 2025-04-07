@@ -50,7 +50,6 @@ func (workflowRepo *WorkflowRepository) CreateWorkflow(ctx context.Context, name
 		}
 	}()
 
-	// Генерация уникального workflow_id
 	var newWorkflowID uint
 	err := tx.Raw("SELECT nextval('workflows_workflow_id_seq')").Scan(&newWorkflowID).Error
 	if err != nil {
@@ -58,7 +57,6 @@ func (workflowRepo *WorkflowRepository) CreateWorkflow(ctx context.Context, name
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	// Создаем срез для массовой вставки
 	var workflows []domain.Workflow
 	for _, stage := range stages {
 		workflows = append(workflows, domain.Workflow{
@@ -69,7 +67,6 @@ func (workflowRepo *WorkflowRepository) CreateWorkflow(ctx context.Context, name
 		})
 	}
 
-	// Массовая вставка
 	if err := tx.Create(&workflows).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("%s: %w", op, err)
@@ -96,11 +93,10 @@ func (workflowRepo *WorkflowRepository) DeleteWorkflow(ctx context.Context, work
 		}
 	}()
 
-	// Удаляем все этапы workflow
 	result := tx.Where("workflow_id = ?", workflowID).Delete(&domain.Workflow{})
 	if result.Error != nil {
 		tx.Rollback()
-		return fmt.Errorf("%s: deletion failed: %w", op, result.Error)
+		return fmt.Errorf("%s: %w", op, result.Error)
 	}
 
 	if result.RowsAffected == 0 {
@@ -109,8 +105,61 @@ func (workflowRepo *WorkflowRepository) DeleteWorkflow(ctx context.Context, work
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		return fmt.Errorf("%s: commit failed: %w", op, err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	return nil
+}
+
+func (workflowRepository *WorkflowRepository) UpdateWorkflow(ctx context.Context, workflowID uint, name string, stages []domain.WorkflowStage) error {
+	const op = "infrastructure.postgresrepo.workflow.UpdateWorkflow"
+
+	tx := workflowRepository.db.WithContext(ctx).Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Where("workflow_id = ?", workflowID).Delete(&domain.Workflow{}).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	var workflows []domain.Workflow
+	for _, stage := range stages {
+		workflows = append(workflows, domain.Workflow{
+			WorkflowID:    workflowID,
+			WorkflowName:  name,
+			UserID:        stage.UserID,
+			WorkflowOrder: stage.Order,
+		})
+	}
+
+	if err := tx.Create(&workflows).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (r *WorkflowRepository) CheckWorkflow(ctx context.Context, workflowID uint) (bool, error) {
+	const op = "infrastructure.postgresrepo.workflow.CheckWorkflow"
+
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&domain.Workflow{}).
+		Where("workflow_id = ?", workflowID).
+		Count(&count).Error
+
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return count > 0, nil
 }

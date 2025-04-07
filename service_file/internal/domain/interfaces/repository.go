@@ -14,6 +14,7 @@ type DirectoryRepository interface {
 	DeleteDirectory(ctx context.Context, directoryID uint, userID uint) error
 
 	CheckUserDirectoryAccess(ctx context.Context, userID, directoryID uint) (bool, error)
+	CheckWorkflow(ctx context.Context, workflowID uint) (bool, error)
 
 	WithTx(tx *gorm.DB) DirectoryRepository // Метод для передачи транзакции
 	GetDB() *gorm.DB
