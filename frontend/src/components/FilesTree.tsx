@@ -2,17 +2,18 @@ import ArchiveIcon from '@mui/icons-material/Archive';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
-import { alpha, Box, Paper, Typography, useTheme } from '@mui/material';
+import {
+	alpha,
+	Box,
+	CircularProgress,
+	Paper,
+	Typography,
+	useTheme,
+} from '@mui/material';
 import { RichTreeView, TreeItem2, TreeItem2Props } from '@mui/x-tree-view';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import React, {
-	useCallback,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import axiosFetching from '../api/AxiosFetch';
 import config from '../constants/Configurations.json';
@@ -21,8 +22,6 @@ import {
 	closeContextMenu,
 	openContextMenu,
 } from '../store/Slices/contextMenuSlice';
-import ErrorState from './ErrorState';
-import LoadingState from './LoadingState';
 
 const getFolders = config.getFiles;
 const createFile = config.createFile;
@@ -37,20 +36,69 @@ interface ExtendedTreeItem2Props extends TreeItem2Props {
 	expansionState?: 'expanded' | 'collapsed' | 'loading';
 }
 
-// Расширяем интерфейс FilesTree добавляя onItemSelect
-interface FilesTreeProps {
-	isArchive: boolean;
-	onItemSelect?: (id: string, type: 'file' | 'directory', name: string) => void;
-}
-
-const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
+const FilesTree: React.FC<{ isArchive: boolean }> = ({ isArchive }) => {
 	const theme = useTheme();
 	const dispatch = useDispatch();
-	const treeViewRef = useRef<HTMLUListElement>(null);
 	const [highlightedItemId, setHighlightedItemId] = useState<string | null>(
 		null
 	);
-	const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+
+	const {
+		data: apiResponse,
+		isLoading,
+		isError,
+		error,
+		refetch: refreshTree,
+	} = useQuery({
+		queryKey: ['directories', isArchive],
+		queryFn: async () => {
+			const response = await axiosFetching.post(getFolders, {
+				is_archive: isArchive,
+			});
+			return response.data;
+		},
+	});
+
+	const createFileMutation = useMutation({
+		mutationFn: async (data: FileUploadData) => {
+			const response = await axiosFetching.post(createFile, data);
+			return response.data;
+		},
+		onSuccess: () => {
+			refreshTree();
+		},
+		onError: (error: AxiosError<{ message?: string }>) => {
+			console.error('Error creating file:', error);
+		},
+	});
+
+	// Properly memoize handleContextMenu to avoid recreating on every render
+	const handleContextMenu = useCallback(
+		(
+			event: React.MouseEvent<Element>,
+			itemId: string,
+			itemType: 'directory' | 'file'
+		) => {
+			event.preventDefault();
+			event.stopPropagation();
+
+			dispatch(closeContextMenu());
+			dispatch(
+				openContextMenu({
+					mouseX: event.clientX,
+					mouseY: event.clientY,
+					itemId,
+					itemType,
+					treeType: isArchive ? 'archive' : 'work',
+				})
+			);
+		},
+		[dispatch, isArchive]
+	);
+
+	useEffect(() => {
+		refreshTree();
+	}, [refreshTree]); // Add refreshTree to dependencies
 
 	// Поиск элемента в дереве любой глубины вложенности
 	const findTreeItem = useCallback(
@@ -72,21 +120,27 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 		[]
 	);
 
-	const {
-		data: apiResponse,
-		isLoading,
-		isError,
-		error,
-		refetch: refreshTree,
-	} = useQuery({
-		queryKey: ['directories', isArchive],
-		queryFn: async () => {
-			const response = await axiosFetching.post(getFolders, {
-				is_archive: isArchive,
+	// Обернуть findFileInDirectory в useCallback
+	const findFileInDirectory = useCallback(
+		(items: TreeDataItem[], directoryId: number, fileName: string): boolean => {
+			const directory = findTreeItem(items, `dir-${directoryId}`);
+			if (!directory || !directory.children) return false;
+
+			const cleanFileName = fileName
+				.replace(/\s*\(draft\)\s*$/, '')
+				.trim()
+				.toLowerCase();
+
+			return directory.children.some(child => {
+				const childName = child.label
+					.replace(/\s*\(draft\)\s*$/, '')
+					.trim()
+					.toLowerCase();
+				return childName === cleanFileName;
 			});
-			return response.data;
 		},
-	});
+		[findTreeItem]
+	);
 
 	// Преобразование данных API в формат дерева
 	const transformDataToTreeItems = useCallback(
@@ -160,6 +214,7 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 		() => (apiResponse ? transformDataToTreeItems(apiResponse.data) : []),
 		[apiResponse, transformDataToTreeItems]
 	);
+
 
 	// Проверка наличия файла в директории
 	const findFileInDirectory = useCallback(
@@ -283,6 +338,7 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 		[createFileMutation, findFileInDirectory, treeItems]
 	);
 
+
 	// Глобальный обработчик кликов для снятия выделения
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -338,12 +394,10 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 		);
 	}
 
-	// Отображение ошибки
 	if (isError) {
 		return <ErrorState error={error} onRetry={refreshTree} />;
 	}
 
-	// Основной рендер компонента
 	return (
 		<Paper
 			elevation={2}
@@ -363,7 +417,6 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 				},
 			}}
 		>
-			{/* Заголовок хранилища */}
 			<Box
 				sx={{
 					bgcolor: isArchive
@@ -410,6 +463,7 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 					{isArchive ? 'Архивное хранилище' : 'Рабочее хранилище'}
 				</Typography>
 			</Box>
+
 
 			{/* Индикатор для случая, когда показывается только часть дерева */}
 			{hasPartialTreeAccess && (
@@ -699,6 +753,7 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 						}}
 					/>
 				)}
+
 			</Box>
 		</Paper>
 	);
