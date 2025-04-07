@@ -50,7 +50,7 @@ type MinIOClient struct {
 	UseSSL    bool
 }
 
-func MustLoad() *Config {
+func MustLoadEnv() *Config {
 	// Загружаем переменные окружения из .env файла
 	if err := godotenv.Load(); err != nil {
 		log.Println(".env file not found", err)

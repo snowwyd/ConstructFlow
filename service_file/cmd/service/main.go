@@ -21,7 +21,7 @@ import (
 //	@name						Authorization
 
 func main() {
-	cfg := config.MustLoad()
+	cfg := config.MustLoadEnv()
 
 	log := setupLogger()
 

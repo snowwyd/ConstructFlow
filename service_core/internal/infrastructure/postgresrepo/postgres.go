@@ -1,8 +1,8 @@
 package postgresrepo
 
 import (
-	"service-core/pkg/config"
 	"fmt"
+	"service-core/pkg/config"
 
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -17,8 +17,8 @@ type Database struct {
 func New(cfg *config.Config) (*Database, error) {
 	const op = "database.postgres.New"
 
-	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		cfg.Database.Host, cfg.Database.Port, cfg.Database.User, cfg.Database.Password, cfg.Database.Name, cfg.SSLMode)
+	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s",
+		cfg.Database.Host, cfg.Database.Port, cfg.Database.User, cfg.Database.Password, cfg.Database.Name)
 
 	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{})
 	if err != nil {

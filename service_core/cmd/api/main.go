@@ -21,14 +21,13 @@ import (
 // @name Authorization
 
 func main() {
-	cfg := config.MustLoad()
+	cfg := config.MustLoadEnv()
 
 	log := setupLogger()
 
 	log.Info("config loaded successfully",
 		slog.String("env", cfg.Env),
-		slog.String("address", cfg.Address),
-		slog.Any("http_server", cfg.HTTPServer),
+		slog.Any("http_server", cfg.HTTPServer.Address),
 	)
 
 	application, err := app.New(cfg, log)

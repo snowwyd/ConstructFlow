@@ -22,12 +22,12 @@ func main() {
 	seedFlag := flag.Bool("seed", false, "Заполнить тестовыми данными")
 	flag.Parse()
 
-	cfg := config.MustLoad()
+	cfg := config.MustLoadEnv()
 	log := setupLogger()
 
 	// Подключение к БД
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		cfg.Database.Host, cfg.Database.Port, cfg.Database.User, cfg.Database.Password, cfg.Database.Name, cfg.SSLMode)
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s",
+		cfg.Database.Host, cfg.Database.Port, cfg.Database.User, cfg.Database.Password, cfg.Database.Name)
 	db, err := gorm.Open(postgres.Open(psqlInfo), &gorm.Config{})
 	if err != nil {
 		log.Error("failed to open database", slog.String("error", err.Error()))
