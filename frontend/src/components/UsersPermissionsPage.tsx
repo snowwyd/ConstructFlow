@@ -12,8 +12,8 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
-// Placeholder component for Approval Editor
-const ApprovalEditorPage = () => {
+// Placeholder component for UsersPermissionsPage
+const UsersPermissionsPage = () => {
 	const theme = useTheme();
 	const [activeTab, setActiveTab] = useState(0);
 
@@ -44,10 +44,12 @@ const ApprovalEditorPage = () => {
 					}}
 				>
 					<Typography variant='h5' fontWeight={600} gutterBottom>
-						Редактор согласования
+						Управление правами и пользователями
 					</Typography>
 					<Typography variant='body1' color='text.secondary'>
-						Управление и настройка процессов согласования документов
+						Эта страница находится в разработке. Здесь будет отображаться список
+						пользователей и функции для управления их учетными записями и
+						правами.
 					</Typography>
 				</Box>
 
@@ -68,12 +70,12 @@ const ApprovalEditorPage = () => {
 						}}
 					>
 						<Tab
-							label='Конструктор шаблонов согласования'
+							label='Назначение ролей пользователям'
 							icon={<AccountTreeIcon />}
 							iconPosition='start'
 						/>
 						<Tab
-							label='Назначение шаблонов согласования'
+							label='Назначение пользователей на проекты'
 							icon={<ArticleOutlinedIcon />}
 							iconPosition='start'
 						/>
@@ -85,26 +87,24 @@ const ApprovalEditorPage = () => {
 					{activeTab === 0 && (
 						<Box>
 							<Typography variant='h6' gutterBottom>
-								Конструктор шаблонов согласования
+								Назначение ролей пользователям
 							</Typography>
 							<Divider sx={{ my: 2 }} />
 							<Typography variant='body1' color='text.secondary'>
 								Этот раздел находится в разработке. Здесь будет отображаться
-								интерфейс для управления шаблонами согласования, создания и
-								редактирования маршрутов согласования документов,
-								последовательности этапов и назначения ответственных лиц.
+								интерфейс назначения ролей пользователям.
 							</Typography>
 						</Box>
 					)}
 					{activeTab === 1 && (
 						<Box>
 							<Typography variant='h6' gutterBottom>
-								Назначение шаблонов согласования
+								Назначение пользователей на проекты
 							</Typography>
 							<Divider sx={{ my: 2 }} />
 							<Typography variant='body1' color='text.secondary'>
 								Этот раздел находится в разработке. Здесь будет отображаться
-								интерфейс для назначения шаблонов согласования.
+								интерфейс для назначения пользователей на проекты.
 							</Typography>
 						</Box>
 					)}
@@ -114,4 +114,4 @@ const ApprovalEditorPage = () => {
 	);
 };
 
-export default ApprovalEditorPage;
+export default UsersPermissionsPage;
