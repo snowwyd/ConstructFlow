@@ -12,13 +12,15 @@ import { Box, IconButton, Snackbar, Tooltip, Dialog, DialogTitle, DialogContent,
 const getApprovals = config.getApprovals;
 const approveDocument = config.approveDocument;
 const annotateDocument = config.annotateDocument;
+const finalizeDocument = config.finalizeDocument;
 
 interface ResponseProps {
-    id: number,
+    approval_id: number,
     file_id: number,
     file_name: string,
     status: string,
-    workflow_order: number
+    workflow_order: number,
+    workflow_user_count: number
 }
 
 export const ApprovalsPage = () => {
@@ -58,7 +60,7 @@ export const ApprovalsPage = () => {
             return response.data;
         },
         onSuccess: () => {
-            setSnackbarMessage('Документ был согласовон!');
+            setSnackbarMessage('Документ был согласован!');
             setSnackbarOpen(true);
             refetch();
         },
@@ -86,6 +88,31 @@ export const ApprovalsPage = () => {
             setSnackbarOpen(true);
         },
     });
+
+    const finalizeDocumentMutation = useMutation({
+        mutationFn: async (approvalId: number) => {
+            const url = finalizeDocument.replace(':approval_id', String(approvalId));
+            const response = await axiosFetching.put(url);
+            return response.data;
+        },
+        onSuccess: () => {
+            setSnackbarMessage('Документ был финализирован!');
+            setSnackbarOpen(true);
+            refetch();
+        },
+        onError: () => {
+            setSnackbarMessage('Ошибка при финализации документа.');
+            setSnackbarOpen(true);
+        },
+    });
+
+    const handleApproveOrFinalize = (document: ResponseProps) => {
+        if (document.workflow_order === document.workflow_user_count) {
+            finalizeDocumentMutation.mutate(document.approval_id);
+        } else {
+            approveDocumentMutation.mutate(document.approval_id);
+        }
+    };
 
     const handleAnnotateClick = (fileId: number) => {
         setSelectedFileId(fileId); 
@@ -115,7 +142,7 @@ export const ApprovalsPage = () => {
             <ul style={{ listStyle: 'none', padding: 0 }}>
                 {apiResponse.map((document: ResponseProps) => (
                     <li
-                        key={document.id}
+                        key={document.approval_id}
                         style={{
                             display: 'flex',
                             justifyContent: 'space-between',
@@ -134,19 +161,27 @@ export const ApprovalsPage = () => {
 
                         {isAdmin && (
                             <Box display="flex" gap={1}>
-                                {/* Кнопка "Approve" */}
-                                <Tooltip title="Approve">
+                                {/* Кнопка "Approve/Finalize" */}
+                                <Tooltip title={document.workflow_order === document.workflow_user_count ? "Finalize" : "Approve"}>
                                     <IconButton
                                         sx={{
-                                            border: '2px solid green',
-                                            color: 'green',
+                                            border: `2px solid ${
+                                                document.workflow_order === document.workflow_user_count ? 'blue' : 'green'
+                                            }`,
+                                            color: `${
+                                                document.workflow_order === document.workflow_user_count ? 'blue' : 'green'
+                                            }`,
                                             backgroundColor: 'transparent',
                                             borderRadius: '15%',
                                             '&:hover': {
-                                                backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                                                backgroundColor: `${
+                                                    document.workflow_order === document.workflow_user_count
+                                                        ? 'rgba(0, 0, 255, 0.1)'
+                                                        : 'rgba(0, 255, 0, 0.1)'
+                                                }`,
                                             },
                                         }}
-                                        onClick={() => approveDocumentMutation.mutate(document.id)}
+                                        onClick={() => handleApproveOrFinalize(document)}
                                     >
                                         <CheckCircleOutline />
                                     </IconButton>
@@ -164,7 +199,7 @@ export const ApprovalsPage = () => {
                                                 backgroundColor: 'rgba(255, 0, 0, 0.1)',
                                             },
                                         }}
-                                        onClick={() => handleAnnotateClick(document.id)}
+                                        onClick={() => handleAnnotateClick(document.approval_id)}
                                     >
                                         <CancelOutlined />
                                     </IconButton>
@@ -175,7 +210,7 @@ export const ApprovalsPage = () => {
                 ))}
             </ul>
 
-            {/* Уведомление  */}
+            {/* Уведомление */}
             <Snackbar
                 open={snackbarOpen}
                 autoHideDuration={3000}

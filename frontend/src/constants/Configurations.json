@@ -11,5 +11,6 @@
 	"getApprovals": "/file-approvals",
 	"approveDocument": "/file-approvals/:approval_id/sign",
 	"sendFileToApprove": "/files/:file_id/approve",
-	"annotateDocument": "/file-approvals/:approval_id/annotate"
+	"annotateDocument": "/file-approvals/:approval_id/annotate",
+	"finalizeDocument": "/file-approvals/:approval_id/finalize"
 }
