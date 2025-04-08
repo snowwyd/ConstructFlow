@@ -1,0 +1,44 @@
+services:
+
+  db_core:
+    image: postgres:16
+    container_name: db_core
+    env_file:
+      - .env_prod
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-U", "postgres"]
+    
+  constructflow_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: constructflow_app
+    env_file:
+      - .env_prod
+    command: sh -c "go run cmd/migrator/main.go -reset -migrate -seed && go run cmd/api/main.go -env=prod"
+    ports:
+      - "8080:8080"
+    volumes:
+      - app:/app
+    networks:
+      - app-network
+    restart: always
+    depends_on:
+      db_core:
+          condition: service_healthy
+
+networks:
+  app-network:
+    # external: true
+    name: app-network
+      
+
+volumes:
+  app:
+  pgdata:
