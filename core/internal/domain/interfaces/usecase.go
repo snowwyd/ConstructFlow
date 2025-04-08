@@ -23,6 +23,8 @@ type WorkflowUsecase interface {
 	CreateWorkflow(ctx context.Context, name string, stages []domain.WorkflowStage, userID uint) error
 	UpdateWorkflow(ctx context.Context, workflowID uint, name string, stages []domain.WorkflowStage, userID uint) error
 	DeleteWorkflow(ctx context.Context, workflowID uint, userID uint) error
+
+	AssignWorkflow(ctx context.Context, workflowID uint, directoryIDs []uint, userID uint) error
 }
 
 type RoleUsecase interface {

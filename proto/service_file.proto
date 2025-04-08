@@ -12,6 +12,7 @@ service FileService {
   rpc GetFilesInfo(GetFilesRequest) returns (GetFilesResponse);
 
   rpc CheckWorkflow(CheckWorkflowRequest) returns (CheckWorkflowResponse);
+  rpc AssignWorkflow(AssignWorkflowRequest) returns (google.protobuf.Empty);
 
   rpc DeleteUserRelations(DeleteUserRelationsRequest) returns (google.protobuf.Empty);
 
@@ -58,6 +59,11 @@ message CheckWorkflowRequest {
 
 message CheckWorkflowResponse {
   bool exists = 1;
+}
+
+message AssignWorkflowRequest {
+  uint32 workflow_id = 1;
+  repeated uint32 directory_ids = 2;
 }
 
 message DeleteUserRelationsRequest {

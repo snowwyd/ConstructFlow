@@ -98,9 +98,17 @@ func (s *GRPCServer) CheckWorkflow(ctx context.Context, req *pb.CheckWorkflowReq
 	return &pb.CheckWorkflowResponse{Exists: exists}, nil
 }
 
+func (s *GRPCServer) AssignWorkflow(ctx context.Context, req *pb.AssignWorkflowRequest) (*emptypb.Empty, error) {
+	if err := s.usecase.AssignWorkflow(ctx, req.GetWorkflowId(), req.GetDirectoryIds()); err != nil {
+		// TODO: custom errors
+		return nil, status.Errorf(codes.Internal, "failed to assign workflows")
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
 func (s *GRPCServer) DeleteUserRelations(ctx context.Context, req *pb.DeleteUserRelationsRequest) (*emptypb.Empty, error) {
-	err := s.usecase.DeleteUserRelations(ctx, uint(req.GetUserId()))
-	if err != nil {
+	if err := s.usecase.DeleteUserRelations(ctx, uint(req.GetUserId())); err != nil {
 		// TODO: custom errors
 		return nil, status.Errorf(codes.Internal, "failed to delete user relations")
 	}

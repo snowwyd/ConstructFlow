@@ -135,6 +135,7 @@ func setupRoutes(
 			workflowsGroup.DELETE("", workflowHandler.DeleteWorkflow)
 			// TODO: get workflow by id
 			workflowsGroup.PUT("/:workflow_id", workflowHandler.UpdateWorkflow)
+			workflowsGroup.PUT("/:workflow_id/assign", workflowHandler.AssignWorkflow)
 		}
 
 		rolesGroup := adminGroup.Group("/roles")

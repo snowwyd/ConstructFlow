@@ -158,6 +158,39 @@ func (workflowUsecase *WorkflowUsecase) DeleteWorkflow(ctx context.Context, work
 	return nil
 }
 
+func (workflowUsecase *WorkflowUsecase) AssignWorkflow(ctx context.Context, workflowID uint, directoryIDs []uint, userID uint) error {
+	const op = "usecase.workflow.AssignWorkflow"
+
+	log := workflowUsecase.log.With(slog.String("op", op))
+	log.Info("assigning workfow")
+
+	log.Debug("checking if user is admin")
+	if err := workflowUsecase.checkAdmin(ctx, userID); err != nil {
+		log.Error("failed admin check", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Debug("checking workflow existence")
+	if err := workflowUsecase.checkWorkflow(ctx, workflowID); err != nil {
+		log.Error("failed workflow existence check", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	directories := make([]uint32, len(directoryIDs))
+	for i, value := range directoryIDs {
+		directories[i] = uint32(value)
+	}
+
+	log.Debug("deleting workflow")
+	if err := workflowUsecase.fileService.AssignWorkflow(ctx, workflowID, directories); err != nil {
+		// TODO: custom errors
+		log.Error("failed to delete workflow", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
 func (workflowUsecase *WorkflowUsecase) checkAdmin(ctx context.Context, userID uint) error {
 	role, err := workflowUsecase.userRepo.GetUserRole(ctx, userID)
 	if err != nil {

@@ -118,7 +118,7 @@ func (workflowlHandler *WorkflowlHandler) UpdateWorkflow(c *gin.Context) {
 	workflowIDStr := c.Param("workflow_id")
 	workflowID, err := strconv.ParseUint(workflowIDStr, 10, 64)
 	if err != nil {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_APPROVAL_ID", "Invalid approval ID")
+		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_APPROVAL_ID", "Invalid workflow ID")
 		return
 	}
 
@@ -144,6 +144,47 @@ func (workflowlHandler *WorkflowlHandler) UpdateWorkflow(c *gin.Context) {
 			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "Workflow not found")
 		case errors.Is(err, domain.ErrUserNotFound):
 			utils.SendErrorResponse(c, http.StatusNotFound, "NOT_FOUND", "Some users are not found")
+		default:
+			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to update workflow")
+		}
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+type assignWorkflowInput struct {
+	DirectoryIDs []uint `json:"directory_ids"`
+}
+
+// TODO: swagger docs
+func (workflowlHandler *WorkflowlHandler) AssignWorkflow(c *gin.Context) {
+	workflowIDStr := c.Param("workflow_id")
+	workflowID, err := strconv.ParseUint(workflowIDStr, 10, 64)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_APPROVAL_ID", "Invalid workflow ID")
+		return
+	}
+
+	var req assignWorkflowInput
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
+		return
+	}
+
+	userID, err := utils.ExtractUserID(c)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
+		return
+	}
+
+	err = workflowlHandler.usecase.AssignWorkflow(c.Request.Context(), uint(workflowID), req.DirectoryIDs, userID)
+	if err != nil {
+		switch {
+		// TODO: custom errors
+		case errors.Is(err, domain.ErrAccessDenied):
+			utils.SendErrorResponse(c, http.StatusForbidden, "FORBIDDEN", "User has no access")
 		default:
 			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to update workflow")
 		}

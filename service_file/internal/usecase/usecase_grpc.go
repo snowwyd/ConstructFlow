@@ -105,7 +105,38 @@ func (grpcUsecase *GRPCUsecase) CheckWorkflow(ctx context.Context, workflowID ui
 	}
 
 	log.Info("workflow existence checked successfully")
-	return exists, err
+	return exists, nil
+}
+
+func (grpcUsecase *GRPCUsecase) AssignWorkflow(ctx context.Context, workflowID uint32, directoryIDs []uint32) error {
+	const op = "usecases.grpc.AssignWorkflow"
+
+	log := grpcUsecase.log.With(slog.String("op", op))
+	log.Info("assigning workflow")
+
+	log.Debug("checking directories")
+	directories := make([]uint, len(directoryIDs))
+	for i, value := range directoryIDs {
+		directories[i] = uint(value)
+	}
+
+	exists, err := grpcUsecase.directoryRepo.CheckDirectoriesExist(ctx, directories)
+	if err != nil {
+		log.Error("failed to check workflow existence", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if !exists {
+		return domain.ErrDirectoryNotFound
+	}
+
+	log.Debug("updating directory data")
+	if err := grpcUsecase.directoryRepo.UpdateDirectories(ctx, uint(workflowID), directories); err != nil {
+		log.Error("failed to update directories", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("workflow assigned successfully")
+	return nil
 }
 
 func (grpcUsecase *GRPCUsecase) DeleteUserRelations(ctx context.Context, userID uint) error {

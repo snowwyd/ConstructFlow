@@ -9,6 +9,7 @@ import (
 
 type DirectoryRepository interface {
 	GetFileTree(ctx context.Context, isArchive bool, userID uint) ([]domain.Directory, error)
+	UpdateDirectories(ctx context.Context, workflowID uint, directoryIDs []uint) error
 
 	CreateDirectory(ctx context.Context, parentPathID *uint, name string, status string, userID uint) error
 	DeleteDirectory(ctx context.Context, directoryID uint, userID uint) error
@@ -17,6 +18,8 @@ type DirectoryRepository interface {
 	CheckWorkflow(ctx context.Context, workflowID uint) (bool, error)
 
 	DeleteUserRelations(ctx context.Context, userID uint) error
+
+	CheckDirectoriesExist(ctx context.Context, directoryIDs []uint) (bool, error)
 
 	WithTx(tx *gorm.DB) DirectoryRepository // Метод для передачи транзакции
 	GetDB() *gorm.DB

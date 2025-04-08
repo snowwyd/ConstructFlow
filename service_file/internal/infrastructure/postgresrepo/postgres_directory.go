@@ -285,3 +285,62 @@ func (directoryRepository *DirectoryRepository) DeleteUserRelations(ctx context.
 
 	return nil
 }
+
+func (directoryRepository *DirectoryRepository) CheckDirectoriesExist(ctx context.Context, directoryIDs []uint) (bool, error) {
+	const op = "infrastructure.postgresrepo.directory.CheckDirectoriesExist"
+
+	if len(directoryIDs) == 0 {
+		return false, fmt.Errorf("%s: empty user list", op)
+	}
+
+	var count int64
+	err := directoryRepository.db.WithContext(ctx).
+		Model(&domain.Directory{}).
+		Where("id IN (?)", directoryIDs).
+		Count(&count).Error
+
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return count == int64(len(directoryIDs)), nil
+}
+
+func (r *DirectoryRepository) UpdateDirectories(ctx context.Context, workflowID uint, directoryIDs []uint) error {
+	const op = "infrastructure.postgresrepo.directory.UpdateDirectories"
+
+	// Начало транзакции
+	tx := r.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return fmt.Errorf("%s: failed to begin transaction: %w", op, tx.Error)
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Обновление workflow_id для всех указанных directory_ids
+	result := tx.Model(&domain.Directory{}).
+		Where("id IN ?", directoryIDs).
+		Update("workflow_id", workflowID)
+
+	if result.Error != nil {
+		tx.Rollback()
+		return fmt.Errorf("%s: %w", op, result.Error)
+	}
+
+	// Проверка, были ли затронуты строки
+	if result.RowsAffected == 0 {
+		tx.Rollback()
+		return fmt.Errorf("%s: %w", op, domain.ErrDirectoryNotFound)
+	}
+
+	// Фиксация изменений
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
