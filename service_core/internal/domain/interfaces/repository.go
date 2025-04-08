@@ -10,9 +10,10 @@ type UserRepository interface {
 	GetUserByLogin(ctx context.Context, login string) (user domain.User, err error)
 	GetUserRole(ctx context.Context, userID uint) (role string, err error)
 
-	SaveUser(ctx context.Context, login string, passHash []byte, roleID uint) (err error)
+	SaveUser(ctx context.Context, login string, passHash []byte, roleID uint) error
 	CheckUsersExist(ctx context.Context, userIDs []uint) (bool, error)
 	CheckUsersWithRole(ctx context.Context, roleID uint) (bool, error)
+	GetUsersGroupedByRoles(ctx context.Context) ([]domain.RoleData, error)
 }
 
 type ApprovalRepository interface {

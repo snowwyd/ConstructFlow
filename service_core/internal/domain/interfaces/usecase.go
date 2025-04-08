@@ -8,12 +8,10 @@ import (
 type AuthUsecase interface {
 	Login(ctx context.Context, login, password string) (token string, err error)
 	GetCurrentUser(ctx context.Context, userID uint) (userInfo domain.GetCurrentUserResponse, err error)
-
-	RegisterUser(ctx context.Context, login, password string, roleID uint) error
 }
 
 type ApprovalUsecase interface {
-	ApproveFile(ctx context.Context, fileID uint) (err error)
+	ApproveFile(ctx context.Context, fileID uint) error
 	GetApprovalsByUserID(ctx context.Context, userID uint) (approvals []domain.ApprovalResponse, err error)
 	SignApproval(ctx context.Context, approvalID, userID uint) error
 	AnnotateApproval(ctx context.Context, approvalID, userID uint, message string) error
@@ -33,4 +31,9 @@ type RoleUsecase interface {
 	RegisterRole(ctx context.Context, roleName string, userID uint) error
 	UpdateRole(ctx context.Context, roleID uint, roleName string, userID uint) error
 	DeleteRole(ctx context.Context, roleID uint, userID uint) error
+}
+
+type UserUsecase interface {
+	GetUsersGrouped(ctx context.Context, userID uint) (users []domain.RoleData, err error)
+	RegisterUser(ctx context.Context, login, password string, roleID uint, userID uint) error
 }

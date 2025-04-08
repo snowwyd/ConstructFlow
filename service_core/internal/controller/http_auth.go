@@ -85,48 +85,6 @@ type registerInput struct {
 	RoleID   uint   `json:"role_id"`
 }
 
-// RegisterUser godoc
-// @Summary Регистрация нового пользователя
-// @Description Регистрирует нового пользователя на основе предоставленных данных (логин, пароль, ID роли) и возвращает HTTP статус 201 при успешной регистрации.
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param input body registerInput true "Данные для регистрации пользователя"
-// @Success 201 {object} nil "Пользователь успешно зарегистрирован. Тело ответа пустое."
-// @Failure 400 {object} domain.ErrorResponse "Неверный запрос: отсутствуют обязательные поля или некорректный формат данных."
-// @Failure 409 {object} domain.ErrorResponse "Конфликт: пользователь с таким логином уже существует."
-// @Failure 404 {object} domain.ErrorResponse "Роль с указанным ID не найдена."
-// @Failure 500 {object} domain.ErrorResponse "Внутренняя ошибка сервера: не удалось зарегистрировать пользователя."
-// @Router /auth/register [post]
-func (h *AuthHandler) RegisterUser(c *gin.Context) {
-	var req registerInput
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
-		return
-	}
-
-	if req.Login == "" || req.Password == "" || req.RoleID == 0 {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "MISSING_FIELDS", "Login, password, and role_id are required")
-		return
-	}
-
-	// вызов Usecase RegisterUser
-	err := h.usecase.RegisterUser(c.Request.Context(), req.Login, req.Password, req.RoleID)
-	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrUserAlreadyExists):
-			utils.SendErrorResponse(c, http.StatusConflict, "USER_ALREADY_EXISTS", "User with this login already exists")
-		case errors.Is(err, domain.ErrRoleNotFound):
-			utils.SendErrorResponse(c, http.StatusNotFound, "ROLE_NOT_FOUND", "Role not found")
-		default:
-			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to register user")
-		}
-		return
-	}
-
-	c.Status(http.StatusCreated)
-}
 
 // GetCurrentUser godoc
 // @Summary Получение информации о текущем пользователе

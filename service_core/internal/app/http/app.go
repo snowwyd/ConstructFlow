@@ -22,6 +22,7 @@ type App struct {
 	fileApprovalsHandler *controller.FileApprovalsHandler
 	workflowHandler      *controller.WorkflowlHandler
 	roleHandler          *controller.RoleHandler
+	userHandler          *controller.UserHandler
 	cfg                  *config.Config
 	server               *http.Server
 }
@@ -33,6 +34,7 @@ func New(
 	fileApprovalsHandler *controller.FileApprovalsHandler,
 	workflowHandler *controller.WorkflowlHandler,
 	roleHandler *controller.RoleHandler,
+	userHandler *controller.UserHandler,
 	cfg *config.Config,
 ) *App {
 	return &App{
@@ -42,6 +44,7 @@ func New(
 		fileApprovalsHandler: fileApprovalsHandler,
 		workflowHandler:      workflowHandler,
 		roleHandler:          roleHandler,
+		userHandler:          userHandler,
 		cfg:                  cfg,
 	}
 }
@@ -70,6 +73,7 @@ func (a *App) Run() error {
 		a.fileApprovalsHandler,
 		a.workflowHandler,
 		a.roleHandler,
+		a.userHandler,
 		a.cfg,
 	)
 
@@ -95,6 +99,7 @@ func setupRoutes(
 	fileApprovalsHandler *controller.FileApprovalsHandler,
 	workflowHandler *controller.WorkflowlHandler,
 	roleHandler *controller.RoleHandler,
+	userHandler *controller.UserHandler,
 	cfg *config.Config,
 ) {
 	router.GET("/docs", func(c *gin.Context) {
@@ -105,8 +110,6 @@ func setupRoutes(
 	authGroup := router.Group("/auth")
 	{
 		authGroup.POST("/login", authHandler.Login)
-		authGroup.POST("/register", authHandler.RegisterUser)
-
 		authGroup.GET("/me", middleware.AuthMiddleware(cfg), authHandler.GetCurrentUser)
 	}
 
@@ -130,6 +133,7 @@ func setupRoutes(
 			workflowsGroup.GET("", workflowHandler.GetWorkflows)
 			workflowsGroup.POST("", workflowHandler.CreateWorkflow)
 			workflowsGroup.DELETE("", workflowHandler.DeleteWorkflow)
+			// TODO: get workflow by id
 			workflowsGroup.PUT("/:workflow_id", workflowHandler.UpdateWorkflow)
 		}
 
@@ -140,6 +144,13 @@ func setupRoutes(
 			rolesGroup.POST("", roleHandler.RegisterRole)
 			rolesGroup.PUT("/:role_id", roleHandler.UpdateRole)
 			rolesGroup.DELETE("", roleHandler.DeleteRole)
+		}
+
+		usersGroup := adminGroup.Group("/users")
+		{
+			usersGroup.GET("", userHandler.GetUsers)
+			usersGroup.POST("/register", userHandler.RegisterUser)
+
 		}
 	}
 

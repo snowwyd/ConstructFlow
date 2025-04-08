@@ -143,3 +143,44 @@ func (userRepo *UserRepository) CheckUsersWithRole(ctx context.Context, roleID u
 
 	return count > 0, nil
 }
+
+func (userRepo *UserRepository) GetUsersGroupedByRoles(ctx context.Context) ([]domain.RoleData, error) {
+	const op = "infrastructure.postgresrepo.user.GetUsersGroupedByRoles"
+
+	type UserWithRole struct {
+		UserID   uint   `json:"user_id"`
+		Login    string `json:"login"`
+		RoleName string `json:"role_name"`
+	}
+
+	var usersWithRoles []UserWithRole
+
+	err := userRepo.db.WithContext(ctx).
+		Table("users").
+		Select("users.id AS user_id, users.login, roles.role_name").
+		Joins("JOIN roles ON users.role_id = roles.id").
+		Where("users.deleted_at IS NULL AND roles.deleted_at IS NULL").
+		Scan(&usersWithRoles).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	groupedData := make(map[string][]domain.UserData)
+	for _, userWithRole := range usersWithRoles {
+		groupedData[userWithRole.RoleName] = append(groupedData[userWithRole.RoleName], domain.UserData{
+			UserID: userWithRole.UserID,
+			Login:  userWithRole.Login,
+		})
+	}
+
+	var roleData []domain.RoleData
+	for roleName, users := range groupedData {
+		roleData = append(roleData, domain.RoleData{
+			RoleName: roleName,
+			Users:    users,
+		})
+	}
+
+	return roleData, nil
+}
