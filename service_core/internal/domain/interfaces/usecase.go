@@ -9,9 +9,7 @@ type AuthUsecase interface {
 	Login(ctx context.Context, login, password string) (token string, err error)
 	GetCurrentUser(ctx context.Context, userID uint) (userInfo domain.GetCurrentUserResponse, err error)
 
-	// для админа и локального тестирования
-	RegisterUser(ctx context.Context, login, password string, roleID uint) (err error)
-	RegisterRole(ctx context.Context, roleName string) (err error)
+	RegisterUser(ctx context.Context, login, password string, roleID uint) error
 }
 
 type ApprovalUsecase interface {
@@ -27,4 +25,12 @@ type WorkflowUsecase interface {
 	CreateWorkflow(ctx context.Context, name string, stages []domain.WorkflowStage, userID uint) error
 	UpdateWorkflow(ctx context.Context, workflowID uint, name string, stages []domain.WorkflowStage, userID uint) error
 	DeleteWorkflow(ctx context.Context, workflowID uint, userID uint) error
+}
+
+type RoleUsecase interface {
+	GetRoles(ctx context.Context, userID uint) (workflows []domain.RoleResponse, err error)
+	GetRoleByID(ctx context.Context, roleID uint, userID uint) (role string, err error)
+	RegisterRole(ctx context.Context, roleName string, userID uint) error
+	UpdateRole(ctx context.Context, roleID uint, roleName string, userID uint) error
+	DeleteRole(ctx context.Context, roleID uint, userID uint) error
 }

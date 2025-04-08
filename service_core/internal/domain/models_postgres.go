@@ -5,7 +5,7 @@ import "gorm.io/gorm"
 // Role модель
 type Role struct {
 	gorm.Model
-	RoleName string `gorm:"unique;not null"`
+	RoleName string `gorm:"not null"`
 }
 
 // User модель

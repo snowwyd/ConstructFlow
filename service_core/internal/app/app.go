@@ -37,12 +37,23 @@ func New(cfg *config.Config, logger *slog.Logger) (*App, error) {
 	authUsecase := usecase.NewAuthUsecase(userRepo, roleRepo, cfg, logger)
 	approvalUsecase := usecase.NewApprovalUsecase(approvalRepo, fileService, logger)
 	workflowUsecase := usecase.NewWorkflowUsecase(workflowRepo, userRepo, fileService, logger)
+	roleUsecase := usecase.NewRoleUsecase(roleRepo, userRepo, logger)
 
 	authHandler := http.NewAuthHandler(authUsecase)
-	approvalHandler := http.NewApprovalHandler(approvalUsecase)
+	fileHandler := http.NewFileHandler(approvalUsecase)
+	approvalHandler := http.NewFileApprovalsHandler(approvalUsecase)
 	workflowHandler := http.NewWorkflowHandler(workflowUsecase)
+	roleHandler := http.NewRoleHandler(roleUsecase)
 
-	httpApp := httpapp.New(logger, authHandler, approvalHandler, workflowHandler, cfg)
+	httpApp := httpapp.New(
+		logger,
+		authHandler,
+		fileHandler,
+		approvalHandler,
+		workflowHandler,
+		roleHandler,
+		cfg,
+	)
 
 	return &App{
 		HTTPSrv: httpApp,

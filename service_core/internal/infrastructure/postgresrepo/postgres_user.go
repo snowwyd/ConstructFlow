@@ -127,3 +127,19 @@ func (r *UserRepository) CheckUsersExist(ctx context.Context, userIDs []uint) (b
 
 	return count == int64(len(userIDs)), nil
 }
+
+func (userRepo *UserRepository) CheckUsersWithRole(ctx context.Context, roleID uint) (bool, error) {
+	const op = "infrastructure.postgresrepo.user.CheckUsersWithRole"
+
+	var count int64
+	err := userRepo.db.WithContext(ctx).
+		Model(&domain.User{}).
+		Where("role_id = ?", roleID).
+		Count(&count).Error
+
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return count > 0, nil
+}

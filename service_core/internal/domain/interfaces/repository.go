@@ -5,24 +5,16 @@ import (
 	"service-core/internal/domain"
 )
 
-// Для вызова методов слоя БД для работы с пользователями
 type UserRepository interface {
 	GetUserByID(ctx context.Context, userID uint) (user domain.User, err error)
 	GetUserByLogin(ctx context.Context, login string) (user domain.User, err error)
 	GetUserRole(ctx context.Context, userID uint) (role string, err error)
 
-	// Админские ручки для создания/изменения пользователей
 	SaveUser(ctx context.Context, login string, passHash []byte, roleID uint) (err error)
 	CheckUsersExist(ctx context.Context, userIDs []uint) (bool, error)
+	CheckUsersWithRole(ctx context.Context, roleID uint) (bool, error)
 }
 
-// Для вызова методов слоя БД для работы с ролями
-type RoleRepository interface {
-	CreateRole(ctx context.Context, roleName string) (err error)
-	GetRoleByID(ctx context.Context, roleID uint) (roleName string, err error)
-}
-
-// Для вызова методов слоя БД для работы с файлами на согласовании
 type ApprovalRepository interface {
 	CreateApproval(ctx context.Context, approval *domain.Approval) error
 	FindApprovalsByUser(ctx context.Context, userID uint) ([]domain.ApprovalResponse, error)
@@ -41,4 +33,15 @@ type WorkflowRepository interface {
 	UpdateWorkflow(ctx context.Context, workflowID uint, name string, stages []domain.WorkflowStage) error
 	DeleteWorkflow(ctx context.Context, workflowID uint) error
 	CheckWorkflow(ctx context.Context, workflowID uint) (bool, error)
+}
+
+type RoleRepository interface {
+	GetRoles(ctx context.Context) (roles []domain.RoleResponse, err error)
+	GetRoleByID(ctx context.Context, roleID uint) (roleName string, err error)
+	CreateRole(ctx context.Context, roleName string) error
+	UpdateRole(ctx context.Context, roleID uint, roleName string) error
+	DeleteRole(ctx context.Context, roleID uint) error
+
+	CheckRole(ctx context.Context, roleID uint) (bool, error)
+	CheckRoleByName(ctx context.Context, roleName string) (bool, error)
 }

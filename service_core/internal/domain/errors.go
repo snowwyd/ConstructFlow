@@ -15,6 +15,7 @@ var (
 
 var (
 	ErrRoleNotFound = errors.New("role not found")
+	ErrRoleInUse    = errors.New("role in use")
 
 	ErrRoleAlreadyExists = errors.New("role already exists")
 )

@@ -139,24 +139,3 @@ func (u *AuthUsecase) GetCurrentUser(ctx context.Context, userID uint) (domain.G
 	}, nil
 }
 
-// RegisterRole создает роль
-func (u *AuthUsecase) RegisterRole(ctx context.Context, roleName string) error {
-	const op = "usecase.auth.RegisterRole"
-
-	log := u.log.With(slog.String("op", op), slog.Any("role", roleName))
-	log.Info("registering new role")
-
-	log.Debug("inserting role into DB")
-	err := u.roleRepo.CreateRole(ctx, roleName)
-	if err != nil {
-		if errors.Is(err, domain.ErrRoleAlreadyExists) {
-			u.log.Error("role already exists", slogger.Err(domain.ErrRoleAlreadyExists))
-			return fmt.Errorf("%s: %w", op, domain.ErrRoleAlreadyExists)
-		}
-		u.log.Error("failed to save role", slogger.Err(err))
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	log.Info("role registered successfully")
-	return nil
-}
