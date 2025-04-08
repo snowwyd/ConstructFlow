@@ -111,10 +111,10 @@ func (workflowRepo *WorkflowRepository) DeleteWorkflow(ctx context.Context, work
 	return nil
 }
 
-func (workflowRepository *WorkflowRepository) UpdateWorkflow(ctx context.Context, workflowID uint, name string, stages []domain.WorkflowStage) error {
+func (workflowRepo *WorkflowRepository) UpdateWorkflow(ctx context.Context, workflowID uint, name string, stages []domain.WorkflowStage) error {
 	const op = "infrastructure.postgresrepo.workflow.UpdateWorkflow"
 
-	tx := workflowRepository.db.WithContext(ctx).Begin()
+	tx := workflowRepo.db.WithContext(ctx).Begin()
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
@@ -155,6 +155,22 @@ func (r *WorkflowRepository) CheckWorkflow(ctx context.Context, workflowID uint)
 	err := r.db.WithContext(ctx).
 		Model(&domain.Workflow{}).
 		Where("workflow_id = ?", workflowID).
+		Count(&count).Error
+
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return count > 0, nil
+}
+
+func (workflowRepo *WorkflowRepository) CheckUserInWorkflow(ctx context.Context, userID uint) (bool, error) {
+	const op = "infrastructure.postgresrepo.workflow.CheckUserInWorkflow"
+
+	var count int64
+	err := workflowRepo.db.WithContext(ctx).
+		Model(&domain.Workflow{}).
+		Where("user_id = ?", userID).
 		Count(&count).Error
 
 	if err != nil {

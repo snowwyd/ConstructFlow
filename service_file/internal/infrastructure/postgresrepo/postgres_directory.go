@@ -253,3 +253,35 @@ func (directoryRepository *DirectoryRepository) CheckWorkflow(ctx context.Contex
 
 	return count > 0, nil
 }
+
+func (directoryRepository *DirectoryRepository) DeleteUserRelations(ctx context.Context, userID uint) error {
+	const op = "infrastructure.postgresrepo.directory.DeleteUserRelations"
+
+	tx := directoryRepository.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return fmt.Errorf("%s: failed to begin transaction: %w", op, tx.Error)
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	result := tx.Where("user_id = ?", userID).Delete(&domain.UserDirectory{})
+	if result.Error != nil {
+		tx.Rollback()
+		return fmt.Errorf("%s: %w", op, result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		tx.Rollback()
+		return fmt.Errorf("%s: %w", op, domain.ErrNoRelationsFound)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}

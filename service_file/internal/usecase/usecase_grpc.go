@@ -107,3 +107,33 @@ func (grpcUsecase *GRPCUsecase) CheckWorkflow(ctx context.Context, workflowID ui
 	log.Info("workflow existence checked successfully")
 	return exists, err
 }
+
+func (grpcUsecase *GRPCUsecase) DeleteUserRelations(ctx context.Context, userID uint) error {
+	const op = "usecases.grpc.DeleteUserRelations"
+
+	log := grpcUsecase.log.With(slog.String("op", op))
+	log.Info("deleting user relations")
+
+	log.Debug("deleting user_directories relations")
+	if err := grpcUsecase.directoryRepo.DeleteUserRelations(ctx, userID); err != nil {
+		if errors.Is(err, domain.ErrNoRelationsFound) {
+			log.Warn("no user relations found")
+			return nil
+		}
+		log.Error("failed to delete user_directories relations", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Debug("deleting user_files relations")
+	if err := grpcUsecase.fileMetadataRepo.DeleteUserRelations(ctx, userID); err != nil {
+		if errors.Is(err, domain.ErrNoRelationsFound) {
+			log.Warn("no user relations found")
+			return nil
+		}
+		log.Error("failed to delete user_files relations", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("user relations deleted successfully")
+	return nil
+}

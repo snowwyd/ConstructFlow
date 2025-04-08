@@ -45,11 +45,11 @@ func MustLoadEnv() *Config {
 	println(envFile)
 	switch *envFile {
 	case "dev":
-		envPath = "../../.env_dev"
+		envPath = ".env_dev"
 	case "prod":
-		envPath = "../../.env_prod"
+		envPath = ".env_prod"
 	default:
-		envPath = "../../.env_dev"
+		envPath = ".env_dev"
 	}
 
 	if err := godotenv.Load(envPath); err != nil {

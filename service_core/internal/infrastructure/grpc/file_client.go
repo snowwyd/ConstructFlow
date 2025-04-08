@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"service-core/internal/domain"
+	"service-core/pkg/config"
 
 	pb "service-core/internal/proto"
 
-	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -19,8 +18,10 @@ type FileGRPCClient struct {
 	client pb.FileServiceClient
 }
 
-func NewFileGRPCClient(address string) (*FileGRPCClient, error) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithUnaryInterceptor(addAPIKey)) // Используйте TLS в production
+func NewFileGRPCClient(cfg *config.Config) (*FileGRPCClient, error) {
+	apiKeyInterceptor := createAPIKeyInterceptor(cfg.SecretKeys.KeyGrpc)
+
+	conn, err := grpc.Dial(cfg.GRPCAddress, grpc.WithInsecure(), grpc.WithUnaryInterceptor(apiKeyInterceptor)) // Используйте TLS в production
 	if err != nil {
 		return nil, err
 	}
@@ -28,11 +29,11 @@ func NewFileGRPCClient(address string) (*FileGRPCClient, error) {
 	return &FileGRPCClient{client: client}, nil
 }
 
-func addAPIKey(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-	godotenv.Load()
-	apiKey := os.Getenv("GRPC_KEY")
-	ctx = metadata.AppendToOutgoingContext(ctx, "x-api-key", apiKey)
-	return invoker(ctx, method, req, reply, cc, opts...)
+func createAPIKeyInterceptor(apiKey string) grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		ctx = metadata.AppendToOutgoingContext(ctx, "x-api-key", apiKey)
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
 }
 
 func (c *FileGRPCClient) GetFileWithDirectory(ctx context.Context, fileID uint) (*domain.File, error) {
@@ -110,6 +111,21 @@ func (c *FileGRPCClient) CheckWorkflow(ctx context.Context, workflowID uint) (bo
 	}
 
 	return resp.Exists, nil
+}
+
+func (c *FileGRPCClient) DeleteUserRelations(ctx context.Context, userID uint) error {
+	const op = "infrastructure.grpc.fileclient.DeleteUserRelations"
+
+	req := &pb.DeleteUserRelationsRequest{
+		UserId: uint32(userID),
+	}
+
+	_, err := c.client.DeleteUserRelations(ctx, req)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }
 
 func uintPtrOrNil(value uint32) *uint {

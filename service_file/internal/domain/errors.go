@@ -32,3 +32,7 @@ var (
 	ErrUnsupportedFormat = errors.New("unsupported file format")
 	ErrConversionFailed  = errors.New("conversion failed")
 )
+
+var (
+	ErrNoRelationsFound = errors.New("no user relations found")
+)

@@ -36,6 +36,21 @@ type WorkflowResponse struct {
 	WorkflowLength int    `json:"workflow_length"`
 }
 
+type RoleResponse struct {
+	RoleID   uint   `json:"role_id"`
+	RoleName string `json:"role_name"`
+}
+
+type RoleData struct {
+	RoleName string     `json:"role_name"`
+	Users    []UserData `json:"users"`
+}
+
+type UserData struct {
+	UserID uint   `json:"user_id"`
+	Login  string `json:"login"`
+}
+
 // Directory модель
 type Directory struct {
 	ID           uint

@@ -49,7 +49,7 @@ func main() {
 			&domain.Role{},
 			&domain.User{},
 			&domain.Approval{},
-			&domain.Workflow{}, // Явное указание связующих таблиц
+			&domain.Workflow{},
 		)
 
 		db.Exec("CREATE SEQUENCE IF NOT EXISTS workflows_workflow_id_seq")

@@ -12,56 +12,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ApprovalHandler struct {
+type FileApprovalsHandler struct {
 	usecase interfaces.ApprovalUsecase
 }
 
-// конструктор
-func NewApprovalHandler(usecase interfaces.ApprovalUsecase) *ApprovalHandler {
-	return &ApprovalHandler{usecase: usecase}
-}
-
-// ApproveFile godoc
-// @Summary Отправить файл на согласование
-// @Description Переводит файл в статус "на согласовании". Файл должен находиться в состоянии черновика.
-// @Tags approval
-// @Security ApiKeyAuth
-// @Param file_id path string true "ID файла (числовой формат, например: 123)"
-// @Accept json
-// @Produce json
-// @Success 201 {object} nil "Файл успешно отправлен на согласование"
-// @Failure 400 {object} domain.ErrorResponse "Невалидный ID файла или файл не в статусе 'черновик'"
-// @Failure 404 {object} domain.ErrorResponse "Файл с указанным ID не найден"
-// @Failure 500 {object} domain.ErrorResponse "Ошибка при изменении статуса файла"
-// @Router /files/{file_id}/approve [put]
-func (h *ApprovalHandler) ApproveFile(c *gin.Context) {
-	_, err := utils.ExtractUserID(c)
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
-		return
-	}
-
-	fileIDStr := c.Param("file_id")
-	fileID, err := strconv.ParseUint(fileIDStr, 10, 64)
-	if err != nil {
-		utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_FILE_ID", "Invalid file ID")
-		return
-	}
-
-	err = h.usecase.ApproveFile(c.Request.Context(), uint(fileID))
-	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrFileNotFound):
-			utils.SendErrorResponse(c, http.StatusNotFound, "FILE_NOT_FOUND", "File not found")
-		case errors.Is(err, domain.ErrInvalidFileStatus):
-			utils.SendErrorResponse(c, http.StatusBadRequest, "INVALID_STATUS", "File is not in a draft state")
-		default:
-			utils.SendErrorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to approve file")
-		}
-		return
-	}
-
-	c.Status(http.StatusCreated)
+func NewFileApprovalsHandler(usecase interfaces.ApprovalUsecase) *FileApprovalsHandler {
+	return &FileApprovalsHandler{usecase: usecase}
 }
 
 // GetApprovalsByUser godoc
@@ -75,7 +31,7 @@ func (h *ApprovalHandler) ApproveFile(c *gin.Context) {
 // @Failure 401 {object} domain.ErrorResponse "Отсутствует/недействителен API-ключ"
 // @Failure 500 {object} domain.ErrorResponse "Ошибка при получении данных"
 // @Router /file-approvals [get]
-func (h *ApprovalHandler) GetApprovalsByUser(c *gin.Context) {
+func (h *FileApprovalsHandler) GetApprovalsByUser(c *gin.Context) {
 	userID, err := utils.ExtractUserID(c)
 	if err != nil {
 		utils.SendErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
@@ -106,7 +62,7 @@ func (h *ApprovalHandler) GetApprovalsByUser(c *gin.Context) {
 // @Failure 404 {object} domain.ErrorResponse "Согласование не найдено"
 // @Failure 500 {object} domain.ErrorResponse "Ошибка при обработке подписи"
 // @Router /file-approvals/{approval_id}/sign [put]
-func (h *ApprovalHandler) SignApproval(c *gin.Context) {
+func (h *FileApprovalsHandler) SignApproval(c *gin.Context) {
 	approvalIDStr := c.Param("approval_id")
 	approvalID, err := strconv.ParseUint(approvalIDStr, 10, 64)
 	if err != nil {
@@ -156,7 +112,7 @@ type annotateApprovalInput struct {
 // @Failure 404 {object} domain.ErrorResponse "Согласование не найдено"
 // @Failure 500 {object} domain.ErrorResponse "Ошибка при добавлении примечания"
 // @Router /file-approvals/{approval_id}/annotate [put]
-func (h *ApprovalHandler) AnnotateApproval(c *gin.Context) {
+func (h *FileApprovalsHandler) AnnotateApproval(c *gin.Context) {
 	approvalIDStr := c.Param("approval_id")
 	approvalID, err := strconv.ParseUint(approvalIDStr, 10, 64)
 	if err != nil {
@@ -206,7 +162,7 @@ func (h *ApprovalHandler) AnnotateApproval(c *gin.Context) {
 // @Failure 404 {object} domain.ErrorResponse "Согласование не найдено"
 // @Failure 500 {object} domain.ErrorResponse "Ошибка при завершении согласования"
 // @Router /file-approvals/{approval_id}/finalize [put]
-func (h *ApprovalHandler) FinalizeApproval(c *gin.Context) {
+func (h *FileApprovalsHandler) FinalizeApproval(c *gin.Context) {
 	approvalIDStr := c.Param("approval_id")
 	approvalID, err := strconv.ParseUint(approvalIDStr, 10, 64)
 	if err != nil {

@@ -16,21 +16,36 @@ import (
 )
 
 type App struct {
-	log             *slog.Logger
-	authHandler     *controller.AuthHandler
-	approvalHandler *controller.ApprovalHandler
-	workflowHandler *controller.WorkflowlHandler
-	cfg             *config.Config
-	server          *http.Server
+	log                  *slog.Logger
+	authHandler          *controller.AuthHandler
+	fileHandler          *controller.FileHandler
+	fileApprovalsHandler *controller.FileApprovalsHandler
+	workflowHandler      *controller.WorkflowlHandler
+	roleHandler          *controller.RoleHandler
+	userHandler          *controller.UserHandler
+	cfg                  *config.Config
+	server               *http.Server
 }
 
-func New(log *slog.Logger, authHandler *controller.AuthHandler, approvalHandler *controller.ApprovalHandler, workflowHandler *controller.WorkflowlHandler, cfg *config.Config) *App {
+func New(
+	log *slog.Logger,
+	authHandler *controller.AuthHandler,
+	fileHandler *controller.FileHandler,
+	fileApprovalsHandler *controller.FileApprovalsHandler,
+	workflowHandler *controller.WorkflowlHandler,
+	roleHandler *controller.RoleHandler,
+	userHandler *controller.UserHandler,
+	cfg *config.Config,
+) *App {
 	return &App{
-		log:             log,
-		authHandler:     authHandler,
-		approvalHandler: approvalHandler,
-		workflowHandler: workflowHandler,
-		cfg:             cfg,
+		log:                  log,
+		authHandler:          authHandler,
+		fileHandler:          fileHandler,
+		fileApprovalsHandler: fileApprovalsHandler,
+		workflowHandler:      workflowHandler,
+		roleHandler:          roleHandler,
+		userHandler:          userHandler,
+		cfg:                  cfg,
 	}
 }
 
@@ -51,7 +66,16 @@ func (a *App) Run() error {
 	router := gin.Default()
 	router.Use(gin.Recovery(), middleware.CORSMiddleware())
 
-	setupRoutes(router, a.authHandler, a.approvalHandler, a.workflowHandler, a.cfg)
+	setupRoutes(
+		router,
+		a.authHandler,
+		a.fileHandler,
+		a.fileApprovalsHandler,
+		a.workflowHandler,
+		a.roleHandler,
+		a.userHandler,
+		a.cfg,
+	)
 
 	port := a.cfg.HTTPServer.Address
 	log.Info("starting HTTP server", slog.String("port", port))
@@ -68,7 +92,16 @@ func (a *App) Run() error {
 	return nil
 }
 
-func setupRoutes(router *gin.Engine, authHandler *controller.AuthHandler, approvalHandler *controller.ApprovalHandler, workflowHandler *controller.WorkflowlHandler, cfg *config.Config) {
+func setupRoutes(
+	router *gin.Engine,
+	authHandler *controller.AuthHandler,
+	fileHandler *controller.FileHandler,
+	fileApprovalsHandler *controller.FileApprovalsHandler,
+	workflowHandler *controller.WorkflowlHandler,
+	roleHandler *controller.RoleHandler,
+	userHandler *controller.UserHandler,
+	cfg *config.Config,
+) {
 	router.GET("/docs", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/docs/index.html")
 	})
@@ -77,32 +110,51 @@ func setupRoutes(router *gin.Engine, authHandler *controller.AuthHandler, approv
 	authGroup := router.Group("/auth")
 	{
 		authGroup.POST("/login", authHandler.Login)
-		authGroup.POST("/register", authHandler.RegisterUser)
-		authGroup.POST("/role", authHandler.RegisterRole)
-
 		authGroup.GET("/me", middleware.AuthMiddleware(cfg), authHandler.GetCurrentUser)
 	}
 
 	filesGroup := router.Group("/files", middleware.AuthMiddleware(cfg))
 	{
-		filesGroup.PUT("/:file_id/approve", approvalHandler.ApproveFile)
+		filesGroup.PUT("/:file_id/approve", fileHandler.ApproveFile)
 	}
 
 	approvalsGroup := router.Group("/file-approvals", middleware.AuthMiddleware(cfg))
 	{
-		approvalsGroup.GET("", approvalHandler.GetApprovalsByUser)
-		approvalsGroup.PUT("/:approval_id/sign", approvalHandler.SignApproval)
-		approvalsGroup.PUT("/:approval_id/annotate", approvalHandler.AnnotateApproval)
-		approvalsGroup.PUT("/:approval_id/finalize", approvalHandler.FinalizeApproval)
+		approvalsGroup.GET("", fileApprovalsHandler.GetApprovalsByUser)
+		approvalsGroup.PUT("/:approval_id/sign", fileApprovalsHandler.SignApproval)
+		approvalsGroup.PUT("/:approval_id/annotate", fileApprovalsHandler.AnnotateApproval)
+		approvalsGroup.PUT("/:approval_id/finalize", fileApprovalsHandler.FinalizeApproval)
 	}
 
-	workflowsGroup := router.Group("/workflows", middleware.AuthMiddleware(cfg))
+	adminGroup := router.Group("/admin", middleware.AuthMiddleware(cfg))
 	{
-		workflowsGroup.GET("", workflowHandler.GetWorkflows)
-		workflowsGroup.POST("", workflowHandler.CreateWorkflow)
-		workflowsGroup.DELETE("", workflowHandler.DeleteWorkflow)
-		workflowsGroup.PUT("/:workflow_id", workflowHandler.UpdateWorkflow)
+		workflowsGroup := adminGroup.Group("/workflows")
+		{
+			workflowsGroup.GET("", workflowHandler.GetWorkflows)
+			workflowsGroup.POST("", workflowHandler.CreateWorkflow)
+			workflowsGroup.DELETE("", workflowHandler.DeleteWorkflow)
+			// TODO: get workflow by id
+			workflowsGroup.PUT("/:workflow_id", workflowHandler.UpdateWorkflow)
+		}
+
+		rolesGroup := adminGroup.Group("/roles")
+		{
+			rolesGroup.GET("", roleHandler.GetRoles)
+			rolesGroup.GET("/:role_id", roleHandler.GetRole)
+			rolesGroup.POST("", roleHandler.RegisterRole)
+			rolesGroup.PUT("/:role_id", roleHandler.UpdateRole)
+			rolesGroup.DELETE("", roleHandler.DeleteRole)
+		}
+
+		usersGroup := adminGroup.Group("/users")
+		{
+			usersGroup.GET("", userHandler.GetUsers)
+			usersGroup.POST("/register", userHandler.RegisterUser)
+			usersGroup.PUT("/:user_id", userHandler.UpdateUser)
+			usersGroup.DELETE("", userHandler.DeleteUser)
+		}
 	}
+
 }
 
 func (a *App) Stop() {
