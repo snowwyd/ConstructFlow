@@ -20,10 +20,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FileService_GetFileByID_FullMethodName      = "/file.FileService/GetFileByID"
-	FileService_UpdateFileStatus_FullMethodName = "/file.FileService/UpdateFileStatus"
-	FileService_GetFilesInfo_FullMethodName     = "/file.FileService/GetFilesInfo"
-	FileService_CheckWorkflow_FullMethodName    = "/file.FileService/CheckWorkflow"
+	FileService_GetFileByID_FullMethodName         = "/file.FileService/GetFileByID"
+	FileService_UpdateFileStatus_FullMethodName    = "/file.FileService/UpdateFileStatus"
+	FileService_GetFilesInfo_FullMethodName        = "/file.FileService/GetFilesInfo"
+	FileService_CheckWorkflow_FullMethodName       = "/file.FileService/CheckWorkflow"
+	FileService_DeleteUserRelations_FullMethodName = "/file.FileService/DeleteUserRelations"
 )
 
 // FileServiceClient is the client API for FileService service.
@@ -34,6 +35,7 @@ type FileServiceClient interface {
 	UpdateFileStatus(ctx context.Context, in *UpdateFileStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetFilesInfo(ctx context.Context, in *GetFilesRequest, opts ...grpc.CallOption) (*GetFilesResponse, error)
 	CheckWorkflow(ctx context.Context, in *CheckWorkflowRequest, opts ...grpc.CallOption) (*CheckWorkflowResponse, error)
+	DeleteUserRelations(ctx context.Context, in *DeleteUserRelationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type fileServiceClient struct {
@@ -84,6 +86,16 @@ func (c *fileServiceClient) CheckWorkflow(ctx context.Context, in *CheckWorkflow
 	return out, nil
 }
 
+func (c *fileServiceClient) DeleteUserRelations(ctx context.Context, in *DeleteUserRelationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, FileService_DeleteUserRelations_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServiceServer is the server API for FileService service.
 // All implementations must embed UnimplementedFileServiceServer
 // for forward compatibility.
@@ -92,6 +104,7 @@ type FileServiceServer interface {
 	UpdateFileStatus(context.Context, *UpdateFileStatusRequest) (*emptypb.Empty, error)
 	GetFilesInfo(context.Context, *GetFilesRequest) (*GetFilesResponse, error)
 	CheckWorkflow(context.Context, *CheckWorkflowRequest) (*CheckWorkflowResponse, error)
+	DeleteUserRelations(context.Context, *DeleteUserRelationsRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedFileServiceServer()
 }
 
@@ -113,6 +126,9 @@ func (UnimplementedFileServiceServer) GetFilesInfo(context.Context, *GetFilesReq
 }
 func (UnimplementedFileServiceServer) CheckWorkflow(context.Context, *CheckWorkflowRequest) (*CheckWorkflowResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckWorkflow not implemented")
+}
+func (UnimplementedFileServiceServer) DeleteUserRelations(context.Context, *DeleteUserRelationsRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteUserRelations not implemented")
 }
 func (UnimplementedFileServiceServer) mustEmbedUnimplementedFileServiceServer() {}
 func (UnimplementedFileServiceServer) testEmbeddedByValue()                     {}
@@ -207,6 +223,24 @@ func _FileService_CheckWorkflow_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileService_DeleteUserRelations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteUserRelationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).DeleteUserRelations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_DeleteUserRelations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).DeleteUserRelations(ctx, req.(*DeleteUserRelationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FileService_ServiceDesc is the grpc.ServiceDesc for FileService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -229,6 +263,10 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckWorkflow",
 			Handler:    _FileService_CheckWorkflow_Handler,
+		},
+		{
+			MethodName: "DeleteUserRelations",
+			Handler:    _FileService_DeleteUserRelations_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -73,15 +73,12 @@ func (s *GRPCServer) GetFilesInfo(ctx context.Context, req *pb.GetFilesRequest) 
 	fileIDs := req.FileIds
 	fileNames := make(map[uint32]string)
 
-	// Получаем все файлы за один запрос
-
 	files, err := s.usecase.GetFilesByID(ctx, fileIDs)
 	if err != nil {
 		// TODO: custom errors
 		return nil, status.Errorf(codes.Internal, "failed to get files: %v", err)
 	}
 
-	// Заполняем map file_id → file_name
 	for _, file := range files {
 		fileNames[uint32(file.ID)] = file.Name
 	}
@@ -99,4 +96,14 @@ func (s *GRPCServer) CheckWorkflow(ctx context.Context, req *pb.CheckWorkflowReq
 	}
 
 	return &pb.CheckWorkflowResponse{Exists: exists}, nil
+}
+
+func (s *GRPCServer) DeleteUserRelations(ctx context.Context, req *pb.DeleteUserRelationsRequest) (*emptypb.Empty, error) {
+	err := s.usecase.DeleteUserRelations(ctx, uint(req.GetUserId()))
+	if err != nil {
+		// TODO: custom errors
+		return nil, status.Errorf(codes.Internal, "failed to delete user relations")
+	}
+
+	return &emptypb.Empty{}, nil
 }

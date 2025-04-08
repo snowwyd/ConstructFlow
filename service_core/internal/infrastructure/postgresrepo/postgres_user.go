@@ -160,6 +160,7 @@ func (userRepo *UserRepository) GetUsersGroupedByRoles(ctx context.Context) ([]d
 		Select("users.id AS user_id, users.login, roles.role_name").
 		Joins("JOIN roles ON users.role_id = roles.id").
 		Where("users.deleted_at IS NULL AND roles.deleted_at IS NULL").
+		Order("users.login ASC").
 		Scan(&usersWithRoles).Error
 
 	if err != nil {
@@ -183,4 +184,86 @@ func (userRepo *UserRepository) GetUsersGroupedByRoles(ctx context.Context) ([]d
 	}
 
 	return roleData, nil
+}
+
+func (userRepo *UserRepository) UpdateUser(ctx context.Context, login string, hashedPassword []byte, roleID, userID uint) error {
+	const op = "infrastructure.postgresrepo.user.UpdateUser"
+
+	tx := userRepo.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return fmt.Errorf("%s: failed to begin transaction: %w", op, tx.Error)
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	var count int64
+	if err := tx.Model(&domain.User{}).
+		Where("login = ? AND id != ?", login, userID).
+		Count(&count).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if count > 0 {
+		tx.Rollback()
+		return fmt.Errorf("%s: %w", op, domain.ErrUserAlreadyExists)
+	}
+
+	if err := tx.Model(&domain.User{}).
+		Where("id = ?", userID).
+		Updates(map[string]interface{}{
+			"login":     login,
+			"pass_hash": hashedPassword,
+			"role_id":   roleID,
+		}).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (userRepo *UserRepository) DeleteUser(ctx context.Context, userID uint) error {
+	const op = "infrastructure.postgresrepo.user.DeleteUser"
+
+	tx := userRepo.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return fmt.Errorf("%s: failed to begin transaction: %w", op, tx.Error)
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Проверка существования пользователя
+	var existingUser domain.User
+	if err := tx.First(&existingUser, userID).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("%s: %w", op, domain.ErrUserNotFound)
+		}
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	// Физическое удаление пользователя
+	if err := tx.Where("id = ?", userID).Delete(&domain.User{}).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }

@@ -38,7 +38,7 @@ func New(cfg *config.Config, logger *slog.Logger) (*App, error) {
 	approvalUsecase := usecase.NewApprovalUsecase(approvalRepo, fileService, logger)
 	workflowUsecase := usecase.NewWorkflowUsecase(workflowRepo, userRepo, fileService, logger)
 	roleUsecase := usecase.NewRoleUsecase(roleRepo, userRepo, logger)
-	userUsecase := usecase.NewUserUsecase(userRepo, roleRepo, logger)
+	userUsecase := usecase.NewUserUsecase(userRepo, roleRepo, workflowRepo, fileService, logger)
 
 	authHandler := http.NewAuthHandler(authUsecase)
 	fileHandler := http.NewFileHandler(approvalUsecase)

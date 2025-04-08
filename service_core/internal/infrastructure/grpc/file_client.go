@@ -113,6 +113,21 @@ func (c *FileGRPCClient) CheckWorkflow(ctx context.Context, workflowID uint) (bo
 	return resp.Exists, nil
 }
 
+func (c *FileGRPCClient) DeleteUserRelations(ctx context.Context, userID uint) error {
+	const op = "infrastructure.grpc.fileclient.DeleteUserRelations"
+
+	req := &pb.DeleteUserRelationsRequest{
+		UserId: uint32(userID),
+	}
+
+	_, err := c.client.DeleteUserRelations(ctx, req)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
 func uintPtrOrNil(value uint32) *uint {
 	if value == 0 {
 		return nil

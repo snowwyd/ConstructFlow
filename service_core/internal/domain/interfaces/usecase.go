@@ -35,5 +35,7 @@ type RoleUsecase interface {
 
 type UserUsecase interface {
 	GetUsersGrouped(ctx context.Context, userID uint) (users []domain.RoleData, err error)
-	RegisterUser(ctx context.Context, login, password string, roleID uint, userID uint) error
+	RegisterUser(ctx context.Context, login, password string, roleID, userID uint) error
+	UpdateUser(ctx context.Context, login, password string, roleID, userID, actorID uint) error
+	DeleteUser(ctx context.Context, userID, actorID uint) error
 }

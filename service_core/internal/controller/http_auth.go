@@ -79,13 +79,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
-type registerInput struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
-	RoleID   uint   `json:"role_id"`
-}
-
-
 // GetCurrentUser godoc
 // @Summary Получение информации о текущем пользователе
 // @Description Возвращает информацию о пользователе на основе JWT токена, извлеченного из заголовка Authorization.

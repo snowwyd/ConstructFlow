@@ -150,7 +150,8 @@ func setupRoutes(
 		{
 			usersGroup.GET("", userHandler.GetUsers)
 			usersGroup.POST("/register", userHandler.RegisterUser)
-
+			usersGroup.PUT("/:user_id", userHandler.UpdateUser)
+			usersGroup.DELETE("", userHandler.DeleteUser)
 		}
 	}
 

@@ -13,6 +13,8 @@ service FileService {
 
   rpc CheckWorkflow(CheckWorkflowRequest) returns (CheckWorkflowResponse);
 
+  rpc DeleteUserRelations(DeleteUserRelationsRequest) returns (google.protobuf.Empty);
+
   // TODO: остальные методы
 }
 
@@ -56,4 +58,8 @@ message CheckWorkflowRequest {
 
 message CheckWorkflowResponse {
   bool exists = 1;
+}
+
+message DeleteUserRelationsRequest {
+  uint32 user_id = 1;
 }

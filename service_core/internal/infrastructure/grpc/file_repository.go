@@ -11,6 +11,8 @@ type FileRepositoryImpl struct {
 	client *FileGRPCClient
 }
 
+// TODO: убрать костыль
+
 func NewFileService(client *FileGRPCClient) interfaces.FileService {
 	return &FileRepositoryImpl{client: client}
 }
@@ -29,4 +31,8 @@ func (r *FileRepositoryImpl) GetFilesInfo(ctx context.Context, fileIDs []uint32)
 
 func (r *FileRepositoryImpl) CheckWorkflow(ctx context.Context, workflowID uint) (bool, error) {
 	return r.client.CheckWorkflow(ctx, workflowID)
+}
+
+func (r *FileRepositoryImpl) DeleteUserRelations(ctx context.Context, userID uint) error {
+	return r.client.DeleteUserRelations(ctx, userID)
 }

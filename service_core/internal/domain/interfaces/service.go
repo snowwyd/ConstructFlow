@@ -11,4 +11,6 @@ type FileService interface {
 	GetFilesInfo(ctx context.Context, fileIDs []uint32) (map[uint32]string, error)
 
 	CheckWorkflow(ctx context.Context, workflowID uint) (bool, error)
+
+	DeleteUserRelations(ctx context.Context, userID uint) error
 }

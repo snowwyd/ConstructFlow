@@ -14,6 +14,8 @@ type UserRepository interface {
 	CheckUsersExist(ctx context.Context, userIDs []uint) (bool, error)
 	CheckUsersWithRole(ctx context.Context, roleID uint) (bool, error)
 	GetUsersGroupedByRoles(ctx context.Context) ([]domain.RoleData, error)
+	UpdateUser(ctx context.Context, login string, hashedPassword []byte, roleID, userID uint) error
+	DeleteUser(ctx context.Context, userID uint) error
 }
 
 type ApprovalRepository interface {
@@ -34,6 +36,7 @@ type WorkflowRepository interface {
 	UpdateWorkflow(ctx context.Context, workflowID uint, name string, stages []domain.WorkflowStage) error
 	DeleteWorkflow(ctx context.Context, workflowID uint) error
 	CheckWorkflow(ctx context.Context, workflowID uint) (bool, error)
+	CheckUserInWorkflow(ctx context.Context, userID uint) (bool, error)
 }
 
 type RoleRepository interface {
