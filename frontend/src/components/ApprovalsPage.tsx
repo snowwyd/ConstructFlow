@@ -1,247 +1,586 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { CheckCircleOutline } from '@mui/icons-material';
+import CloseIcon from '@mui/icons-material/Close';
+import CommentOutlinedIcon from '@mui/icons-material/CommentOutlined';
+import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
+import HourglassTopOutlinedIcon from '@mui/icons-material/HourglassTopOutlined';
+import {
+	Alert,
+	alpha,
+	Box,
+	Button,
+	Chip,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
+	Divider,
+	IconButton,
+	Paper,
+	Snackbar,
+	TextField,
+	Tooltip,
+	Typography,
+	useTheme,
+} from '@mui/material';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
+import axiosFetching from '../api/AxiosFetch';
+import { updateApprovalsCount } from '../api/NavigationService';
 import config from '../constants/Configurations.json';
-import axiosFetching from "../api/AxiosFetch";
-import ErrorState from "./ErrorState";
-import LoadingState from "./LoadingState";
-import { useDispatch } from "react-redux";
-import { useEffect, useState } from "react";
-import { CheckCircleOutline, CancelOutlined } from '@mui/icons-material';
-import { setPendingCount } from "../store/Slices/pendingApprovalsSlice";
-import { Box, IconButton, Snackbar, Tooltip, Dialog, DialogTitle, DialogContent, TextField, DialogActions, Button } from "@mui/material";
+import { ApprovalResponse } from '../interfaces/Approvals';
+import { setPendingCount } from '../store/Slices/pendingApprovalsSlice';
+import ErrorState from './ErrorState';
+import LoadingState from './LoadingState';
 
+// Config endpoints
 const getApprovals = config.getApprovals;
 const approveDocument = config.approveDocument;
 const annotateDocument = config.annotateDocument;
 const finalizeDocument = config.finalizeDocument;
 
-interface ResponseProps {
-    approval_id: number,
-    file_id: number,
-    file_name: string,
-    status: string,
-    workflow_order: number,
-    workflow_user_count: number
-}
-
+/**
+ * Main component for displaying and managing document approvals
+ * This page allows users to view, approve, finalize, and annotate documents
+ * in the approval workflow
+ */
 export const ApprovalsPage = () => {
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
-    const [isAnnotationModalOpen, setIsAnnotationModalOpen] = useState(false); 
-    const [annotationMessage, setAnnotationMessage] = useState('');
-    const [selectedFileId, setSelectedFileId] = useState<number | null>(null); 
+	// State management
+	const [snackbarOpen, setSnackbarOpen] = useState(false);
+	const [snackbarMessage, setSnackbarMessage] = useState('');
+	const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>(
+		'success'
+	);
+	const [isAnnotationModalOpen, setIsAnnotationModalOpen] = useState(false);
+	const [annotationMessage, setAnnotationMessage] = useState('');
+	const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
+	const [selectedFileName, setSelectedFileName] = useState<string>('');
 
-    const dispatch = useDispatch();
-    const isAdmin = true;
+	const dispatch = useDispatch();
+	const theme = useTheme();
+	const isAdmin = true; // This should be determined by user role in a real app
 
-    const {
-        data: apiResponse,
-        isLoading,
-        isError,
-        refetch,
-    } = useQuery({
-        queryKey: ['approvals'],
-        queryFn: async () => {
-            const response = await axiosFetching.get(getApprovals);
-            return response.data;
-        },
-    });
+	// Fetch approvals data
+	const {
+		data: apiResponse,
+		isLoading,
+		isError,
+		refetch,
+	} = useQuery({
+		queryKey: ['approvals'],
+		queryFn: async () => {
+			const response = await axiosFetching.get(getApprovals);
+			return response.data;
+		},
+	});
 
-    useEffect(() => {
-        if (apiResponse) {
-            const pendingCount = apiResponse.length;
-            dispatch(setPendingCount(pendingCount));
-        }
-    }, [apiResponse, dispatch]);
+	// Update pending count in global state
+	useEffect(() => {
+		if (apiResponse) {
+			const pendingCount = apiResponse.length;
+			dispatch(setPendingCount(pendingCount));
 
-    const approveDocumentMutation = useMutation({
-        mutationFn: async (approvalId: number) => {
-            const url = approveDocument.replace(':approval_id', String(approvalId));
-            const response = await axiosFetching.put(url);
-            return response.data;
-        },
-        onSuccess: () => {
-            setSnackbarMessage('Документ был согласован!');
-            setSnackbarOpen(true);
-            refetch();
-        },
-        onError: () => {
-            setSnackbarMessage('Ошибка при согласовании документа.');
-            setSnackbarOpen(true);
-        },
-    });
+			// Also update global count via event
+			updateApprovalsCount();
+		}
+	}, [apiResponse, dispatch]);
 
-    const annotateDocumentMutation = useMutation({
-        mutationFn: async ({ approvalId, message }: { approvalId: number; message: string }) => {
-            const url = annotateDocument.replace(':approval_id', String(approvalId));
-            const response = await axiosFetching.put(url, { message }); 
-            return response.data;
-        },
-        onSuccess: () => {
-            setSnackbarMessage('Документ был отправлен на аннотацию!');
-            setSnackbarOpen(true);
-            refetch();
-            setIsAnnotationModalOpen(false);
-            setAnnotationMessage(''); 
-        },
-        onError: () => {
-            setSnackbarMessage('Ошибка при аннотации документа.');
-            setSnackbarOpen(true);
-        },
-    });
+	// Mutations for document actions
+	const approveDocumentMutation = useMutation({
+		mutationFn: async (approvalId: number) => {
+			const url = approveDocument.replace(':approval_id', String(approvalId));
+			const response = await axiosFetching.put(url);
+			return response.data;
+		},
+		onSuccess: () => {
+			setSnackbarMessage('Документ был успешно согласован!');
+			setSnackbarSeverity('success');
+			setSnackbarOpen(true);
+			refetch();
 
-    const finalizeDocumentMutation = useMutation({
-        mutationFn: async (approvalId: number) => {
-            const url = finalizeDocument.replace(':approval_id', String(approvalId));
-            const response = await axiosFetching.put(url);
-            return response.data;
-        },
-        onSuccess: () => {
-            setSnackbarMessage('Документ был финализирован!');
-            setSnackbarOpen(true);
-            refetch();
-        },
-        onError: () => {
-            setSnackbarMessage('Ошибка при финализации документа.');
-            setSnackbarOpen(true);
-        },
-    });
+			// Update global approval count
+			updateApprovalsCount();
+		},
+		onError: () => {
+			setSnackbarMessage('Ошибка при согласовании документа.');
+			setSnackbarSeverity('error');
+			setSnackbarOpen(true);
+		},
+	});
 
-    const handleApproveOrFinalize = (document: ResponseProps) => {
-        if (document.workflow_order === document.workflow_user_count) {
-            finalizeDocumentMutation.mutate(document.approval_id);
-        } else {
-            approveDocumentMutation.mutate(document.approval_id);
-        }
-    };
+	const annotateDocumentMutation = useMutation({
+		mutationFn: async ({
+			approvalId,
+			message,
+		}: {
+			approvalId: number;
+			message: string;
+		}) => {
+			const url = annotateDocument.replace(':approval_id', String(approvalId));
+			const response = await axiosFetching.put(url, { message });
+			return response.data;
+		},
+		onSuccess: () => {
+			setSnackbarMessage('Документ был успешно отправлен на доработку!');
+			setSnackbarSeverity('success');
+			setSnackbarOpen(true);
+			refetch();
+			setIsAnnotationModalOpen(false);
+			setAnnotationMessage('');
 
-    const handleAnnotateClick = (fileId: number) => {
-        setSelectedFileId(fileId); 
-        setIsAnnotationModalOpen(true); 
-    };
+			// Update global approval count
+			updateApprovalsCount();
+		},
+		onError: () => {
+			setSnackbarMessage('Ошибка при отправке документа на доработку.');
+			setSnackbarSeverity('error');
+			setSnackbarOpen(true);
+		},
+	});
 
-    const handleAnnotationSubmit = () => {
-        if (selectedFileId && annotationMessage.trim()) {
-            annotateDocumentMutation.mutate({ approvalId: selectedFileId, message: annotationMessage });
-        }
-    };
+	const finalizeDocumentMutation = useMutation({
+		mutationFn: async (approvalId: number) => {
+			const url = finalizeDocument.replace(':approval_id', String(approvalId));
+			const response = await axiosFetching.put(url);
+			return response.data;
+		},
+		onSuccess: () => {
+			setSnackbarMessage('Документ был успешно финализирован!');
+			setSnackbarSeverity('success');
+			setSnackbarOpen(true);
+			refetch();
 
-    if (isLoading) {
-        return <LoadingState />;
-    }
+			// Update global approval count
+			updateApprovalsCount();
+		},
+		onError: () => {
+			setSnackbarMessage('Ошибка при финализации документа.');
+			setSnackbarSeverity('error');
+			setSnackbarOpen(true);
+		},
+	});
 
-    if (isError) {
-        return <ErrorState />;
-    }
+	// Handle approve or finalize action
+	const handleApproveOrFinalize = (document: ApprovalResponse) => {
+		if (document.workflow_order === document.workflow_user_count) {
+			finalizeDocumentMutation.mutate(document.approval_id);
+		} else {
+			approveDocumentMutation.mutate(document.approval_id);
+		}
+	};
 
-    if (!apiResponse || !Array.isArray(apiResponse)) {
-        return <p>Нет документов на согласовании</p>;
-    }
+	// Handle annotate dialog
+	const handleAnnotateClick = (fileId: number, fileName: string) => {
+		setSelectedFileId(fileId);
+		setSelectedFileName(fileName);
+		setIsAnnotationModalOpen(true);
+	};
 
-    return (
-        <div>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-                {apiResponse.map((document: ResponseProps) => (
-                    <li
-                        key={document.approval_id}
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '1rem',
-                            padding: '0.5rem',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                        }}
-                    >
-                        <div>
-                            <h3>{document.file_name}</h3>
-                            <p>Статус: {document.status}</p>
-                            <p>Рабочий номер: {document.workflow_order}</p>
-                        </div>
+	const handleAnnotationSubmit = () => {
+		if (selectedFileId && annotationMessage.trim()) {
+			annotateDocumentMutation.mutate({
+				approvalId: selectedFileId,
+				message: annotationMessage,
+			});
+		}
+	};
 
-                        {isAdmin && (
-                            <Box display="flex" gap={1}>
-                                {/* Кнопка "Approve/Finalize" */}
-                                <Tooltip title={document.workflow_order === document.workflow_user_count ? "Finalize" : "Approve"}>
-                                    <IconButton
-                                        sx={{
-                                            border: `2px solid ${
-                                                document.workflow_order === document.workflow_user_count ? 'blue' : 'green'
-                                            }`,
-                                            color: `${
-                                                document.workflow_order === document.workflow_user_count ? 'blue' : 'green'
-                                            }`,
-                                            backgroundColor: 'transparent',
-                                            borderRadius: '15%',
-                                            '&:hover': {
-                                                backgroundColor: `${
-                                                    document.workflow_order === document.workflow_user_count
-                                                        ? 'rgba(0, 0, 255, 0.1)'
-                                                        : 'rgba(0, 255, 0, 0.1)'
-                                                }`,
-                                            },
-                                        }}
-                                        onClick={() => handleApproveOrFinalize(document)}
-                                    >
-                                        <CheckCircleOutline />
-                                    </IconButton>
-                                </Tooltip>
+	// Loading and error states
+	if (isLoading) {
+		return <LoadingState message='Загрузка документов на согласование...' />;
+	}
 
-                                {/* Кнопка "Annotate" */}
-                                <Tooltip title="Annotate">
-                                    <IconButton
-                                        sx={{
-                                            border: '2px solid red',
-                                            color: 'red',
-                                            backgroundColor: 'transparent',
-                                            borderRadius: '15%',
-                                            '&:hover': {
-                                                backgroundColor: 'rgba(255, 0, 0, 0.1)',
-                                            },
-                                        }}
-                                        onClick={() => handleAnnotateClick(document.approval_id)}
-                                    >
-                                        <CancelOutlined />
-                                    </IconButton>
-                                </Tooltip>
-                            </Box>
-                        )}
-                    </li>
-                ))}
-            </ul>
+	if (isError) {
+		return <ErrorState onRetry={refetch} />;
+	}
 
-            {/* Уведомление */}
-            <Snackbar
-                open={snackbarOpen}
-                autoHideDuration={3000}
-                onClose={() => setSnackbarOpen(false)}
-                message={snackbarMessage}
-            />
+	// Render empty state if no documents
+	if (!apiResponse || !Array.isArray(apiResponse) || apiResponse.length === 0) {
+		return (
+			<Box sx={{ p: 4 }}>
+				<Paper
+					elevation={2}
+					sx={{
+						borderRadius: 3,
+						overflow: 'hidden',
+						maxWidth: 1200,
+						mx: 'auto',
+						bgcolor: theme.palette.background.paper,
+						boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.12)}`,
+					}}
+				>
+					<Box
+						sx={{
+							bgcolor: alpha(theme.palette.primary.light, 0.1),
+							py: 2.5,
+							px: 4,
+							borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+						}}
+					>
+						<Typography variant='h5' fontWeight={600} gutterBottom>
+							Система согласования документов
+						</Typography>
+						<Typography variant='body1' color='text.secondary'>
+							Управление процессами согласования документов в вашей организации
+						</Typography>
+					</Box>
 
-            {/* Модальное окно для аннотации */}
-            <Dialog open={isAnnotationModalOpen} onClose={() => setIsAnnotationModalOpen(false)}>
-                <DialogTitle>Аннотация Документа</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="Message"
-                        fullWidth
-                        value={annotationMessage}
-                        onChange={(e) => setAnnotationMessage(e.target.value)}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setIsAnnotationModalOpen(false)} color="primary">
-                        Отмена
-                    </Button>
-                    <Button onClick={handleAnnotationSubmit} color="primary" disabled={!annotationMessage.trim()}>
-                        Подтвердить
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </div>
-    );
+					<Box sx={{ p: 4, textAlign: 'center' }}>
+						<HourglassTopOutlinedIcon
+							sx={{
+								fontSize: 64,
+								color: alpha(theme.palette.text.secondary, 0.5),
+								mb: 2,
+							}}
+						/>
+						<Typography variant='h6' gutterBottom>
+							Нет документов на согласовании
+						</Typography>
+						<Typography variant='body1' color='text.secondary'>
+							В данный момент документы на согласование отсутствуют
+						</Typography>
+					</Box>
+				</Paper>
+			</Box>
+		);
+	}
+
+	// Determine approval status chip color and label
+	const getStatusChip = (
+		status: string,
+		workflowOrder: number,
+		workflowUserCount: number
+	) => {
+		let color:
+			| 'default'
+			| 'primary'
+			| 'secondary'
+			| 'error'
+			| 'info'
+			| 'success'
+			| 'warning' = 'default';
+		let icon: React.ReactElement | undefined = undefined; // Use undefined instead of null
+		let label = status;
+
+		switch (status) {
+			case 'on approval':
+				color = workflowOrder === workflowUserCount ? 'info' : 'warning';
+				icon = <HourglassTopOutlinedIcon fontSize='small' />;
+				label =
+					workflowOrder === workflowUserCount
+						? 'Финальное согласование'
+						: 'На согласовании';
+				break;
+			case 'approved':
+				color = 'success';
+				icon = <CheckCircleOutline fontSize='small' />;
+				label = 'Согласовано';
+				break;
+			case 'annotated':
+				color = 'error';
+				icon = <CommentOutlinedIcon fontSize='small' />;
+				label = 'На доработке';
+				break;
+			default:
+				color = 'default';
+			// icon remains undefined for default case
+		}
+
+		return (
+			<Chip
+				icon={icon}
+				label={label}
+				color={color}
+				size='small'
+				variant='outlined'
+				sx={{ fontWeight: 500 }}
+			/>
+		);
+	};
+
+	// Main component render
+	return (
+		<Box sx={{ p: 4 }}>
+			<Paper
+				elevation={2}
+				sx={{
+					borderRadius: 3,
+					overflow: 'hidden',
+					maxWidth: 1200,
+					mx: 'auto',
+					bgcolor: theme.palette.background.paper,
+					boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.12)}`,
+				}}
+			>
+				{/* Header section */}
+				<Box
+					sx={{
+						bgcolor: alpha(theme.palette.primary.light, 0.1),
+						py: 2.5,
+						px: 4,
+						borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+					}}
+				>
+					<Typography variant='h5' fontWeight={600} gutterBottom>
+						Система согласования документов
+					</Typography>
+					<Typography variant='body1' color='text.secondary'>
+						Управление процессами согласования документов в вашей организации
+					</Typography>
+				</Box>
+
+				{/* Document list section */}
+				<Box sx={{ p: 4 }}>
+					{apiResponse.map((document: ApprovalResponse) => (
+						<Paper
+							key={document.approval_id}
+							elevation={1}
+							sx={{
+								mb: 2,
+								borderRadius: 2,
+								overflow: 'hidden',
+								border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+								transition: 'all 0.2s ease',
+								'&:hover': {
+									boxShadow: `0 4px 12px ${alpha(
+										theme.palette.primary.main,
+										0.08
+									)}`,
+									borderColor: alpha(theme.palette.primary.main, 0.2),
+								},
+							}}
+						>
+							<Box
+								sx={{
+									display: 'flex',
+									justifyContent: 'space-between',
+									alignItems: 'center',
+									px: 3,
+									py: 2,
+									borderBottom: `1px solid ${alpha(
+										theme.palette.divider,
+										0.1
+									)}`,
+								}}
+							>
+								<Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+									<DescriptionOutlined color='primary' sx={{ opacity: 0.7 }} />
+									<Typography variant='subtitle1' fontWeight={600}>
+										{document.file_name}
+									</Typography>
+								</Box>
+
+								{getStatusChip(
+									document.status,
+									document.workflow_order,
+									document.workflow_user_count
+								)}
+							</Box>
+
+							<Box
+								sx={{
+									display: 'flex',
+									justifyContent: 'space-between',
+									alignItems: 'center',
+									px: 3,
+									py: 2,
+								}}
+							>
+								<Box>
+									<Typography variant='body2' color='text.secondary'>
+										Этап согласования:{' '}
+										<strong>{document.workflow_order}</strong> из{' '}
+										<strong>{document.workflow_user_count}</strong>
+									</Typography>
+								</Box>
+
+								{isAdmin && (
+									<Box display='flex' gap={1}>
+										{/* Approve/Finalize button */}
+										<Tooltip
+											title={
+												document.workflow_order === document.workflow_user_count
+													? 'Финализировать'
+													: 'Согласовать'
+											}
+										>
+											<Button
+												variant='outlined'
+												color={
+													document.workflow_order ===
+													document.workflow_user_count
+														? 'info'
+														: 'success'
+												}
+												size='small'
+												startIcon={<CheckCircleOutline />}
+												onClick={() => handleApproveOrFinalize(document)}
+												sx={{
+													borderRadius: 2,
+													textTransform: 'none',
+													fontWeight: 500,
+												}}
+											>
+												{document.workflow_order ===
+												document.workflow_user_count
+													? 'Финализировать'
+													: 'Согласовать'}
+											</Button>
+										</Tooltip>
+
+										{/* Annotate button */}
+										<Tooltip title='Отправить на доработку'>
+											<Button
+												variant='outlined'
+												color='error'
+												size='small'
+												startIcon={<CommentOutlinedIcon />}
+												onClick={() =>
+													handleAnnotateClick(
+														document.approval_id,
+														document.file_name
+													)
+												}
+												sx={{
+													borderRadius: 2,
+													textTransform: 'none',
+													fontWeight: 500,
+												}}
+											>
+												На доработку
+											</Button>
+										</Tooltip>
+									</Box>
+								)}
+							</Box>
+						</Paper>
+					))}
+				</Box>
+			</Paper>
+
+			{/* Snackbar notifications */}
+			<Snackbar
+				open={snackbarOpen}
+				autoHideDuration={4000}
+				onClose={() => setSnackbarOpen(false)}
+				anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+			>
+				<Alert
+					onClose={() => setSnackbarOpen(false)}
+					severity={snackbarSeverity}
+					variant='filled'
+					sx={{
+						width: '100%',
+						borderRadius: 2,
+					}}
+				>
+					{snackbarMessage}
+				</Alert>
+			</Snackbar>
+
+			{/* Annotation dialog */}
+			<Dialog
+				open={isAnnotationModalOpen}
+				onClose={() => setIsAnnotationModalOpen(false)}
+				fullWidth
+				maxWidth='sm'
+				PaperProps={{
+					sx: {
+						borderRadius: 3,
+						boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.15)}`,
+					},
+				}}
+			>
+				<DialogTitle
+					sx={{
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'space-between',
+						borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+						pb: 2,
+					}}
+				>
+					<Box display='flex' alignItems='center' gap={1}>
+						<CommentOutlinedIcon color='error' />
+						<Typography variant='h6' fontWeight={600}>
+							Отправка документа на доработку
+						</Typography>
+					</Box>
+					<IconButton
+						onClick={() => setIsAnnotationModalOpen(false)}
+						size='small'
+						sx={{ color: theme.palette.text.secondary }}
+					>
+						<CloseIcon fontSize='small' />
+					</IconButton>
+				</DialogTitle>
+
+				<DialogContent sx={{ pt: 3, pb: 1 }}>
+					<Typography variant='subtitle2' gutterBottom>
+						Документ: <strong>{selectedFileName}</strong>
+					</Typography>
+					<Divider sx={{ my: 2 }} />
+					<Typography variant='body2' color='text.secondary' paragraph>
+						Укажите причину возврата документа на доработку. Ваш комментарий
+						будет отправлен ответственному сотруднику.
+					</Typography>
+					<TextField
+						autoFocus
+						margin='dense'
+						label='Комментарий'
+						fullWidth
+						multiline
+						rows={4}
+						value={annotationMessage}
+						onChange={e => setAnnotationMessage(e.target.value)}
+						variant='outlined'
+						placeholder='Опишите необходимые изменения...'
+						sx={{
+							mt: 1,
+							'& .MuiOutlinedInput-root': {
+								borderRadius: 2,
+							},
+						}}
+					/>
+				</DialogContent>
+
+				<DialogActions
+					sx={{
+						px: 3,
+						py: 2,
+						borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+					}}
+				>
+					<Button
+						onClick={() => setIsAnnotationModalOpen(false)}
+						variant='outlined'
+						sx={{
+							borderRadius: 2,
+							px: 3,
+							textTransform: 'none',
+						}}
+					>
+						Отмена
+					</Button>
+					<Button
+						onClick={handleAnnotationSubmit}
+						disabled={!annotationMessage.trim()}
+						variant='contained'
+						color='error'
+						sx={{
+							borderRadius: 2,
+							px: 3,
+							textTransform: 'none',
+							ml: 1,
+							boxShadow: `0 4px 12px ${alpha(theme.palette.error.main, 0.3)}`,
+						}}
+					>
+						Отправить на доработку
+					</Button>
+				</DialogActions>
+			</Dialog>
+		</Box>
+	);
 };
 
 export default ApprovalsPage;

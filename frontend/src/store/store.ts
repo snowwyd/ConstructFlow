@@ -1,6 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit';
-import contextMenuReducer from './Slices/contextMenuSlice';
-import approvalsReducer from './Slices/contextMenuSlice';
+import {
+	default as approvalsReducer,
+	default as contextMenuReducer,
+} from './Slices/contextMenuSlice';
 
 export const store = configureStore({
 	reducer: {
