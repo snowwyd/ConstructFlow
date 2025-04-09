@@ -113,6 +113,22 @@ func (c *FileGRPCClient) CheckWorkflow(ctx context.Context, workflowID uint) (bo
 	return resp.Exists, nil
 }
 
+func (c *FileGRPCClient) AssignWorkflow(ctx context.Context, workflowID uint, directoryIDs []uint32) error {
+	const op = "infrastructure.grpc.fileclient.AssignWorkflow"
+
+	req := &pb.AssignWorkflowRequest{
+		WorkflowId:   uint32(workflowID),
+		DirectoryIds: directoryIDs,
+	}
+
+	_, err := c.client.AssignWorkflow(ctx, req)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
 func (c *FileGRPCClient) DeleteUserRelations(ctx context.Context, userID uint) error {
 	const op = "infrastructure.grpc.fileclient.DeleteUserRelations"
 
@@ -121,6 +137,23 @@ func (c *FileGRPCClient) DeleteUserRelations(ctx context.Context, userID uint) e
 	}
 
 	_, err := c.client.DeleteUserRelations(ctx, req)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (c *FileGRPCClient) AssignUser(ctx context.Context, userID uint, directoryIDs []uint32, fileIDs []uint32) error {
+	const op = "infrastructure.grpc.fileclient.AssignUser"
+
+	req := &pb.AssignUserRequest{
+		UserId:       uint32(userID),
+		DirectoryIds: directoryIDs,
+		FileIds:      fileIDs,
+	}
+
+	_, err := c.client.AssignUser(ctx, req)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

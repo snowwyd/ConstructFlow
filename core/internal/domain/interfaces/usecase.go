@@ -20,9 +20,13 @@ type ApprovalUsecase interface {
 
 type WorkflowUsecase interface {
 	GetWorkflows(ctx context.Context, userID uint) (workflows []domain.WorkflowResponse, err error)
+	GetWorkflowByID(ctx context.Context, workflowID, userID uint) (domain.ExtendedWorkflowResponse, error)
+
 	CreateWorkflow(ctx context.Context, name string, stages []domain.WorkflowStage, userID uint) error
 	UpdateWorkflow(ctx context.Context, workflowID uint, name string, stages []domain.WorkflowStage, userID uint) error
 	DeleteWorkflow(ctx context.Context, workflowID uint, userID uint) error
+
+	AssignWorkflow(ctx context.Context, workflowID uint, directoryIDs []uint, userID uint) error
 }
 
 type RoleUsecase interface {
@@ -38,4 +42,6 @@ type UserUsecase interface {
 	RegisterUser(ctx context.Context, login, password string, roleID, userID uint) error
 	UpdateUser(ctx context.Context, login, password string, roleID, userID, actorID uint) error
 	DeleteUser(ctx context.Context, userID, actorID uint) error
+
+	AssignUser(ctx context.Context, userID uint, directoryIDs []uint, fileIDs []uint, actorID uint) error
 }

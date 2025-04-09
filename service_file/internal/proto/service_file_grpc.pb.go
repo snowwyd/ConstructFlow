@@ -24,7 +24,9 @@ const (
 	FileService_UpdateFileStatus_FullMethodName    = "/file.FileService/UpdateFileStatus"
 	FileService_GetFilesInfo_FullMethodName        = "/file.FileService/GetFilesInfo"
 	FileService_CheckWorkflow_FullMethodName       = "/file.FileService/CheckWorkflow"
+	FileService_AssignWorkflow_FullMethodName      = "/file.FileService/AssignWorkflow"
 	FileService_DeleteUserRelations_FullMethodName = "/file.FileService/DeleteUserRelations"
+	FileService_AssignUser_FullMethodName          = "/file.FileService/AssignUser"
 )
 
 // FileServiceClient is the client API for FileService service.
@@ -35,7 +37,9 @@ type FileServiceClient interface {
 	UpdateFileStatus(ctx context.Context, in *UpdateFileStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetFilesInfo(ctx context.Context, in *GetFilesRequest, opts ...grpc.CallOption) (*GetFilesResponse, error)
 	CheckWorkflow(ctx context.Context, in *CheckWorkflowRequest, opts ...grpc.CallOption) (*CheckWorkflowResponse, error)
+	AssignWorkflow(ctx context.Context, in *AssignWorkflowRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteUserRelations(ctx context.Context, in *DeleteUserRelationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	AssignUser(ctx context.Context, in *AssignUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type fileServiceClient struct {
@@ -86,10 +90,30 @@ func (c *fileServiceClient) CheckWorkflow(ctx context.Context, in *CheckWorkflow
 	return out, nil
 }
 
+func (c *fileServiceClient) AssignWorkflow(ctx context.Context, in *AssignWorkflowRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, FileService_AssignWorkflow_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *fileServiceClient) DeleteUserRelations(ctx context.Context, in *DeleteUserRelationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, FileService_DeleteUserRelations_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileServiceClient) AssignUser(ctx context.Context, in *AssignUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, FileService_AssignUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +128,9 @@ type FileServiceServer interface {
 	UpdateFileStatus(context.Context, *UpdateFileStatusRequest) (*emptypb.Empty, error)
 	GetFilesInfo(context.Context, *GetFilesRequest) (*GetFilesResponse, error)
 	CheckWorkflow(context.Context, *CheckWorkflowRequest) (*CheckWorkflowResponse, error)
+	AssignWorkflow(context.Context, *AssignWorkflowRequest) (*emptypb.Empty, error)
 	DeleteUserRelations(context.Context, *DeleteUserRelationsRequest) (*emptypb.Empty, error)
+	AssignUser(context.Context, *AssignUserRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedFileServiceServer()
 }
 
@@ -127,8 +153,14 @@ func (UnimplementedFileServiceServer) GetFilesInfo(context.Context, *GetFilesReq
 func (UnimplementedFileServiceServer) CheckWorkflow(context.Context, *CheckWorkflowRequest) (*CheckWorkflowResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckWorkflow not implemented")
 }
+func (UnimplementedFileServiceServer) AssignWorkflow(context.Context, *AssignWorkflowRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AssignWorkflow not implemented")
+}
 func (UnimplementedFileServiceServer) DeleteUserRelations(context.Context, *DeleteUserRelationsRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUserRelations not implemented")
+}
+func (UnimplementedFileServiceServer) AssignUser(context.Context, *AssignUserRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AssignUser not implemented")
 }
 func (UnimplementedFileServiceServer) mustEmbedUnimplementedFileServiceServer() {}
 func (UnimplementedFileServiceServer) testEmbeddedByValue()                     {}
@@ -223,6 +255,24 @@ func _FileService_CheckWorkflow_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileService_AssignWorkflow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AssignWorkflowRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).AssignWorkflow(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_AssignWorkflow_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).AssignWorkflow(ctx, req.(*AssignWorkflowRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _FileService_DeleteUserRelations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteUserRelationsRequest)
 	if err := dec(in); err != nil {
@@ -237,6 +287,24 @@ func _FileService_DeleteUserRelations_Handler(srv interface{}, ctx context.Conte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(FileServiceServer).DeleteUserRelations(ctx, req.(*DeleteUserRelationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FileService_AssignUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AssignUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).AssignUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_AssignUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).AssignUser(ctx, req.(*AssignUserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -265,8 +333,16 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _FileService_CheckWorkflow_Handler,
 		},
 		{
+			MethodName: "AssignWorkflow",
+			Handler:    _FileService_AssignWorkflow_Handler,
+		},
+		{
 			MethodName: "DeleteUserRelations",
 			Handler:    _FileService_DeleteUserRelations_Handler,
+		},
+		{
+			MethodName: "AssignUser",
+			Handler:    _FileService_AssignUser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

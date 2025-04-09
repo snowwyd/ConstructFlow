@@ -23,7 +23,8 @@ services:
       - .env_prod
     command: sh -c "go run cmd/migrator/main.go -reset -migrate -seed && go run cmd/api/main.go -env=prod"
     ports:
-      - "8080:8080"
+    # TODO: вернуть порт 8080
+      - "8090:8080"
     volumes:
       - app:/app
     networks:

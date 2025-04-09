@@ -238,3 +238,41 @@ func (userUsecase *UserUsecase) checkUser(ctx context.Context, userID uint) erro
 
 	return nil
 }
+
+func (userUsecase *UserUsecase) AssignUser(ctx context.Context, userID uint, directoryIDs []uint, fileIDs []uint, actorID uint) error {
+	const op = "usecase.user.AssignUser"
+
+	log := userUsecase.log.With(slog.String("op", op))
+	log.Info("assigning user")
+
+	log.Debug("checking if user is admin")
+	if err := userUsecase.checkAdmin(ctx, actorID); err != nil {
+		log.Error("failed admin check", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Debug("checking user existence")
+	if err := userUsecase.checkUser(ctx, userID); err != nil {
+		log.Error("failed user existence check", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	directories := make([]uint32, len(directoryIDs))
+	for i, value := range directoryIDs {
+		directories[i] = uint32(value)
+	}
+
+	files := make([]uint32, len(fileIDs))
+	for i, value := range fileIDs {
+		files[i] = uint32(value)
+	}
+
+	log.Debug("assigning user in microservice")
+	if err := userUsecase.fileService.AssignUser(ctx, userID, directories, files); err != nil {
+		// TODO: custom errors
+		log.Error("failed to delete workflow", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}

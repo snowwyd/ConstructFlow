@@ -33,6 +33,14 @@ func (r *FileRepositoryImpl) CheckWorkflow(ctx context.Context, workflowID uint)
 	return r.client.CheckWorkflow(ctx, workflowID)
 }
 
+func (r *FileRepositoryImpl) AssignWorkflow(ctx context.Context, workflowID uint, directoryIDs []uint32) error {
+	return r.client.AssignWorkflow(ctx, workflowID, directoryIDs)
+}
+
 func (r *FileRepositoryImpl) DeleteUserRelations(ctx context.Context, userID uint) error {
 	return r.client.DeleteUserRelations(ctx, userID)
+}
+
+func (r *FileRepositoryImpl) AssignUser(ctx context.Context, userID uint, directoryIDs []uint32, fileIDs []uint32) error {
+	return r.client.AssignUser(ctx, userID, directoryIDs, fileIDs)
 }

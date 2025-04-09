@@ -277,3 +277,64 @@ func (fileMetadataRepo *FileMetadataRepository) DeleteUserRelations(ctx context.
 
 	return nil
 }
+
+func (fileMetadataRepo *FileMetadataRepository) CheckFilesExist(ctx context.Context, fileIDs []uint) (bool, error) {
+	const op = "infrastructure.postgresrepo.directory.CheckFilesExist"
+
+	if len(fileIDs) == 0 {
+		return false, fmt.Errorf("%s: empty user list", op)
+	}
+
+	var count int64
+	err := fileMetadataRepo.db.WithContext(ctx).
+		Model(&domain.File{}).
+		Where("id IN (?)", fileIDs).
+		Count(&count).Error
+
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return count == int64(len(fileIDs)), nil
+}
+
+func (r *FileMetadataRepository) UpdateUserFileRelations(ctx context.Context, userID uint, fileIDs []uint) error {
+	const op = "infrastructure.postgresrepo.file.UpdateUserFileRelations"
+
+	tx := r.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return fmt.Errorf("%s: failed to begin transaction: %w", op, tx.Error)
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Where("user_id = ?", userID).Delete(&domain.UserFile{}).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("%s: failed to delete user file relations: %w", op, err)
+	}
+
+	var newRelations []domain.UserFile
+	for _, fileID := range fileIDs {
+		newRelations = append(newRelations, domain.UserFile{
+			UserID: userID,
+			FileID: fileID,
+		})
+	}
+
+	if len(newRelations) > 0 {
+		if err := tx.Create(&newRelations).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("%s: failed to create user file relations: %w", op, err)
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}

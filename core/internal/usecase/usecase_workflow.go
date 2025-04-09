@@ -54,6 +54,35 @@ func (workflowUsecase *WorkflowUsecase) GetWorkflows(ctx context.Context, userID
 	return workflows, nil
 }
 
+func (workflowUsecase *WorkflowUsecase) GetWorkflowByID(ctx context.Context, workflowID, userID uint) (domain.ExtendedWorkflowResponse, error) {
+	const op = "usecase.workflow.GetWorkflowByID"
+
+	log := workflowUsecase.log.With(slog.String("op", op))
+	log.Info("getting workfow by id")
+
+	log.Debug("checking if user is admin")
+	if err := workflowUsecase.checkAdmin(ctx, userID); err != nil {
+		log.Error("failed admin check", slogger.Err(err))
+		return domain.ExtendedWorkflowResponse{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Debug("checking workflow existence")
+	if err := workflowUsecase.checkWorkflow(ctx, workflowID); err != nil {
+		log.Error("failed workflow existence check", slogger.Err(err))
+		return domain.ExtendedWorkflowResponse{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Debug("getting workflow by id from db")
+	workflow, err := workflowUsecase.workflowRepo.GetWorkflowByID(ctx, workflowID)
+	if err != nil {
+		log.Error("failed to get workflow", slogger.Err(err))
+		return domain.ExtendedWorkflowResponse{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("workflow got successfully")
+	return workflow, nil
+}
+
 func (workflowUsecase *WorkflowUsecase) CreateWorkflow(ctx context.Context, name string, stages []domain.WorkflowStage, userID uint) error {
 	const op = "usecase.workflow.CreateWorkflow"
 
@@ -150,6 +179,39 @@ func (workflowUsecase *WorkflowUsecase) DeleteWorkflow(ctx context.Context, work
 
 	log.Debug("deleting workflow")
 	if err := workflowUsecase.workflowRepo.DeleteWorkflow(ctx, workflowID); err != nil {
+		// TODO: custom errors
+		log.Error("failed to delete workflow", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (workflowUsecase *WorkflowUsecase) AssignWorkflow(ctx context.Context, workflowID uint, directoryIDs []uint, userID uint) error {
+	const op = "usecase.workflow.AssignWorkflow"
+
+	log := workflowUsecase.log.With(slog.String("op", op))
+	log.Info("assigning workfow")
+
+	log.Debug("checking if user is admin")
+	if err := workflowUsecase.checkAdmin(ctx, userID); err != nil {
+		log.Error("failed admin check", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Debug("checking workflow existence")
+	if err := workflowUsecase.checkWorkflow(ctx, workflowID); err != nil {
+		log.Error("failed workflow existence check", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	directories := make([]uint32, len(directoryIDs))
+	for i, value := range directoryIDs {
+		directories[i] = uint32(value)
+	}
+
+	log.Debug("deleting workflow")
+	if err := workflowUsecase.fileService.AssignWorkflow(ctx, workflowID, directories); err != nil {
 		// TODO: custom errors
 		log.Error("failed to delete workflow", slogger.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
