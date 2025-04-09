@@ -21,6 +21,8 @@ type DirectoryRepository interface {
 
 	CheckDirectoriesExist(ctx context.Context, directoryIDs []uint) (bool, error)
 
+	UpdateUserDirectoryRelations(ctx context.Context, userID uint, directoryIDs []uint) error
+
 	WithTx(tx *gorm.DB) DirectoryRepository // Метод для передачи транзакции
 	GetDB() *gorm.DB
 }
@@ -36,6 +38,9 @@ type FileMetadataRepository interface {
 	DeleteFile(ctx context.Context, fileID uint, userID uint) error
 
 	CheckUserFileAccess(ctx context.Context, userID, fileID uint) (bool, error)
+	CheckFilesExist(ctx context.Context, fileIDs []uint) (bool, error)
+
+	UpdateUserFileRelations(ctx context.Context, userID uint, fileIDs []uint) error
 
 	DeleteUserRelations(ctx context.Context, userID uint) error
 

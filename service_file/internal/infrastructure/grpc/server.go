@@ -115,3 +115,12 @@ func (s *GRPCServer) DeleteUserRelations(ctx context.Context, req *pb.DeleteUser
 
 	return &emptypb.Empty{}, nil
 }
+
+func (s *GRPCServer) AssignUser(ctx context.Context, req *pb.AssignUserRequest) (*emptypb.Empty, error) {
+	if err := s.usecase.AssignUser(ctx, uint(req.GetUserId()), req.GetDirectoryIds(), req.GetFileIds()); err != nil {
+		// TODO: custom errors
+		return nil, status.Errorf(codes.Internal, "failed to assign user")
+	}
+
+	return &emptypb.Empty{}, nil
+}

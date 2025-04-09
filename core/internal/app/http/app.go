@@ -20,7 +20,7 @@ type App struct {
 	authHandler          *controller.AuthHandler
 	fileHandler          *controller.FileHandler
 	fileApprovalsHandler *controller.FileApprovalsHandler
-	workflowHandler      *controller.WorkflowlHandler
+	workflowHandler      *controller.WorkflowHandler
 	roleHandler          *controller.RoleHandler
 	userHandler          *controller.UserHandler
 	cfg                  *config.Config
@@ -32,7 +32,7 @@ func New(
 	authHandler *controller.AuthHandler,
 	fileHandler *controller.FileHandler,
 	fileApprovalsHandler *controller.FileApprovalsHandler,
-	workflowHandler *controller.WorkflowlHandler,
+	workflowHandler *controller.WorkflowHandler,
 	roleHandler *controller.RoleHandler,
 	userHandler *controller.UserHandler,
 	cfg *config.Config,
@@ -97,7 +97,7 @@ func setupRoutes(
 	authHandler *controller.AuthHandler,
 	fileHandler *controller.FileHandler,
 	fileApprovalsHandler *controller.FileApprovalsHandler,
-	workflowHandler *controller.WorkflowlHandler,
+	workflowHandler *controller.WorkflowHandler,
 	roleHandler *controller.RoleHandler,
 	userHandler *controller.UserHandler,
 	cfg *config.Config,
@@ -131,6 +131,7 @@ func setupRoutes(
 		workflowsGroup := adminGroup.Group("/workflows")
 		{
 			workflowsGroup.GET("", workflowHandler.GetWorkflows)
+			workflowsGroup.GET("/:workflow_id", workflowHandler.GetWorkflowByID)
 			workflowsGroup.POST("", workflowHandler.CreateWorkflow)
 			workflowsGroup.DELETE("", workflowHandler.DeleteWorkflow)
 			// TODO: get workflow by id
@@ -152,6 +153,7 @@ func setupRoutes(
 			usersGroup.GET("", userHandler.GetUsers)
 			usersGroup.POST("/register", userHandler.RegisterUser)
 			usersGroup.PUT("/:user_id", userHandler.UpdateUser)
+			usersGroup.PUT("/:user_id/assign", userHandler.AssignUser)
 			usersGroup.DELETE("", userHandler.DeleteUser)
 		}
 	}

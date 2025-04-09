@@ -344,3 +344,44 @@ func (r *DirectoryRepository) UpdateDirectories(ctx context.Context, workflowID 
 
 	return nil
 }
+
+func (r *DirectoryRepository) UpdateUserDirectoryRelations(ctx context.Context, userID uint, directoryIDs []uint) error {
+	const op = "infrastructure.postgresrepo.directory.UpdateUserDirectoryRelations"
+
+	tx := r.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return fmt.Errorf("%s: failed to begin transaction: %w", op, tx.Error)
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Where("user_id = ?", userID).Delete(&domain.UserDirectory{}).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("%s: failed to delete user directory relations: %w", op, err)
+	}
+
+	var newRelations []domain.UserDirectory
+	for _, directoryID := range directoryIDs {
+		newRelations = append(newRelations, domain.UserDirectory{
+			UserID:      userID,
+			DirectoryID: directoryID,
+		})
+	}
+
+	if len(newRelations) > 0 {
+		if err := tx.Create(&newRelations).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("%s: failed to create user directory relations: %w", op, err)
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}

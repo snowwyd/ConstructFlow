@@ -168,3 +168,55 @@ func (grpcUsecase *GRPCUsecase) DeleteUserRelations(ctx context.Context, userID 
 	log.Info("user relations deleted successfully")
 	return nil
 }
+
+func (grpcUsecase *GRPCUsecase) AssignUser(ctx context.Context, userID uint, directoryIDs []uint32, fileIDs []uint32) error {
+	const op = "usecases.grpc.AssignUser"
+
+	log := grpcUsecase.log.With(slog.String("op", op))
+	log.Info("assigning user")
+
+	log.Debug("preparing directories")
+	directories := make([]uint, len(directoryIDs))
+	for i, value := range directoryIDs {
+		directories[i] = uint(value)
+	}
+
+	log.Debug("preparing files")
+	files := make([]uint, len(fileIDs))
+	for i, value := range fileIDs {
+		files[i] = uint(value)
+	}
+
+	exists, err := grpcUsecase.directoryRepo.CheckDirectoriesExist(ctx, directories)
+	if err != nil {
+		log.Error("failed to check directories existence", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if !exists {
+		return domain.ErrDirectoryNotFound
+	}
+
+	exists, err = grpcUsecase.fileMetadataRepo.CheckFilesExist(ctx, files)
+	if err != nil {
+		log.Error("failed to check files existence", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if !exists {
+		return domain.ErrFileNotFound
+	}
+
+	log.Debug("updating directory data")
+	if err := grpcUsecase.directoryRepo.UpdateUserDirectoryRelations(ctx, userID, directories); err != nil {
+		log.Error("failed to update directories", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Debug("updating file data")
+	if err := grpcUsecase.fileMetadataRepo.UpdateUserFileRelations(ctx, userID, files); err != nil {
+		log.Error("failed to update files", slogger.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("user assigned successfully")
+	return nil
+}

@@ -40,6 +40,46 @@ func (workflowRepo *WorkflowRepository) GetWorkflows(ctx context.Context) ([]dom
 	return workflows, nil
 }
 
+func (workflowRepo *WorkflowRepository) GetWorkflowByID(ctx context.Context, workflowID uint) (domain.ExtendedWorkflowResponse, error) {
+	const op = "infrastructure.postgresrepo.workflow.GetWorkflowByID"
+
+	type WorkflowStageRow struct {
+		UserID       uint   `json:"user_id"`
+		Order        int    `json:"order"`
+		WorkflowName string `json:"workflow_name"`
+	}
+
+	var rows []WorkflowStageRow
+
+	err := workflowRepo.db.WithContext(ctx).
+		Table("workflows").
+		Select("workflows.user_id, workflows.workflow_order AS order, workflows.workflow_name").
+		Where("workflows.workflow_id = ?", workflowID).
+		Order("workflows.workflow_order ASC").
+		Scan(&rows).Error
+
+	if err != nil {
+		return domain.ExtendedWorkflowResponse{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	if len(rows) == 0 {
+		return domain.ExtendedWorkflowResponse{}, fmt.Errorf("%s: %w", op, domain.ErrWorkflowNotFound)
+	}
+
+	var workflow domain.ExtendedWorkflowResponse
+	workflow.WorkflowName = rows[0].WorkflowName
+	workflow.Stages = make([]domain.WorkflowStage, len(rows))
+
+	for i, row := range rows {
+		workflow.Stages[i] = domain.WorkflowStage{
+			UserID: row.UserID,
+			Order:  row.Order,
+		}
+	}
+
+	return workflow, nil
+}
+
 func (workflowRepo *WorkflowRepository) CreateWorkflow(ctx context.Context, name string, stages []domain.WorkflowStage) error {
 	const op = "infrastructure.postgresrepo.workflow.CreateWorkflow"
 

@@ -14,4 +14,5 @@ type FileService interface {
 	AssignWorkflow(ctx context.Context, workflowID uint, directoryIDs []uint32) error
 
 	DeleteUserRelations(ctx context.Context, userID uint) error
+	AssignUser(ctx context.Context, userID uint, directoryIDs []uint32, fileIDs []uint32) error
 }

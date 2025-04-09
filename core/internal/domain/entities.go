@@ -36,6 +36,16 @@ type WorkflowResponse struct {
 	WorkflowLength int    `json:"workflow_length"`
 }
 
+type ExtendedWorkflowResponse struct {
+	WorkflowName string          `json:"workflow_name"`
+	Stages       []WorkflowStage `json:"stages"`
+}
+
+type WorkflowStage struct {
+	UserID uint `json:"user_id"`
+	Order  int  `json:"order"`
+}
+
 type RoleResponse struct {
 	RoleID   uint   `json:"role_id"`
 	RoleName string `json:"role_name"`
@@ -73,9 +83,4 @@ type File struct {
 	Version     int
 
 	Directory *Directory
-}
-
-type WorkflowStage struct {
-	UserID uint `json:"user_id"`
-	Order  int  `json:"order"`
 }

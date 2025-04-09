@@ -144,6 +144,23 @@ func (c *FileGRPCClient) DeleteUserRelations(ctx context.Context, userID uint) e
 	return nil
 }
 
+func (c *FileGRPCClient) AssignUser(ctx context.Context, userID uint, directoryIDs []uint32, fileIDs []uint32) error {
+	const op = "infrastructure.grpc.fileclient.AssignUser"
+
+	req := &pb.AssignUserRequest{
+		UserId:       uint32(userID),
+		DirectoryIds: directoryIDs,
+		FileIds:      fileIDs,
+	}
+
+	_, err := c.client.AssignUser(ctx, req)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
 func uintPtrOrNil(value uint32) *uint {
 	if value == 0 {
 		return nil
