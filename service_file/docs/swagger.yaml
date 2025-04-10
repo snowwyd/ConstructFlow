@@ -1,0 +1,481 @@
+definitions:
+  internal_controller.createDirectoryInput:
+    properties:
+      name:
+        type: string
+      parent_path_id:
+        type: integer
+    type: object
+  internal_controller.deleteDirectoryInput:
+    properties:
+      directory_id:
+        type: integer
+    type: object
+  internal_controller.deleteFileInput:
+    properties:
+      file_id:
+        type: integer
+    type: object
+  internal_controller.getTreeInput:
+    properties:
+      is_archive:
+        type: boolean
+    type: object
+  service-file_internal_domain.ErrorResponse:
+    description: Стандартизированный ответ при ошибке API
+    properties:
+      error:
+        properties:
+          code:
+            example: NOT_FOUND
+            type: string
+          message:
+            example: Resource not found
+            type: string
+        type: object
+    type: object
+  service-file_internal_domain.FileResponse:
+    properties:
+      directory_id:
+        example: 123
+        type: integer
+      id:
+        example: 789
+        type: integer
+      name_file:
+        example: report.pdf
+        type: string
+      status:
+        example: draft
+        type: string
+    type: object
+info:
+  contact: {}
+  description: API File Microservice for Constructflow
+  title: Constructflow File Microservice
+  version: "0.2"
+paths:
+  /directories:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет директорию по её ID, переданному в теле запроса. Если директория
+        не найдена, содержит недопустимые файлы или доступ запрещен – возвращает ошибку.
+      parameters:
+      - description: Параметры для удаления директории
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controller.deleteDirectoryInput'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Директория успешно удалена
+          schema:
+            type: string
+        "400":
+          description: Невалидный запрос или отсутствуют обязательные поля
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "403":
+          description: Доступ к директории запрещен
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "404":
+          description: Директория не найдена
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "409":
+          description: Директория содержит файлы, не соответствующие черновикам
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "500":
+          description: Ошибка при удалении директории
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить директорию
+      tags:
+      - directory
+    post:
+      consumes:
+      - application/json
+      description: Отдает дерево файлов, доступных конкретному пользователю. Если
+        флаг isArchive = true, отдает полностью дерево с статусом "archive".
+      parameters:
+      - description: Параметры для получения дерева (например, флаг isArchive)
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controller.getTreeInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Дерево файлов успешно отображено
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.FileResponse'
+        "400":
+          description: Невалидный запрос
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "403":
+          description: Доступ к репозиторию запрещен
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "500":
+          description: Ошибка при получении дерева файлов
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Получить файловое дерево
+      tags:
+      - tree
+  /directories/create:
+    post:
+      consumes:
+      - application/json
+      description: Создает новую директорию в файловой системе для пользователя. Обязательны
+        поля parent_path_id и name.
+      parameters:
+      - description: Параметры для создания директории
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controller.createDirectoryInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Директория успешно создана
+          schema:
+            type: string
+        "400":
+          description: Невалидный запрос или отсутствуют обязательные поля
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "403":
+          description: Доступ к директории запрещен
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "404":
+          description: Родительская директория не найдена
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "409":
+          description: Директория уже существует
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "500":
+          description: Ошибка при создании директории
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Создать директорию
+      tags:
+      - directory
+  /files:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет файл по его ID, переданному в теле запроса. Если файл не
+        найден или доступ запрещен – возвращает ошибку.
+      parameters:
+      - description: Параметры для удаления файла
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controller.deleteFileInput'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Файл успешно удален
+          schema:
+            type: string
+        "400":
+          description: Невалидный запрос или отсутствуют обязательные поля
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "403":
+          description: Доступ к файлу запрещен
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "404":
+          description: Файл не найден
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "409":
+          description: Нельзя удалить файл, не являющийся черновиком
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "500":
+          description: Ошибка при удалении файла
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить файл
+      tags:
+      - file
+  /files/{file_id}:
+    get:
+      consumes:
+      - application/json
+      description: Отдает подробную информацию о файле по его ID. Если файл не найден
+        – возвращает 404, если пользователь не имеет доступа – 403.
+      parameters:
+      - description: ID файла (например, 123)
+        in: path
+        name: file_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о файле
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.FileResponse'
+        "400":
+          description: Невалидный ID файла
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "403":
+          description: Доступ к файлу запрещен
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "404":
+          description: Файл не найден
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "500":
+          description: Ошибка при получении информации о файле
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Получить информацию о файле
+      tags:
+      - file
+    put:
+      consumes:
+      - multipart/form-data
+      description: Обновляет содержимое файла, переданное через multipart/form-data.
+        Если файл не найден или нет доступа – возвращает соответствующую ошибку.
+      parameters:
+      - description: ID файла (например, 123)
+        in: path
+        name: file_id
+        required: true
+        type: integer
+      - description: Новый файл для загрузки
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Файл успешно обновлен
+          schema:
+            type: string
+        "400":
+          description: Невалидный ID файла или данные формы
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "403":
+          description: Доступ к файлу запрещен
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "404":
+          description: Файл не найден
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "500":
+          description: Ошибка при обновлении файла
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить файл
+      tags:
+      - file
+  /files/{file_id}/convert/gltf:
+    get:
+      consumes:
+      - application/json
+      description: Конвертирует файл STP в формат GLTF и возвращает GLB-файл. Если
+        конвертация завершается ошибкой – возвращает сообщение об ошибке.
+      parameters:
+      - description: ID исходного STP файла (например, 123)
+        in: path
+        name: file_id
+        required: true
+        type: integer
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: GLB-файл для просмотра
+          schema:
+            type: file
+        "400":
+          description: Невалидный ID файла
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "500":
+          description: Ошибка при конвертации файла
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Конвертировать STP в GLTF
+      tags:
+      - file
+  /files/{file_id}/download-direct:
+    get:
+      consumes:
+      - application/json
+      description: Отдает файл для скачивания в виде потока. Если файл не найден –
+        возвращает 404, а при отсутствии доступа – 403.
+      parameters:
+      - description: ID файла (например, 123)
+        in: path
+        name: file_id
+        required: true
+        type: integer
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Файл для скачивания
+          schema:
+            type: file
+        "400":
+          description: Невалидный ID файла
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "403":
+          description: Доступ к файлу запрещен
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "404":
+          description: Файл не найден
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "500":
+          description: Ошибка при получении файла
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Скачать файл напрямую
+      tags:
+      - file
+  /files/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 'Загружает файл в указанную директорию. Данные передаются в формате
+        multipart/form-data: файл (file), ID директории (directory_id) и имя файла
+        (name).'
+      parameters:
+      - description: Файл для загрузки
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: ID директории, куда загружается файл
+        in: formData
+        name: directory_id
+        required: true
+        type: integer
+      - description: Имя файла
+        in: formData
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Файл успешно загружен
+          schema:
+            type: string
+        "400":
+          description: Нет файла или переданы некорректные данные
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "403":
+          description: Доступ к директории запрещен
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "404":
+          description: Директория не найдена
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "409":
+          description: Файл с таким именем уже существует
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+        "500":
+          description: Ошибка при загрузке файла
+          schema:
+            $ref: '#/definitions/service-file_internal_domain.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Загрузить файл
+      tags:
+      - file
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
