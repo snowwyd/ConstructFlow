@@ -22,29 +22,45 @@ func NewDirectoryUsecase(directoryRepo interfaces.DirectoryRepository, log *slog
 	}
 }
 
-func (u *DirectoryUsecase) GetFileTree(ctx context.Context, isArchive bool, userID uint) (domain.GetFileTreeResponse, error) {
+func (u *DirectoryUsecase) GetFileTree(ctx context.Context, isArchive bool, userID uint) (response domain.GetFileTreeResponse, err error) {
 	const op = "usecases.directory.GetFileTree"
 
 	log := u.log.With(slog.String("op", op))
 	log.Info("getting file tree")
 
-	directories, err := u.directoryRepo.GetFileTree(ctx, isArchive, userID)
-	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrAccessDenied):
-			log.Error("user has no acces to this repository", slogger.Err(domain.ErrAccessDenied))
-			return domain.GetFileTreeResponse{}, fmt.Errorf("%s: %w", op, domain.ErrAccessDenied)
-		default:
-			log.Error("failed to get file tree", slogger.Err(err))
-			return domain.GetFileTreeResponse{}, fmt.Errorf("%s: %w", op, err)
+	var directories []domain.Directory
+
+	switch isArchive {
+	case false:
+		directories, err = u.directoryRepo.GetFileTreeWorking(ctx, userID)
+		if err != nil {
+			switch {
+			case errors.Is(err, domain.ErrAccessDenied):
+				log.Error("user has no acces to this repository", slogger.Err(domain.ErrAccessDenied))
+				return domain.GetFileTreeResponse{}, fmt.Errorf("%s: %w", op, domain.ErrAccessDenied)
+			default:
+				log.Error("failed to get file tree", slogger.Err(err))
+				return domain.GetFileTreeResponse{}, fmt.Errorf("%s: %w", op, err)
+			}
+		}
+
+	case true:
+		directories, err = u.directoryRepo.GetFileTreeArchive(ctx, userID)
+		if err != nil {
+			switch {
+			case errors.Is(err, domain.ErrAccessDenied):
+				log.Error("user has no acces to this repository", slogger.Err(domain.ErrAccessDenied))
+				return domain.GetFileTreeResponse{}, fmt.Errorf("%s: %w", op, domain.ErrAccessDenied)
+			default:
+				log.Error("failed to get file tree", slogger.Err(err))
+				return domain.GetFileTreeResponse{}, fmt.Errorf("%s: %w", op, err)
+			}
 		}
 	}
 
 	log.Debug("directories retrieved successfully")
 
-	response := domain.GetFileTreeResponse{
-		Data: make([]domain.DirectoryResponse, 0, len(directories)),
-	}
+	response.Data = make([]domain.DirectoryResponse, 0, len(directories))
 
 	for _, dir := range directories {
 		dirData := domain.DirectoryResponse{

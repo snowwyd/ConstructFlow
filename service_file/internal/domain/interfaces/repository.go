@@ -8,7 +8,12 @@ import (
 )
 
 type DirectoryRepository interface {
-	GetFileTree(ctx context.Context, isArchive bool, userID uint) ([]domain.Directory, error)
+	GetFileTreeWorking(ctx context.Context, userID uint) ([]domain.Directory, error)
+	GetFileTreeArchive(ctx context.Context, userID uint) ([]domain.Directory, error)
+
+	GetUserFileTree(ctx context.Context, userID uint) ([]domain.DirectoryUserResponse, error)
+	GetWorkflowFileTree(ctx context.Context, workflowID uint) ([]domain.DirectoryWorkflowResponse, error)
+
 	UpdateDirectories(ctx context.Context, workflowID uint, directoryIDs []uint) error
 
 	CreateDirectory(ctx context.Context, parentPathID *uint, name string, status string, userID uint) error

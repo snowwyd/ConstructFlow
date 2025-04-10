@@ -84,6 +84,12 @@ func setupRoutes(router *gin.Engine, treeHandler *controller.TreeHandler, cfg *c
 		filesGroup.GET("/:file_id/convert/gltf", treeHandler.ConvertSTPToGLTF)
 
 	}
+
+	adminGroup := router.Group("/admin", middleware.AuthMiddleware(cfg))
+	{
+		adminGroup.GET("/users/:user_id/tree", treeHandler.GetUserTree)
+		adminGroup.GET("/workflows/:workflow_id/tree", treeHandler.GetWorkflowTree)
+	}
 }
 
 func (a *App) Stop() {

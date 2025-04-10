@@ -9,6 +9,8 @@ import (
 
 type DirectoryUsecase interface {
 	GetFileTree(ctx context.Context, isArchive bool, userID uint) (domain.GetFileTreeResponse, error)
+	// GetFileTreeWithUserFlag(ctx context.Context, userID uint, actorID uint)
+
 	CreateDirectory(ctx context.Context, parentPathID *uint, name string, userID uint) error
 	DeleteDirectory(ctx context.Context, directoryID uint, userID uint) error
 }
@@ -21,6 +23,11 @@ type FileUsecase interface {
 	UpdateFile(ctx context.Context, fileID uint, newData []byte, userID uint) error
 
 	ConvertSTPToGLTF(ctx context.Context, fileID uint, userID uint) (string, error)
+}
+
+type AdminUsecase interface {
+	GetUserTree(ctx context.Context, userID, actorID uint) ([]domain.DirectoryUserResponse, error)
+	GetWorkflowTree(ctx context.Context, workflowID, actorID uint) ([]domain.DirectoryWorkflowResponse, error)
 }
 
 type GRPCUsecase interface {
