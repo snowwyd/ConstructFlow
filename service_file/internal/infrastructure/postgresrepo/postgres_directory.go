@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"service-file/internal/domain"
 	"service-file/internal/domain/interfaces"
+	"sort"
 
 	"gorm.io/gorm"
 )
@@ -26,37 +27,162 @@ func (r *DirectoryRepository) GetDB() *gorm.DB {
 	return r.db
 }
 
-func (r *DirectoryRepository) GetFileTree(ctx context.Context, isArchive bool, userID uint) ([]domain.Directory, error) {
-	const op = "infrastructure.postgresrepo.directory.GetFileTree"
+func (r *DirectoryRepository) GetFileTreeWorking(ctx context.Context, userID uint) ([]domain.Directory, error) {
+	const op = "infrastructure.postgresrepo.directory.GetFileTreeWorking"
 
 	var directories []domain.Directory
 
 	query := r.db.WithContext(ctx).
 		Select("directories.*").
 		Preload("Files", func(db *gorm.DB) *gorm.DB {
-			if isArchive {
-				return db.Where("status = ?", "archive")
-			}
-			return db.Where("status != ?", "archive")
+			return db.Joins("JOIN user_files AS uf ON uf.file_id = files.id").
+				Where("status != ? AND uf.user_id = ?", "archive", userID)
 		})
 
-	if isArchive {
-		query = query.Where("directories.status = ?", "archive")
-	} else {
-		query = query.Joins("JOIN user_directories ON user_directories.directory_id = directories.id").
-			Where("user_directories.user_id = ?", userID).
-			Where("directories.status != ?", "archive")
-	}
+	query = query.Joins("JOIN user_directories ON user_directories.directory_id = directories.id").
+		Where("user_directories.user_id = ?", userID).
+		Where("directories.status != ?", "archive")
 
 	if err := query.Find(&directories).Error; err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	if !isArchive && len(directories) == 0 {
-		return nil, fmt.Errorf("%s: %w", op, domain.ErrAccessDenied)
+	return directories, nil
+}
+
+func (r *DirectoryRepository) GetFileTreeArchive(ctx context.Context, userID uint) ([]domain.Directory, error) {
+	const op = "infrastructure.postgresrepo.directory.GetFileTreeArchive"
+
+	var directories []domain.Directory
+
+	query := r.db.WithContext(ctx).
+		Select("directories.*").
+		Preload("Files", func(db *gorm.DB) *gorm.DB {
+			return db.Where("status = ?", "archive")
+		})
+
+	query = query.Where("directories.status = ? ", "archive")
+
+	if err := query.Find(&directories).Error; err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return directories, nil
+}
+
+func (r *DirectoryRepository) GetUserFileTree(ctx context.Context, userID uint) ([]domain.DirectoryUserResponse, error) {
+	const op = "infrastructure.postgresrepo.directory.GerUserFileTree"
+
+	query := `
+        SELECT 
+            d.id AS directory_id,
+            d.name AS name_folder,
+            d.parent_path_id AS parent_path_id,
+            (ud.user_id IS NOT NULL) AS user_has_access,
+            f.id AS file_id,
+            f.name AS name_file,
+            f.directory_id AS file_directory_id,
+            (uf.user_id IS NOT NULL) AS file_user_has_access
+        FROM directories d
+        LEFT JOIN user_directories ud ON ud.directory_id = d.id AND ud.user_id = ?
+        LEFT JOIN files f ON f.directory_id = d.id
+        LEFT JOIN user_files uf ON uf.file_id = f.id AND uf.user_id = ?
+    `
+
+	var rawResults []struct {
+		DirectoryID       uint    `json:"directory_id"`
+		NameFolder        string  `json:"name_folder"`
+		ParentPathID      *uint   `json:"parent_path_id"`
+		UserHasAccess     bool    `json:"user_has_access"`
+		FileID            *uint   `json:"file_id"`
+		NameFile          *string `json:"name_file"`
+		FileDirectoryID   *uint   `json:"file_directory_id"`
+		FileUserHasAccess *bool   `json:"file_user_has_access"`
+	}
+
+	if err := r.db.WithContext(ctx).Raw(query, userID, userID).Scan(&rawResults).Error; err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	directoryMap := make(map[uint]*domain.DirectoryUserResponse)
+	for _, row := range rawResults {
+		if _, exists := directoryMap[row.DirectoryID]; !exists {
+			directoryMap[row.DirectoryID] = &domain.DirectoryUserResponse{
+				ID:            row.DirectoryID,
+				NameFolder:    row.NameFolder,
+				ParentPathID:  row.ParentPathID,
+				UserHasAccess: row.UserHasAccess,
+				Files:         []domain.FileUserResponse{},
+			}
+		}
+
+		if row.FileID != nil {
+			directoryMap[row.DirectoryID].Files = append(directoryMap[row.DirectoryID].Files, domain.FileUserResponse{
+				ID:            *row.FileID,
+				NameFile:      *row.NameFile,
+				DirectoryID:   *row.FileDirectoryID,
+				UserHasAccess: *row.FileUserHasAccess,
+			})
+		}
+	}
+
+	var result []domain.DirectoryUserResponse
+	for _, dir := range directoryMap {
+		result = append(result, *dir)
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].ID < result[j].ID
+	})
+
+	return result, nil
+}
+
+func (r *DirectoryRepository) GetWorkflowFileTree(ctx context.Context, workflowID uint) ([]domain.DirectoryWorkflowResponse, error) {
+	const op = "infrastructure.postgresrepo.directory.GetWorkflowFileTree"
+
+	query := `
+        SELECT 
+            d.id AS directory_id,
+            d.name AS name_folder,
+            d.parent_path_id AS parent_path_id,
+            (d.workflow_id = ?) AS current_workflow_assigned
+        FROM directories d
+    `
+
+	var rawResults []struct {
+		DirectoryID             uint   `json:"directory_id"`
+		NameFolder              string `json:"name_folder"`
+		ParentPathID            *uint  `json:"parent_path_id"`
+		CurrentWorkflowAssigned bool   `json:"current_workflow_assigned"`
+	}
+
+	if err := r.db.WithContext(ctx).Raw(query, workflowID).Scan(&rawResults).Error; err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	directoryMap := make(map[uint]*domain.DirectoryWorkflowResponse)
+	for _, row := range rawResults {
+		if _, exists := directoryMap[row.DirectoryID]; !exists {
+			directoryMap[row.DirectoryID] = &domain.DirectoryWorkflowResponse{
+				ID:                      row.DirectoryID,
+				NameFolder:              row.NameFolder,
+				ParentPathID:            row.ParentPathID,
+				CurrentWorkflowAssigned: row.CurrentWorkflowAssigned,
+			}
+		}
+	}
+
+	var result []domain.DirectoryWorkflowResponse
+	for _, dir := range directoryMap {
+		result = append(result, *dir)
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].ID < result[j].ID
+	})
+
+	return result, nil
 }
 
 func (r *DirectoryRepository) CreateDirectory(ctx context.Context, parentPathID *uint, name string, status string, userID uint) error {

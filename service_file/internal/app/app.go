@@ -45,9 +45,10 @@ func New(cfg *config.Config, logger *slog.Logger) (*App, error) {
 
 	directoryUsecase := usecase.NewDirectoryUsecase(directoryRepo, logger)
 	fileUsecase := usecase.NewFileUsecase(directoryRepo, fileMetadataRepo, minioClient, logger)
+	adminUsecase := usecase.NewAdminUsecase(directoryRepo, fileMetadataRepo, logger)
 	gRPCUsecase := usecase.NewGRPCUsecase(fileMetadataRepo, directoryRepo, logger)
 
-	treeHandler := http.NewTreeHandler(directoryUsecase, fileUsecase)
+	treeHandler := http.NewTreeHandler(directoryUsecase, fileUsecase, adminUsecase)
 
 	httpApp := httpapp.New(logger, treeHandler, cfg)
 	grpcApp := grpcapp.New(logger, gRPCUsecase, cfg.GRPCServer.Address)
