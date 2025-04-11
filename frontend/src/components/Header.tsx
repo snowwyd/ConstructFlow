@@ -26,8 +26,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axiosFetching from '../api/AxiosFetch';
 import { redirectToLogin } from '../api/NavigationService';
 import config from '../constants/Configurations.json';
+import { ApprovalResponse } from '../interfaces/Approvals';
 
-// Interface from API
+// Interface for UserInfo
 interface UserInfo {
 	id: number;
 	login: string;
@@ -84,25 +85,53 @@ const Header = () => {
 	}, [location.pathname, isLoginPage]);
 
 	/**
-	 * Fetch pending approvals that require user attention
-	 * This is currently stubbed until the backend endpoint is implemented
+	 * Fetches pending approvals that require user attention
+	 * Updates the global state with pending approvals count
 	 */
 	const fetchPendingApprovals = async () => {
 		try {
+			console.log('Fetching pending approvals');
 			const response = await axiosFetching.get(config.getApprovals);
-			const pendingCount = response.data.filter(
-			  (approval: any) => approval.status === 'on approval'
-			).length;
 
-			setPendingApprovals(pendingCount);
+			// Make sure we have valid response data
+			if (response.data && Array.isArray(response.data)) {
+				// Use the proper type instead of 'any'
+				const pendingCount = response.data.filter(
+					(approval: ApprovalResponse) => approval.status === 'on approval'
+				).length;
 
-
+				console.log(`Found ${pendingCount} pending approvals`);
+				setPendingApprovals(pendingCount);
+			} else {
+				console.warn('Unexpected response format:', response.data);
+				setPendingApprovals(0);
+			}
 		} catch (error) {
 			console.error('Error fetching approvals:', error);
 			// Default to 0 in case of error
 			setPendingApprovals(0);
 		}
 	};
+
+	// Add event listener for global approval count updates
+	useEffect(() => {
+		// Define the event handler
+		const handleUpdateApprovalCount = () => {
+			console.log('Approval count update requested');
+			fetchPendingApprovals();
+		};
+
+		// Add event listener
+		window.addEventListener('update-approval-count', handleUpdateApprovalCount);
+
+		// Clean up
+		return () => {
+			window.removeEventListener(
+				'update-approval-count',
+				handleUpdateApprovalCount
+			);
+		};
+	}, []);
 
 	// Menu handlers
 	const handleMobileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {

@@ -25,15 +25,15 @@ const ErrorState: React.FC<ErrorStateProps> = ({
 	// Extract error message from various error types
 	const getErrorMessage = (): string => {
 		if (message) return message;
-		
+
 		if (error instanceof AxiosError) {
 			return error.response?.data?.message || error.message || 'Ошибка сервера';
 		}
-		
+
 		if (error instanceof Error) {
 			return error.message;
 		}
-		
+
 		return 'Неизвестная ошибка';
 	};
 
@@ -61,7 +61,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
 					opacity: 0.8,
 				}}
 			/>
-			
+
 			<Typography
 				color='error'
 				variant='subtitle1'
@@ -70,7 +70,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
 			>
 				{title}
 			</Typography>
-			
+
 			<Typography
 				color='text.secondary'
 				variant='body2'
@@ -79,7 +79,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
 			>
 				{getErrorMessage()}
 			</Typography>
-			
+
 			{onRetry && (
 				<Box sx={{ mt: 2 }}>
 					<Button

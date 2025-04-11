@@ -444,7 +444,9 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 					<RichTreeView
 						ref={treeViewRef}
 						items={treeItems}
-						defaultExpandedItems={treeItems.filter(item => item.type === 'directory').map(item => item.id)}
+						defaultExpandedItems={treeItems
+							.filter(item => item.type === 'directory')
+							.map(item => item.id)}
 						disableSelection={true}
 						autoFocus={false}
 						slots={{

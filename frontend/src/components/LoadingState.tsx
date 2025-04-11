@@ -1,4 +1,10 @@
-import { alpha, CircularProgress, Paper, Typography, useTheme } from '@mui/material';
+import {
+	alpha,
+	CircularProgress,
+	Paper,
+	Typography,
+	useTheme,
+} from '@mui/material';
 import React from 'react';
 
 interface LoadingStateProps {
