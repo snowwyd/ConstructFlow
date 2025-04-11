@@ -25,7 +25,7 @@ import {
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import axiosFetching from '../api/AxiosFetch';
+import {axiosFetching} from '../api/AxiosFetch';
 import { updateApprovalsCount } from '../api/NavigationService';
 import config from '../constants/Configurations.json';
 import { ApprovalResponse } from '../interfaces/Approvals';
