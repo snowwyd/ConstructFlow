@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package file;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "service-file/proto;pb";
+
+service FileService {
+  rpc GetFileByID(GetFileRequest) returns (FileResponse);
+  rpc UpdateFileStatus(UpdateFileStatusRequest) returns (google.protobuf.Empty);
+  rpc GetFilesInfo(GetFilesRequest) returns (GetFilesResponse);
+
+  rpc CheckWorkflow(CheckWorkflowRequest) returns (CheckWorkflowResponse);
+  rpc AssignWorkflow(AssignWorkflowRequest) returns (google.protobuf.Empty);
+
+  rpc DeleteUserRelations(DeleteUserRelationsRequest) returns (google.protobuf.Empty);
+  rpc AssignUser(AssignUserRequest) returns (google.protobuf.Empty);
+
+  // TODO: остальные методы
+}
+
+message GetFileRequest {
+  uint32 file_id = 1;
+}
+
+message FileResponse {
+  uint32 id = 1;
+  uint32 directory_id = 2;
+  string name = 3;
+  string status = 4;
+  int32 version = 5;
+  DirectoryResponse directory = 6;
+}
+
+message DirectoryResponse {
+  uint32 id = 1;
+  uint32 parent_path_id = 2;
+  string name = 3;
+  string status = 4;
+  uint32 workflow_id = 5;
+}
+
+message UpdateFileStatusRequest {
+  uint32 file_id = 1;
+  string status = 2;
+}
+
+message GetFilesRequest {
+  repeated uint32 file_ids = 1;
+}
+
+message GetFilesResponse {
+  map<uint32, string> file_names = 1;
+}
+
+message CheckWorkflowRequest {
+  uint32 workflow_id = 1;
+}
+
+message CheckWorkflowResponse {
+  bool exists = 1;
+}
+
+message AssignWorkflowRequest {
+  uint32 workflow_id = 1;
+  repeated uint32 directory_ids = 2;
+}
+
+message DeleteUserRelationsRequest {
+  uint32 user_id = 1;
+}
+
+message AssignUserRequest {
+  uint32 user_id = 1;
+  repeated uint32 directory_ids = 2;
+  repeated uint32 file_ids = 3;
+}
