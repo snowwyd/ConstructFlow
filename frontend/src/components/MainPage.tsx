@@ -1,9 +1,11 @@
 import { Box, Paper, Typography, alpha, useTheme } from '@mui/material';
 import { useState } from 'react';
+import { axiosFetchingFiles } from '../api/AxiosFetch';
 import ContextMenu from './ContextMenu';
 import FilesTree from './FilesTree';
 
 const MainPage = () => {
+	const [modelUrl, setModelUrl] = useState<string | null>(null);
 	const theme = useTheme();
 	// State to track selected file or folder for preview
 	const [selectedItem, setSelectedItem] = useState<{
@@ -17,12 +19,29 @@ const MainPage = () => {
 	});
 
 	// This function will be passed to FilesTree components to handle item selection
-	const handleItemSelect = (
+	const handleItemSelect = async (
 		id: string,
 		type: 'file' | 'directory',
 		name: string
 	) => {
-		setSelectedItem({ id, type, name });
+		if (type === 'file' && name.endsWith('.glb')) {
+			try {
+				const fileId = id.replace('file-', '');
+				const response = await axiosFetchingFiles.get(`/files/${fileId}/download-direct`, {
+					responseType: 'blob', // Важно указать, чтобы получить файл в виде Blob
+				});
+	
+				// Создаем временный URL для загруженного файла
+				const fileUrl = URL.createObjectURL(response.data);
+				setModelUrl(fileUrl); // Сохраняем URL модели в состоянии
+				setSelectedItem({ id, type, name });
+			} catch (error) {
+				console.error('Error downloading GLB file:', error);
+			}
+		} else {
+			setSelectedItem({ id, type, name });
+			setModelUrl(null); // Очищаем модель, если выбран не `.glb` файл
+		}
 	};
 
 	return (
