@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axiosFetching from '../api/AxiosFetch';
+import {axiosFetching} from '../api/AxiosFetch';
 import { redirectToLogin } from '../api/NavigationService';
 import config from '../constants/Configurations.json';
 import { ApprovalResponse } from '../interfaces/Approvals';

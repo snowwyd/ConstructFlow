@@ -1,5 +1,6 @@
 {
-	"serverUrl": "http://localhost:8080/",
+	"serverUrl": "http://localhost:8090/",
+	"serverUrlFiles": "http://localhost:8081/",
 	"loginEndpoint": "/auth/login",
 	"checkJWT": "/auth/me",
 	"getFiles": "/directories",

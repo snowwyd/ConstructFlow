@@ -14,7 +14,7 @@ import React, {
 	useState,
 } from 'react';
 import { useDispatch } from 'react-redux';
-import axiosFetching from '../api/AxiosFetch';
+import {axiosFetchingFiles} from '../api/AxiosFetch';
 import config from '../constants/Configurations.json';
 import { Directory, TreeDataItem } from '../interfaces/FilesTree';
 import {
@@ -81,7 +81,7 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 	} = useQuery({
 		queryKey: ['directories', isArchive],
 		queryFn: async () => {
-			const response = await axiosFetching.post(getFolders, {
+			const response = await axiosFetchingFiles.post(getFolders, {
 				is_archive: isArchive,
 			});
 			return response.data;
@@ -237,7 +237,7 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 	// Обработка создания файла через mutation
 	const createFileMutation = useMutation({
 		mutationFn: async (data: FileUploadData) => {
-			const response = await axiosFetching.post(createFile, data);
+			const response = await axiosFetchingFiles.post(createFile, data);
 			return response.data;
 		},
 		onSuccess: () => {
