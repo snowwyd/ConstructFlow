@@ -24,7 +24,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios, { AxiosError } from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import axiosFetching from '../api/AxiosFetch';
+import {axiosFetching, axiosFetchingFiles} from '../api/AxiosFetch';
 import { updateApprovalsCount } from '../api/NavigationService';
 import config from '../constants/Configurations.json';
 import { closeContextMenu } from '../store/Slices/contextMenuSlice';
@@ -136,7 +136,7 @@ const ContextMenu = () => {
 
 	const createFolderQuery = useMutation({
 		mutationFn: async (data: CreateFolderPayload) => {
-			const response = await axiosFetching.post(createFolder, data);
+			const response = await axiosFetchingFiles.post(createFolder, data);
 			return response.data;
 		},
 		onSuccess: () => {
@@ -208,7 +208,7 @@ const ContextMenu = () => {
 
 	const deleteFolderMutation = useMutation({
 		mutationFn: async (data: DeleteFolderPayload) => {
-			const response = await axiosFetching.delete(deleteFolder, { data });
+			const response = await axiosFetchingFiles.delete(deleteFolder, { data });
 			return response.data;
 		},
 		onSuccess: () => {
@@ -227,7 +227,7 @@ const ContextMenu = () => {
 
 	const deleteFileMutation = useMutation({
 		mutationFn: async (data: DeleteFilePayload) => {
-			const response = await axiosFetching.delete(deleteFile, { data });
+			const response = await axiosFetchingFiles.delete(deleteFile, { data });
 			return response.data;
 		},
 		onSuccess: () => {

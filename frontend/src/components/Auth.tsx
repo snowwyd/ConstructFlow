@@ -20,7 +20,7 @@ import { useMutation } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import axiosFetching from '../api/AxiosFetch';
+import {axiosFetching} from '../api/AxiosFetch';
 import config from '../constants/Configurations.json';
 
 const loginEndpoint = config.loginEndpoint;

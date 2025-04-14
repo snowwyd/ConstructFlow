@@ -249,39 +249,41 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 	});
 
 	// Обработка перетаскивания файлов
-	const handleDrop = useCallback(
-		(event: React.DragEvent<HTMLDivElement>, directoryId: number) => {
-			event.preventDefault();
-			event.stopPropagation();
-
-			const files = Array.from(event.dataTransfer.files);
-			setHighlightedItemId(null);
-
-			files.forEach(file => {
-				const fileName = file.name;
-				const existingFile = findFileInDirectory(
-					treeItems,
-					directoryId,
-					fileName
-				);
-
-				if (existingFile) {
-					if (confirm(`Файл "${fileName}" уже существует. Заменить?`)) {
-						createFileMutation.mutate({
-							directory_id: directoryId,
-							name: fileName,
-						});
-					}
-				} else {
-					createFileMutation.mutate({
-						directory_id: directoryId,
-						name: fileName,
-					});
-				}
-			});
-		},
-		[createFileMutation, findFileInDirectory, treeItems]
-	);
+	const handleDrop = useCallback(async (event: React.DragEvent<HTMLDivElement>, directoryId: number) => {
+		event.preventDefault();
+		event.stopPropagation();
+		const files = Array.from(event.dataTransfer.files);
+		setHighlightedItemId(null);
+	
+		// Обрабатываем каждый файл
+		files.forEach(async (file) => {
+			// Проверяем, что файл имеет расширение .glb
+			if (!file.name.endsWith('.glb')) {
+				console.warn(`File "${file.name}" is not a .glb file and will be skipped.`);
+				return;
+			}
+	
+			// Создаем FormData для файла
+			const formData = new FormData();
+			formData.append('file', file); // Файл
+			formData.append('directory_id', String(directoryId)); // ID директории
+			formData.append('name', file.name); // Имя файла
+	
+			try {
+				// Отправляем файл на сервер
+				await axiosFetchingFiles.post('/files/upload', formData, {
+					headers: {
+						'Content-Type': 'multipart/form-data',
+					},
+				});
+	
+				// Обновляем дерево после успешной загрузки
+				refreshTree();
+			} catch (error) {
+				console.error('Error uploading file:', error);
+			}
+		});
+	}, [refreshTree]);
 
 	// Глобальный обработчик кликов для снятия выделения
 	useEffect(() => {
