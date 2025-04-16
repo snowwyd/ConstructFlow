@@ -15,6 +15,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=constructflow
       - SSL_MODE=disable
+      - GRPC_KEY = 88XU6LYFGeT8RGgX/3Tp1C1K1a8XwHUi9BCKsx04WwA=
     depends_on:
       - postgres
     # Убираем volumes, чтобы не затирать содержимое /app в контейнере
@@ -81,6 +82,8 @@ services:
       - app-network
     restart: always
 
+
+# сейчас тут костыль и нужно прописывать это: docker network create -d bridge app-network
 networks:
   app-network:
     external: true
