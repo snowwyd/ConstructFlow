@@ -20,7 +20,6 @@ import {
 } from '@mui/material';
 import { OrbitControls, useGLTF } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import axios from 'axios';
 import { useState } from 'react';
 import { axiosFetchingFiles } from '../api/AxiosFetch';
 import ContextMenu from './ContextMenu';
@@ -71,9 +70,12 @@ const MainPage = () => {
 				const fileId = id.replace('file-', '');
 				showNotification('Загрузка модели...', 'info');
 
-				const response = await axios.get(`/files/${fileId}/download-direct`, {
-					responseType: 'blob',
-				});
+				const response = await axiosFetchingFiles.get(
+					`/files/${fileId}/download-direct`,
+					{
+						responseType: 'blob',
+					}
+				);
 
 				// Проверяем тип ответа
 				const contentType = response.headers['content-type'];
@@ -105,9 +107,12 @@ const MainPage = () => {
 
 		try {
 			const fileId = selectedItem.id.replace('file-', '');
-			const response = await axios.get(`/files/${fileId}/download-direct`, {
-				responseType: 'blob',
-			});
+			const response = await axiosFetchingFiles.get(
+				`/files/${fileId}/download-direct`,
+				{
+					responseType: 'blob',
+				}
+			);
 
 			const url = window.URL.createObjectURL(new Blob([response.data]));
 			const link = document.createElement('a');
