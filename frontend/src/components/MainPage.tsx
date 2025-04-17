@@ -2,6 +2,7 @@ import {
 	DownloadOutlined,
 	FileOpenOutlined,
 	HighlightOff,
+	TextSnippetOutlined,
 	UploadFileOutlined,
 	Visibility,
 } from '@mui/icons-material';
@@ -24,6 +25,7 @@ import { useState } from 'react';
 import { axiosFetchingFiles } from '../api/AxiosFetch';
 import ContextMenu from './ContextMenu';
 import FilesTree from './FilesTree';
+import TextViewer from './TextViewer';
 
 const MainPage = () => {
 	const theme = useTheme();
@@ -47,6 +49,7 @@ const MainPage = () => {
 		name: null,
 	});
 	const [modelUrl, setModelUrl] = useState<string | null>(null);
+	const [textContent, setTextContent] = useState<string | null>(null);
 	const [dropHighlight, setDropHighlight] = useState(false);
 
 	const showNotification = (
@@ -64,35 +67,70 @@ const MainPage = () => {
 		name: string
 	) => {
 		setSelectedItem({ id, type, name });
+		setModelUrl(null);
+		setTextContent(null);
 
-		if (type === 'file' && name.endsWith('.glb')) {
+		if (type === 'file') {
 			try {
 				const fileId = id.replace('file-', '');
-				showNotification('Загрузка модели...', 'info');
 
-				const response = await axiosFetchingFiles.get(
-					`/files/${fileId}/download-direct`,
-					{
-						responseType: 'blob',
+				if (name.endsWith('.glb')) {
+					showNotification('Загрузка модели...', 'info');
+
+					const response = await axiosFetchingFiles.get(
+						`/files/${fileId}/download-direct`,
+						{
+							responseType: 'blob',
+						}
+					);
+
+					// Проверяем тип ответа
+					const contentType = response.headers['content-type'];
+					if (contentType && contentType.includes('text/html')) {
+						showNotification('Сервер вернул HTML вместо GLB файла', 'error');
+						return;
 					}
-				);
 
-				// Проверяем тип ответа
-				const contentType = response.headers['content-type'];
-				if (contentType && contentType.includes('text/html')) {
-					showNotification('Сервер вернул HTML вместо GLB файла', 'error');
-					return;
+					const fileUrl = URL.createObjectURL(response.data);
+					setModelUrl(fileUrl);
+					showNotification('Модель успешно загружена', 'success');
+				} else if (name.endsWith('.txt')) {
+					showNotification('Загрузка текстового файла...', 'info');
+
+					const response = await axiosFetchingFiles.get(
+						`/files/${fileId}/download-direct`,
+						{
+							responseType: 'blob',
+						}
+					);
+
+					// Проверяем тип ответа
+					const contentType = response.headers['content-type'];
+					if (
+						contentType &&
+						!contentType.includes('text/plain') &&
+						!contentType.includes('application/octet-stream')
+					) {
+						showNotification('Неверный формат файла', 'error');
+						return;
+					}
+
+					// Читаем содержимое файла как текст
+					const reader = new FileReader();
+					reader.onload = e => {
+						const content = e.target?.result as string;
+						setTextContent(content);
+						showNotification('Текстовый файл успешно загружен', 'success');
+					};
+					reader.onerror = () => {
+						showNotification('Ошибка при чтении текстового файла', 'error');
+					};
+					reader.readAsText(response.data);
 				}
-
-				const fileUrl = URL.createObjectURL(response.data);
-				setModelUrl(fileUrl);
-				showNotification('Модель успешно загружена', 'success');
 			} catch (error) {
-				console.error('Ошибка загрузки GLB файла:', error);
-				showNotification('Ошибка при загрузке 3D модели', 'error');
+				console.error('Ошибка загрузки файла:', error);
+				showNotification('Ошибка при загрузке файла', 'error');
 			}
-		} else {
-			setModelUrl(null);
 		}
 	};
 
@@ -217,6 +255,7 @@ const MainPage = () => {
 
 	const clearPreview = () => {
 		setModelUrl(null);
+		setTextContent(null);
 	};
 
 	const ModelViewer = ({ url }: { url: string }) => {
@@ -355,6 +394,24 @@ const MainPage = () => {
 										</Tooltip>
 									)}
 
+									{/* Кнопка предпросмотра для TXT файлов */}
+									{selectedItem.name?.endsWith('.txt') && (
+										<Tooltip title='Предпросмотр текстового файла'>
+											<IconButton
+												color='primary'
+												onClick={() =>
+													handleItemSelect(
+														selectedItem.id!,
+														selectedItem.type!,
+														selectedItem.name!
+													)
+												}
+											>
+												<TextSnippetOutlined />
+											</IconButton>
+										</Tooltip>
+									)}
+
 									{/* Кнопка скачивания */}
 									<Tooltip title='Скачать файл'>
 										<Button
@@ -395,6 +452,21 @@ const MainPage = () => {
 									sx={{
 										position: 'absolute',
 										top: 10,
+										right: 10,
+										bgcolor: alpha(theme.palette.background.paper, 0.8),
+									}}
+									onClick={clearPreview}
+								>
+									<HighlightOff />
+								</IconButton>
+							</>
+						) : textContent ? (
+							<>
+								<TextViewer text={textContent} />
+								<IconButton
+									sx={{
+										position: 'absolute',
+										top: 0.1,
 										right: 10,
 										bgcolor: alpha(theme.palette.background.paper, 0.8),
 									}}
