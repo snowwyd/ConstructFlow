@@ -23,24 +23,16 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axiosFetching from '../api/AxiosFetch';
+import {axiosFetching} from '../api/AxiosFetch';
 import { redirectToLogin } from '../api/NavigationService';
 import config from '../constants/Configurations.json';
+import { ApprovalResponse } from '../interfaces/Approvals';
 
-// Interface from API
+// Interface for UserInfo
 interface UserInfo {
 	id: number;
 	login: string;
 	role: string;
-}
-
-// Interface for approval items
-interface ApprovalItem {
-	id: number;
-	file_id: number;
-	file_name: string;
-	status: string;
-	workflow_order: number;
 }
 
 const Header = () => {
@@ -93,59 +85,53 @@ const Header = () => {
 	}, [location.pathname, isLoginPage]);
 
 	/**
-	 * Fetch pending approvals that require user attention
-	 * This is currently stubbed until the backend endpoint is implemented
+	 * Fetches pending approvals that require user attention
+	 * Updates the global state with pending approvals count
 	 */
 	const fetchPendingApprovals = async () => {
 		try {
-			// TODO: Uncomment when backend is ready
-			// const response = await axiosFetching.get(config.getApprovals);
-			// const pendingCount = response.data.filter(
-			//   (approval: any) => approval.status === 'on approval'
-			// ).length;
+			console.log('Fetching pending approvals');
+			const response = await axiosFetching.get(config.getApprovals);
 
-			// Mock implementation based on API documentation
-			const mockApprovals: ApprovalItem[] = [
-				{
-					id: 1,
-					file_id: 3,
-					file_name: 'File3',
-					status: 'on approval',
-					workflow_order: 1,
-				},
-				{
-					id: 2,
-					file_id: 4,
-					file_name: 'File4',
-					status: 'on approval',
-					workflow_order: 2,
-				},
-				// Random number of mock approvals (0-3 additional items)
-				...Array(Math.floor(Math.random() * 4))
-					.fill(0)
-					.map((_, index) => ({
-						id: 3 + index,
-						file_id: 5 + index,
-						file_name: `File${5 + index}`,
-						status: 'on approval',
-						workflow_order: 3 + index,
-					})),
-			];
+			// Make sure we have valid response data
+			if (response.data && Array.isArray(response.data)) {
+				// Use the proper type instead of 'any'
+				const pendingCount = response.data.filter(
+					(approval: ApprovalResponse) => approval.status === 'on approval'
+				).length;
 
-			// Count only items with status "on approval"
-			const pendingCount = mockApprovals.filter(
-				a => a.status === 'on approval'
-			).length;
-			setPendingApprovals(pendingCount);
-
-			// Log mock data for development
-			console.debug('Mock approvals data:', mockApprovals);
+				console.log(`Found ${pendingCount} pending approvals`);
+				setPendingApprovals(pendingCount);
+			} else {
+				console.warn('Unexpected response format:', response.data);
+				setPendingApprovals(0);
+			}
 		} catch (error) {
 			console.error('Error fetching approvals:', error);
 			// Default to 0 in case of error
 			setPendingApprovals(0);
 		}
 	};
+
+	// Add event listener for global approval count updates
+	useEffect(() => {
+		// Define the event handler
+		const handleUpdateApprovalCount = () => {
+			console.log('Approval count update requested');
+			fetchPendingApprovals();
+		};
+
+		// Add event listener
+		window.addEventListener('update-approval-count', handleUpdateApprovalCount);
+
+		// Clean up
+		return () => {
+			window.removeEventListener(
+				'update-approval-count',
+				handleUpdateApprovalCount
+			);
+		};
+	}, []);
 
 	// Menu handlers
 	const handleMobileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {

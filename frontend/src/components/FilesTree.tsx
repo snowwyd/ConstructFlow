@@ -14,7 +14,7 @@ import React, {
 	useState,
 } from 'react';
 import { useDispatch } from 'react-redux';
-import axiosFetching from '../api/AxiosFetch';
+import {axiosFetchingFiles} from '../api/AxiosFetch';
 import config from '../constants/Configurations.json';
 import { Directory, TreeDataItem } from '../interfaces/FilesTree';
 import {
@@ -81,7 +81,7 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 	} = useQuery({
 		queryKey: ['directories', isArchive],
 		queryFn: async () => {
-			const response = await axiosFetching.post(getFolders, {
+			const response = await axiosFetchingFiles.post(getFolders, {
 				is_archive: isArchive,
 			});
 			return response.data;
@@ -237,7 +237,7 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 	// Обработка создания файла через mutation
 	const createFileMutation = useMutation({
 		mutationFn: async (data: FileUploadData) => {
-			const response = await axiosFetching.post(createFile, data);
+			const response = await axiosFetchingFiles.post(createFile, data);
 			return response.data;
 		},
 		onSuccess: () => {
@@ -249,39 +249,41 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 	});
 
 	// Обработка перетаскивания файлов
-	const handleDrop = useCallback(
-		(event: React.DragEvent<HTMLDivElement>, directoryId: number) => {
-			event.preventDefault();
-			event.stopPropagation();
-
-			const files = Array.from(event.dataTransfer.files);
-			setHighlightedItemId(null);
-
-			files.forEach(file => {
-				const fileName = file.name;
-				const existingFile = findFileInDirectory(
-					treeItems,
-					directoryId,
-					fileName
-				);
-
-				if (existingFile) {
-					if (confirm(`Файл "${fileName}" уже существует. Заменить?`)) {
-						createFileMutation.mutate({
-							directory_id: directoryId,
-							name: fileName,
-						});
-					}
-				} else {
-					createFileMutation.mutate({
-						directory_id: directoryId,
-						name: fileName,
-					});
-				}
-			});
-		},
-		[createFileMutation, findFileInDirectory, treeItems]
-	);
+	const handleDrop = useCallback(async (event: React.DragEvent<HTMLDivElement>, directoryId: number) => {
+		event.preventDefault();
+		event.stopPropagation();
+		const files = Array.from(event.dataTransfer.files);
+		setHighlightedItemId(null);
+	
+		// Обрабатываем каждый файл
+		files.forEach(async (file) => {
+			// Проверяем, что файл имеет расширение .glb
+			if (!file.name.endsWith('.glb')) {
+				console.warn(`File "${file.name}" is not a .glb file and will be skipped.`);
+				return;
+			}
+	
+			// Создаем FormData для файла
+			const formData = new FormData();
+			formData.append('file', file); // Файл
+			formData.append('directory_id', String(directoryId)); // ID директории
+			formData.append('name', file.name); // Имя файла
+	
+			try {
+				// Отправляем файл на сервер
+				await axiosFetchingFiles.post('/files/upload', formData, {
+					headers: {
+						'Content-Type': 'multipart/form-data',
+					},
+				});
+	
+				// Обновляем дерево после успешной загрузки
+				refreshTree();
+			} catch (error) {
+				console.error('Error uploading file:', error);
+			}
+		});
+	}, [refreshTree]);
 
 	// Глобальный обработчик кликов для снятия выделения
 	useEffect(() => {
@@ -444,7 +446,9 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 					<RichTreeView
 						ref={treeViewRef}
 						items={treeItems}
-						defaultExpandedItems={treeItems.filter(item => item.type === 'directory').map(item => item.id)}
+						defaultExpandedItems={treeItems
+							.filter(item => item.type === 'directory')
+							.map(item => item.id)}
 						disableSelection={true}
 						autoFocus={false}
 						slots={{

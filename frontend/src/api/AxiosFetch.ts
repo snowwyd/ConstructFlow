@@ -3,10 +3,16 @@ import config from '../constants/Configurations.json';
 import { redirectToLogin } from './NavigationService';
 
 const serverURL = config.serverUrl;
+const serverURLFiles = config.serverUrlFiles;
 
-const axiosFetching = axios.create({
+export const axiosFetching = axios.create({
 	baseURL: serverURL,
 	withCredentials: true,
+});
+
+export const axiosFetchingFiles = axios.create({
+    baseURL: serverURLFiles,
+    withCredentials: true,
 });
 
 axiosFetching.interceptors.response.use(
@@ -20,4 +26,13 @@ axiosFetching.interceptors.response.use(
 	}
 );
 
-export default axiosFetching;
+axiosFetchingFiles.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response && error.response.status === 401) {
+            // Перенаправляем на страницу логина в случае ошибки 401
+            redirectToLogin();
+        }
+        return Promise.reject(error);
+    }
+);
