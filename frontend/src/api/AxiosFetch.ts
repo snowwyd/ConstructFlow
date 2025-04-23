@@ -19,10 +19,9 @@ axiosFetching.interceptors.response.use(
 	response => response,
 	error => {
 		if (error.response && error.response.status === 401) {
-			// Use our navigation service instead of useNavigate
 			redirectToLogin();
 		}
-		return Promise.reject(error); // Не забудь вернуть rejected Promise для дальнейшей обработки ошибок
+		return Promise.reject(error); 
 	}
 );
 
@@ -30,7 +29,6 @@ axiosFetchingFiles.interceptors.response.use(
     response => response,
     error => {
         if (error.response && error.response.status === 401) {
-            // Перенаправляем на страницу логина в случае ошибки 401
             redirectToLogin();
         }
         return Promise.reject(error);

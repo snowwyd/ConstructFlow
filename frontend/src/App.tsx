@@ -9,7 +9,7 @@ import Auth from './components/Auth';
 import MainPage from './components/MainPage';
 import UsersPermissionsPage from './components/UsersPermissionsPage';
 import { store } from './store/store';
-import theme from './theme';
+import theme from './constants/theme';
 
 const App = () => {
 	return (

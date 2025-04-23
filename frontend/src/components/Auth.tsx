@@ -4,23 +4,23 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
-	Alert,
-	alpha,
-	Box,
-	Button,
-	CircularProgress,
-	IconButton,
-	InputAdornment,
-	Paper,
-	TextField,
-	Typography,
-	useTheme,
+    Alert,
+    alpha,
+    Box,
+    Button,
+    CircularProgress,
+    IconButton,
+    InputAdornment,
+    Paper,
+    TextField,
+    Typography,
+    useTheme,
 } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import {axiosFetching} from '../api/AxiosFetch';
+import { axiosFetching } from '../api/AxiosFetch';
 import config from '../constants/Configurations.json';
 
 const loginEndpoint = config.loginEndpoint;
@@ -28,73 +28,73 @@ const JWTresponse = config.checkJWT;
 
 // Type for login credentials
 interface LoginCredentials {
-	login: string;
-	password: string;
+    login: string;
+    password: string;
 }
 
 // Type for JWT validation response
 interface JWTValidationResponse {
-	id: number;
-	login: string;
-	role: string;
+    id: number;
+    login: string;
+    role: string;
 }
 
 const Auth = () => {
-	const theme = useTheme();
-	const navigate = useNavigate();
-	const [login, setLogin] = useState<string>('');
-	const [password, setPassword] = useState<string>('');
-	const [error, setError] = useState<string | null>(null);
-	const [showPassword, setShowPassword] = useState<boolean>(false);
+    const theme = useTheme();
+    const navigate = useNavigate();
+    const [login, setLogin] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
+    const [error, setError] = useState<string | null>(null);
+    const [showPassword, setShowPassword] = useState<boolean>(false);
 
-	const { mutate, isPending } = useMutation({
-		mutationFn: async () => {
-			const response = await axiosFetching.post<{ token: string }>(
-				loginEndpoint,
-				{ login, password } as LoginCredentials
-			);
-			return response.data;
-		},
-		onSuccess: async () => {
-			try {
-				const validateResponse = await axiosFetching.get<JWTValidationResponse>(
-					JWTresponse
-				);
+    const { mutate, isPending } = useMutation({
+        mutationFn: async () => {
+            const response = await axiosFetching.post<{ token: string }>(
+                loginEndpoint,
+                { login, password } as LoginCredentials
+            );
+            return response.data;
+        },
+        onSuccess: async () => {
+            try {
+                const validateResponse = await axiosFetching.get<JWTValidationResponse>(
+                    JWTresponse
+                );
 
-				if (validateResponse.data.id) {
-					setError(null);
-					navigate('/main');
-				}
-			} catch (error) {
-				const axiosError = error as AxiosError<{ message?: string }>;
-				setError(
-					axiosError.response?.data?.message || 'Ошибка валидации токена'
-				);
-			}
-		},
-		onError: (error: AxiosError<{ message?: string }>) => {
-			setError(
-				error.response?.data?.message ||
-					error.message ||
-					'Произошла ошибка при входе'
-			);
-		},
-	});
+                if (validateResponse.data.id) {
+                    setError(null);
+                    navigate('/main');
+                }
+            } catch (error) {
+                const axiosError = error as AxiosError<{ message?: string }>;
+                setError(
+                    axiosError.response?.data?.message || 'Ошибка валидации токена'
+                );
+            }
+        },
+        onError: (error: AxiosError<{ message?: string }>) => {
+            setError(
+                error.response?.data?.message ||
+                    error.message ||
+                    'Произошла ошибка при входе'
+            );
+        },
+    });
 
-	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		if (!login || !password) {
-			setError('Заполните все поля');
-			return;
-		}
-		mutate();
-	};
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!login || !password) {
+            setError('Заполните все поля');
+            return;
+        }
+        mutate();
+    };
 
-	const togglePasswordVisibility = () => {
-		setShowPassword(!showPassword);
-	};
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    };
 
-	return (
+    return (
 		<Box
 			sx={{
 				minHeight: '90vh',
@@ -109,8 +109,35 @@ const Auth = () => {
 					0.05
 				)} 60%, transparent 100%)`,
 				padding: 2,
+				flexDirection: 'column', // Изменяем направление на колонку
 			}}
 		>
+			{/* Логотип ConstructHub */}
+			<Box
+				sx={{
+					textAlign: 'center',
+					mb: 4, // Отступ снизу для разделения логотипа и формы
+				}}
+			>
+				<ConstructionIcon
+					sx={{
+						fontSize: 48,
+						color: theme.palette.primary.main,
+						mb: 1,
+						transform: 'rotate(15deg)',
+					}}
+				/>
+				<Typography
+					variant='h4'
+					component='h1'
+					color={theme.palette.primary.main}
+					fontWeight={700}
+				>
+					ConstructHub
+				</Typography>
+			</Box>
+
+			{/* Форма авторизации */}
 			<Paper
 				elevation={6}
 				sx={{
@@ -125,55 +152,16 @@ const Auth = () => {
 				<Box
 					sx={{
 						bgcolor: theme.palette.primary.main,
-						py: 4,
+						py: 2, // Уменьшен паддинг
 						px: 3,
 						textAlign: 'center',
 						position: 'relative',
 						overflow: 'hidden',
-						'&::before': {
-							content: '""',
-							position: 'absolute',
-							top: -100,
-							left: -100,
-							width: 300,
-							height: 300,
-							borderRadius: '50%',
-							backgroundColor: alpha('#fff', 0.05),
-						},
-						'&::after': {
-							content: '""',
-							position: 'absolute',
-							bottom: -80,
-							right: -80,
-							width: 200,
-							height: 200,
-							borderRadius: '50%',
-							backgroundColor: alpha('#fff', 0.05),
-						},
 					}}
 				>
-					<Box sx={{ position: 'relative', zIndex: 1 }}>
-						<ConstructionIcon
-							sx={{
-								fontSize: 48,
-								color: '#fff',
-								mb: 2,
-								transform: 'rotate(15deg)',
-							}}
-						/>
-						<Typography
-							variant='h4'
-							component='h1'
-							color='white'
-							fontWeight={700}
-							gutterBottom
-						>
-							ConstructFlow
-						</Typography>
-						<Typography variant='body1' color={alpha('#fff', 0.8)}>
-							Пожалуйста, войдите в систему
-						</Typography>
-					</Box>
+					<Typography variant='body1' color={alpha('#fff', 0.8)}>
+						Вход в систему
+					</Typography>
 				</Box>
 
 				{/* Form section */}
@@ -203,7 +191,7 @@ const Auth = () => {
 						margin='normal'
 						autoComplete='username'
 						value={login}
-						onChange={e => setLogin(e.target.value)}
+						onChange={(e) => setLogin(e.target.value)}
 						InputProps={{
 							startAdornment: (
 								<InputAdornment position='start'>
@@ -228,7 +216,7 @@ const Auth = () => {
 						margin='normal'
 						autoComplete='current-password'
 						value={password}
-						onChange={e => setPassword(e.target.value)}
+						onChange={(e) => setPassword(e.target.value)}
 						InputProps={{
 							startAdornment: (
 								<InputAdornment position='start'>
@@ -313,10 +301,20 @@ const Auth = () => {
 							'Войти'
 						)}
 					</Button>
+
+					{/* Надпись под кнопкой */}
+					<Typography
+						variant='body2'
+						color='text.secondary'
+						align='center'
+						sx={{ mt: 2 }}
+					>
+						Если вы забыли пароль или логин, обратитесь к администратору
+					</Typography>
 				</Box>
 			</Paper>
 		</Box>
-	);
+    );
 };
 
-export default Auth;
+export default Auth;	

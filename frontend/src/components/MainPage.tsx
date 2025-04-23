@@ -275,280 +275,276 @@ const MainPage = () => {
 	};
 
 	return (
-		<Box
-			className='main-page-container'
-			sx={{ p: 2 }}
-			onDragOver={handleDragOver}
-			onDragLeave={handleDragLeave}
-			onDrop={handleDrop}
-		>
-			<Box
-				sx={{
-					display: 'flex',
-					gap: 2,
-					height: 'calc(100vh - 120px)',
-				}}
-			>
-				{/* Левая панель - Деревья файлов */}
-				<Box
-					sx={{
-						display: 'flex',
-						flexDirection: 'column',
-						gap: 2,
-						width: '350px',
-						maxWidth: '350px',
-						flexShrink: 0,
-					}}
-				>
-					<FilesTree isArchive={false} onItemSelect={handleItemSelect} />
-					<FilesTree isArchive={true} onItemSelect={handleItemSelect} />
-				</Box>
+<Box
+    className='main-page-container'
+    sx={{ p: 2 }}
+    onDragOver={handleDragOver}
+    onDragLeave={handleDragLeave}
+    onDrop={handleDrop}
+>
+    <Box
+        sx={{
+            display: 'flex',
+            gap: 2,
+            height: 'calc(100vh - 120px)',
+        }}
+    >
+        {/* Левая панель - Рабочее дерево */}
+        <FilesTree
+            isArchive={false}
+            onItemSelect={handleItemSelect}
+        />
 
-				{/* Правая панель - Предпросмотр и управление файлами */}
-				<Paper
-					elevation={2}
-					sx={{
-						flex: 1,
-						borderRadius: 3,
-						overflow: 'hidden',
-						display: 'flex',
-						flexDirection: 'column',
-						backgroundColor: theme.palette.background.paper,
-						boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.12)}`,
-						mt: '0px',
-						position: 'relative',
-						border: dropHighlight
-							? `2px dashed ${theme.palette.primary.main}`
-							: 'none',
-					}}
-				>
-					{/* Панель инструментов файла */}
-					<Box
-						sx={{
-							bgcolor: alpha(theme.palette.info.light, 0.1),
-							borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-							py: 2,
-							px: 3,
-							minHeight: '57px',
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'space-between',
-						}}
-					>
-						<Typography variant='h6' fontWeight={600}>
-							{selectedItem.name
-								? `${selectedItem.type === 'directory' ? 'Папка' : 'Файл'}: ${
-										selectedItem.name
-								  }`
-								: 'Выберите файл или папку'}
-						</Typography>
+        {/* Центральная панель - Предпросмотр */}
+        <Paper
+            elevation={2}
+            sx={{
+                flex: 1,
+                borderRadius: 3,
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                backgroundColor: theme.palette.background.paper,
+                boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.12)}`,
+                position: 'relative',
+                border: dropHighlight
+                    ? `2px dashed ${theme.palette.primary.main}`
+                    : 'none',
+            }}
+        >
+            {/* Панель инструментов файла */}
+            <Box
+                sx={{
+                    bgcolor: alpha(theme.palette.info.light, 0.1),
+                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                    py: 1,
+                    px: 2,
+                    minHeight: '57px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                }}
+            >
+                <Typography variant='subtitle1' fontWeight={500}>
+                    {selectedItem.name
+                        ? `${selectedItem.type === 'directory' ? 'Папка' : 'Файл'}: ${
+                              selectedItem.name
+                          }`
+                        : 'Выберите файл или папку'}
+                </Typography>
 
-						<Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-							{/* Кнопка загрузки файлов (видима только если выбрана директория) */}
-							{selectedItem.type === 'directory' && (
-								<Tooltip title='Загрузить файлы'>
-									<Button
-										component='label'
-										variant='outlined'
-										startIcon={<UploadFileOutlined />}
-										disabled={isUploading}
-										sx={{ borderRadius: 2 }}
-									>
-										{isUploading ? (
-											<>
-												<CircularProgress size={20} sx={{ mr: 1 }} />
-												{uploadProgress}%
-											</>
-										) : (
-											'Загрузить'
-										)}
-										<input
-											key={fileInputKey}
-											type='file'
-											hidden
-											multiple
-											onChange={handleFileUpload}
-										/>
-									</Button>
-								</Tooltip>
-							)}
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    {/* Кнопка загрузки файлов (видима только если выбрана директория) */}
+                    {selectedItem.type === 'directory' && (
+                        <Tooltip title='Загрузить файлы'>
+                            <Button
+                                component='label'
+                                variant='outlined'
+                                startIcon={<UploadFileOutlined />}
+                                disabled={isUploading}
+                                sx={{ borderRadius: 2 }}
+                            >
+                                {isUploading ? (
+                                    <>
+                                        <CircularProgress size={20} sx={{ mr: 1 }} />
+                                        {uploadProgress}%
+                                    </>
+                                ) : (
+                                    'Загрузить'
+                                )}
+                                <input
+                                    key={fileInputKey}
+                                    type='file'
+                                    hidden
+                                    multiple
+                                    onChange={handleFileUpload}
+                                />
+                            </Button>
+                        </Tooltip>
+                    )}
 
-							{/* Кнопки управления файлом (видимы только если выбран файл) */}
-							{selectedItem.type === 'file' && (
-								<>
-									{/* Кнопка предпросмотра для GLB файлов */}
-									{selectedItem.name?.endsWith('.glb') && (
-										<Tooltip title='Предпросмотр 3D модели'>
-											<IconButton
-												color='primary'
-												onClick={() =>
-													handleItemSelect(
-														selectedItem.id!,
-														selectedItem.type!,
-														selectedItem.name!
-													)
-												}
-											>
-												<Visibility />
-											</IconButton>
-										</Tooltip>
-									)}
+                    {/* Кнопки управления файлом (видимы только если выбран файл) */}
+                    {selectedItem.type === 'file' && (
+                        <>
+                            {/* Кнопка предпросмотра для GLB файлов */}
+                            {selectedItem.name?.endsWith('.glb') && (
+                                <Tooltip title='Предпросмотр 3D модели'>
+                                    <IconButton
+                                        color='primary'
+                                        onClick={() =>
+                                            handleItemSelect(
+                                                selectedItem.id!,
+                                                selectedItem.type!,
+                                                selectedItem.name!
+                                            )
+                                        }
+                                    >
+                                        <Visibility />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
 
-									{/* Кнопка предпросмотра для TXT файлов */}
-									{selectedItem.name?.endsWith('.txt') && (
-										<Tooltip title='Предпросмотр текстового файла'>
-											<IconButton
-												color='primary'
-												onClick={() =>
-													handleItemSelect(
-														selectedItem.id!,
-														selectedItem.type!,
-														selectedItem.name!
-													)
-												}
-											>
-												<TextSnippetOutlined />
-											</IconButton>
-										</Tooltip>
-									)}
+                            {/* Кнопка предпросмотра для TXT файлов */}
+                            {selectedItem.name?.endsWith('.txt') && (
+                                <Tooltip title='Предпросмотр текстового файла'>
+                                    <IconButton
+                                        color='primary'
+                                        onClick={() =>
+                                            handleItemSelect(
+                                                selectedItem.id!,
+                                                selectedItem.type!,
+                                                selectedItem.name!
+                                            )
+                                        }
+                                    >
+                                        <TextSnippetOutlined />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
 
-									{/* Кнопка скачивания */}
-									<Tooltip title='Скачать файл'>
-										<Button
-											variant='contained'
-											startIcon={<DownloadOutlined />}
-											onClick={handleDownload}
-											disabled={isDownloading}
-											sx={{ borderRadius: 2 }}
-										>
-											{isDownloading ? (
-												<CircularProgress size={20} color='inherit' />
-											) : (
-												'Скачать'
-											)}
-										</Button>
-									</Tooltip>
-								</>
-							)}
-						</Box>
-					</Box>
+                            {/* Кнопка скачивания */}
+                            <Tooltip title='Скачать файл'>
+                                <Button
+                                    variant='contained'
+                                    startIcon={<DownloadOutlined />}
+                                    onClick={handleDownload}
+                                    disabled={isDownloading}
+                                    sx={{ borderRadius: 2 }}
+                                >
+                                    {isDownloading ? (
+                                        <CircularProgress size={20} color='inherit' />
+                                    ) : (
+                                        'Скачать'
+                                    )}
+                                </Button>
+                            </Tooltip>
+                        </>
+                    )}
+                </Box>
+            </Box>
 
-					{/* Область предпросмотра */}
-					<Box
-						sx={{
-							flex: 1,
-							display: 'flex',
-							flexDirection: 'column',
-							alignItems: 'center',
-							justifyContent: 'center',
-							p: 4,
-							position: 'relative',
-						}}
-					>
-						{modelUrl ? (
-							<>
-								<ModelViewer url={modelUrl} />
-								<IconButton
-									sx={{
-										position: 'absolute',
-										top: 10,
-										right: 10,
-										bgcolor: alpha(theme.palette.background.paper, 0.8),
-									}}
-									onClick={clearPreview}
-								>
-									<HighlightOff />
-								</IconButton>
-							</>
-						) : textContent ? (
-							<>
-								<TextViewer text={textContent} />
-								<IconButton
-									sx={{
-										position: 'absolute',
-										top: 0.1,
-										right: 10,
-										bgcolor: alpha(theme.palette.background.paper, 0.8),
-									}}
-									onClick={clearPreview}
-								>
-									<HighlightOff />
-								</IconButton>
-							</>
-						) : (
-							<Box
-								sx={{
-									textAlign: 'center',
-									display: 'flex',
-									flexDirection: 'column',
-									alignItems: 'center',
-									gap: 2,
-									border: dropHighlight
-										? `none`
-										: `2px dashed ${alpha(theme.palette.primary.main, 0.3)}`,
-									borderRadius: 2,
-									p: 4,
-									width: '100%',
-									maxWidth: 500,
-									bgcolor: dropHighlight
-										? alpha(theme.palette.primary.main, 0.05)
-										: 'transparent',
-								}}
-							>
-								{selectedItem.type === 'directory' ? (
-									<>
-										<UploadFileOutlined
-											sx={{
-												fontSize: 60,
-												color: alpha(theme.palette.primary.main, 0.5),
-											}}
-										/>
-										<Typography color='text.secondary' variant='h6'>
-											Перетащите файлы сюда или нажмите "Загрузить"
-										</Typography>
-									</>
-								) : (
-									<>
-										<FileOpenOutlined
-											sx={{
-												fontSize: 60,
-												color: alpha(theme.palette.text.secondary, 0.5),
-											}}
-										/>
-										<Typography color='text.secondary'>
-											Выберите файл для предпросмотра или папку для загрузки
-										</Typography>
-									</>
-								)}
-							</Box>
-						)}
-					</Box>
-				</Paper>
+            {/* Область предпросмотра */}
+            <Box
+                sx={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    p: 4,
+                    position: 'relative',
+                }}
+            >
+                {modelUrl ? (
+                    <>
+                        <ModelViewer url={modelUrl} />
+                        <IconButton
+                            sx={{
+                                position: 'absolute',
+                                top: 10,
+                                right: 10,
+                                bgcolor: alpha(theme.palette.background.paper, 0.8),
+                            }}
+                            onClick={clearPreview}
+                        >
+                            <HighlightOff />
+                        </IconButton>
+                    </>
+                ) : textContent ? (
+                    <>
+                        <TextViewer text={textContent} />
+                        <IconButton
+                            sx={{
+                                position: 'absolute',
+                                top: 10,
+                                right: 10,
+                                bgcolor: alpha(theme.palette.background.paper, 0.8),
+                            }}
+                            onClick={clearPreview}
+                        >
+                            <HighlightOff />
+                        </IconButton>
+                    </>
+                ) : (
+                    <Box
+                        sx={{
+                            textAlign: 'center',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 2,
+                            border: dropHighlight
+                                ? `none`
+                                : `2px dashed ${alpha(theme.palette.primary.main, 0.3)}`,
+                            borderRadius: 2,
+                            p: 4,
+                            width: '100%',
+                            maxWidth: 500,
+                            bgcolor: dropHighlight
+                                ? alpha(theme.palette.primary.main, 0.05)
+                                : 'transparent',
+                        }}
+                    >
+                        {selectedItem.type === 'directory' ? (
+                            <>
+                                <UploadFileOutlined
+                                    sx={{
+                                        fontSize: 60,
+                                        color: alpha(theme.palette.primary.main, 0.5),
+                                    }}
+                                />
+                                <Typography color='text.secondary' variant='h6'>
+                                    Перетащите файлы сюда или нажмите "Загрузить"
+                                </Typography>
+                            </>
+                        ) : (
+                            <>
+                                <FileOpenOutlined
+                                    sx={{
+                                        fontSize: 60,
+                                        color: alpha(theme.palette.text.secondary, 0.5),
+                                    }}
+                                />
+                                <Typography color='text.secondary'>
+                                    Выберите файл для предпросмотра или папку для загрузки
+                                </Typography>
+                            </>
+                        )}
+                    </Box>
+                )}
+            </Box>
+        </Paper>
 
-				{/* Контекстное меню */}
-				<ContextMenu />
-			</Box>
+        {/* Правая панель - Архивное дерево */}
+        <FilesTree
+            isArchive={true}
+            onItemSelect={handleItemSelect}
+        />
+    </Box>
 
-			{/* Уведомления */}
-			<Snackbar
-				open={snackbarOpen}
-				autoHideDuration={4000}
-				onClose={() => setSnackbarOpen(false)}
-				anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-			>
-				<Alert
-					onClose={() => setSnackbarOpen(false)}
-					severity={snackbarSeverity}
-					variant='filled'
-					sx={{
-						width: '100%',
-						borderRadius: 2,
-					}}
-				>
-					{snackbarMessage}
-				</Alert>
-			</Snackbar>
-		</Box>
+    {/* Контекстное меню */}
+    <ContextMenu />
+
+    {/* Уведомления */}
+    <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+    >
+        <Alert
+            onClose={() => setSnackbarOpen(false)}
+            severity={snackbarSeverity}
+            variant='filled'
+            sx={{
+                width: '100%',
+                borderRadius: 2,
+            }}
+        >
+            {snackbarMessage}
+        </Alert>
+    </Snackbar>
+</Box>
 	);
 };
 

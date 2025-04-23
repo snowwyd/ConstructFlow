@@ -367,51 +367,53 @@ const FilesTree: React.FC<FilesTreeProps> = ({ isArchive, onItemSelect }) => {
 		>
 			{/* Заголовок хранилища */}
 			<Box
+			sx={{
+				bgcolor: isArchive
+					? alpha(theme.palette.primary.light, 0.1) // Синий фон для архивного дерева
+					: alpha(theme.palette.primary.light, 0.1), // Оставляем как есть для рабочего дерева
+				borderBottom: `1px solid ${alpha(
+					isArchive
+						? theme.palette.primary.main // Синяя граница для архивного дерева
+						: theme.palette.primary.main,
+					0.1
+				)}`,
+				py: 2,
+				px: 3,
+				display: 'flex',
+				alignItems: 'center',
+				gap: 1,
+				height: '57px',
+			}}
+		>
+			{isArchive ? (
+				<ArchiveIcon
+					sx={{
+						color: theme.palette.primary.main, // Синий цвет иконки для архивного дерева
+						fontSize: 22,
+					}}
+				/>
+			) : (
+				<FolderOpenIcon
+					sx={{
+						color: theme.palette.primary.main, // Оставляем синий цвет для рабочего дерева
+						fontSize: 22,
+					}}
+				/>
+			)}
+			<Typography
+				variant='h6'
+				fontWeight={600}
 				sx={{
-					bgcolor: isArchive
-						? alpha(theme.palette.warning.light, 0.1)
-						: alpha(theme.palette.primary.light, 0.1),
-					borderBottom: `1px solid ${alpha(
-						isArchive ? theme.palette.warning.main : theme.palette.primary.main,
-						0.1
-					)}`,
-					py: 2,
-					px: 3,
-					display: 'flex',
-					alignItems: 'center',
-					gap: 1,
-					height: '57px',
+					fontSize: '1.1rem',
+					color: isArchive
+						? theme.palette.primary.dark // Синий текст для архивного дерева
+						: theme.palette.primary.dark, // Оставляем синий текст для рабочего дерева
+					letterSpacing: '-0.3px',
 				}}
 			>
-				{isArchive ? (
-					<ArchiveIcon
-						sx={{
-							color: theme.palette.warning.main,
-							fontSize: 22,
-						}}
-					/>
-				) : (
-					<FolderOpenIcon
-						sx={{
-							color: theme.palette.primary.main,
-							fontSize: 22,
-						}}
-					/>
-				)}
-				<Typography
-					variant='h6'
-					fontWeight={600}
-					sx={{
-						fontSize: '1.1rem',
-						color: isArchive
-							? theme.palette.warning.dark
-							: theme.palette.primary.dark,
-						letterSpacing: '-0.3px',
-					}}
-				>
-					{isArchive ? 'Архивное хранилище' : 'Рабочее хранилище'}
-				</Typography>
-			</Box>
+				{isArchive ? 'Архивное хранилище' : 'Рабочее хранилище'}
+			</Typography>
+		</Box>
 
 			{/* Индикатор для случая, когда показывается только часть дерева */}
 			{hasPartialTreeAccess && (
