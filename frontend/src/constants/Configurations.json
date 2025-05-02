@@ -1,0 +1,17 @@
+{
+	"serverUrl": "http://localhost:8090/",
+	"serverUrlFiles": "http://localhost:8081/",
+	"loginEndpoint": "/auth/login",
+	"checkJWT": "/auth/me",
+	"getFiles": "/directories",
+	"createDirectory": "/directories/create",
+	"deleteDirectory": "/directories",
+	"createFile": "/files/upload",
+	"deleteFile": "/files",
+	"getInfoAboutFile": "/files",
+	"getApprovals": "/file-approvals",
+	"approveDocument": "/file-approvals/:approval_id/sign",
+	"sendFileToApprove": "/files/:file_id/approve",
+	"annotateDocument": "/file-approvals/:approval_id/annotate",
+	"finalizeDocument": "/file-approvals/:approval_id/finalize"
+}
