@@ -199,43 +199,79 @@ export const ApprovalsPage = () => {
 		return (
 			<Box sx={{ p: 4 }}>
 				<Paper
-					elevation={2}
+					elevation={3}
 					sx={{
-						borderRadius: 3,
+						borderRadius: 4,
 						overflow: 'hidden',
 						maxWidth: 1200,
 						mx: 'auto',
 						bgcolor: theme.palette.background.paper,
-						boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.12)}`,
+						boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.15)}`,
+						transition: 'box-shadow 0.3s ease',
+						'&:hover': {
+							boxShadow: `0 12px 40px ${alpha(theme.palette.primary.main, 0.2)}`,
+						},
 					}}
 				>
+					{/* Заголовок секции */}
 					<Box
 						sx={{
-							bgcolor: alpha(theme.palette.primary.light, 0.1),
-							py: 2.5,
+							bgcolor: alpha(theme.palette.secondary.light, 0.05),
+							py: 3,
 							px: 4,
 							borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
 						}}
 					>
-						<Typography variant='h5' fontWeight={600} gutterBottom>
+						<Typography variant='h5' fontWeight={700} gutterBottom>
 							Система согласования документов
 						</Typography>
+						<Typography variant='body1' color='text.secondary'>
+							Все документы, требующие согласования, будут отображаться здесь
+						</Typography>
 					</Box>
-
-					<Box sx={{ p: 4, textAlign: 'center' }}>
-						<HourglassTopOutlinedIcon
+		
+					{/* Состояние "Нет документов" */}
+					<Box
+						sx={{
+							p: 6,
+							textAlign: 'center',
+							backgroundColor: alpha(theme.palette.background.default, 0.6),
+						}}
+					>
+						<Box
 							sx={{
-								fontSize: 64,
-								color: alpha(theme.palette.text.secondary, 0.5),
-								mb: 2,
+								display: 'inline-flex',
+								alignItems: 'center',
+								justifyContent: 'center',
+								width: 100,
+								height: 100,
+								borderRadius: '50%',
+								bgcolor: alpha(theme.palette.primary.light, 0.1),
+								color: theme.palette.primary.main,
+								mb: 3,
+								transition: 'transform 0.3s ease',
+								'&:hover': {
+									transform: 'rotate(10deg)',
+								},
 							}}
-						/>
-						<Typography variant='h6' gutterBottom>
+						>
+							<HourglassTopOutlinedIcon sx={{ fontSize: 60 }} />
+						</Box>
+		
+						<Typography
+							variant='h6'
+							fontWeight={700}
+							gutterBottom
+							sx={{
+								color: theme.palette.text.primary,
+							}}
+						>
 							Нет документов на согласовании
 						</Typography>
-						<Typography variant='body1' color='text.secondary'>
-							В данный момент документы на согласование отсутствуют
-						</Typography>
+		
+						<Typography variant='body1' color='text.secondary' sx={{ maxWidth: 500, mx: 'auto' }}>
+							В данный момент у вас нет активных документов, требующих согласования.
+						</Typography>			
 					</Box>
 				</Paper>
 			</Box>
@@ -299,14 +335,14 @@ export const ApprovalsPage = () => {
 	return (
 		<Box sx={{ p: 4 }}>
 			<Paper
-				elevation={3}
+				elevation={4}
 				sx={{
 					borderRadius: 4,
 					overflow: 'hidden',
 					maxWidth: 1200,
 					mx: 'auto',
 					bgcolor: theme.palette.background.paper,
-					boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.15)}`,
+					boxShadow: `0 10px 40px ${alpha(theme.palette.primary.main, 0.18)}`,
 				}}
 			>
 				{/* Заголовок */}
@@ -321,7 +357,6 @@ export const ApprovalsPage = () => {
 					<Typography variant='h5' fontWeight={700} gutterBottom>
 						Система согласования документов
 					</Typography>
-
 				</Box>
 	
 				{/* Список документов */}
@@ -331,18 +366,18 @@ export const ApprovalsPage = () => {
 							key={document.approval_id}
 							elevation={1}
 							sx={{
-								mb: 2.5,
+								mb: 3,
 								borderRadius: 3,
 								overflow: 'hidden',
 								border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
 								transition: 'all 0.2s ease-in-out',
 								'&:hover': {
-									boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.12)}`,
-									borderColor: alpha(theme.palette.primary.main, 0.25),
+									boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.15)}`,
+									borderColor: alpha(theme.palette.primary.main, 0.3),
 								},
 							}}
 						>
-							{/* Заголовок документа */}
+							{/* Верхняя часть документа */}
 							<Box
 								sx={{
 									display: 'flex',
@@ -351,24 +386,30 @@ export const ApprovalsPage = () => {
 									px: 3,
 									py: 2.5,
 									borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+									backgroundColor: alpha(theme.palette.primary.light, 0.02),
 								}}
 							>
 								<Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-									<DescriptionOutlined color='primary' sx={{ opacity: 0.8 }} />
+									<DescriptionOutlined color='primary' sx={{ opacity: 0.9 }} />
 									<Typography variant='subtitle1' fontWeight={600}>
 										{document.file_name}
 									</Typography>
 								</Box>
-	
-								{getStatusChip(document.status, document.workflow_order, document.workflow_user_count)}
+								{getStatusChip(
+									document.status,
+									document.workflow_order,
+									document.workflow_user_count
+								)}
 							</Box>
 	
-							{/* Информация об этапе и действия */}
+							{/* Информация и действия */}
 							<Box
 								sx={{
 									display: 'flex',
+									flexDirection: { xs: 'column', sm: 'row' },
 									justifyContent: 'space-between',
-									alignItems: 'center',
+									alignItems: { xs: 'flex-start', sm: 'center' },
+									gap: 2,
 									px: 3,
 									py: 2,
 								}}
@@ -382,7 +423,7 @@ export const ApprovalsPage = () => {
 								</Box>
 	
 								{isAdmin && (
-									<Box display='flex' gap={1.5}>
+									<Box display='flex' gap={1.5} flexWrap='wrap'>
 										{/* Кнопка согласовать / финализировать */}
 										<Tooltip
 											title={
@@ -412,6 +453,7 @@ export const ApprovalsPage = () => {
 															0.2
 														)}`,
 													},
+													minWidth: 110,
 												}}
 											>
 												{document.workflow_order === document.workflow_user_count
@@ -428,7 +470,10 @@ export const ApprovalsPage = () => {
 												size='small'
 												startIcon={<CommentOutlinedIcon />}
 												onClick={() =>
-													handleAnnotateClick(document.approval_id, document.file_name)
+													handleAnnotateClick(
+														document.approval_id,
+														document.file_name
+													)
 												}
 												sx={{
 													borderRadius: 2.5,
@@ -437,9 +482,13 @@ export const ApprovalsPage = () => {
 													borderColor: alpha(theme.palette.error.main, 0.4),
 													color: theme.palette.error.main,
 													'&:hover': {
-														backgroundColor: alpha(theme.palette.error.main, 0.08),
+														backgroundColor: alpha(
+															theme.palette.error.main,
+															0.08
+														),
 														borderColor: theme.palette.error.main,
 													},
+													minWidth: 110,
 												}}
 											>
 												На доработку
