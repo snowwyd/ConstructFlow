@@ -220,9 +220,6 @@ export const ApprovalsPage = () => {
 						<Typography variant='h5' fontWeight={600} gutterBottom>
 							Система согласования документов
 						</Typography>
-						<Typography variant='body1' color='text.secondary'>
-							Управление процессами согласования документов в вашей организации
-						</Typography>
 					</Box>
 
 					<Box sx={{ p: 4, textAlign: 'center' }}>
@@ -302,81 +299,71 @@ export const ApprovalsPage = () => {
 	return (
 		<Box sx={{ p: 4 }}>
 			<Paper
-				elevation={2}
+				elevation={3}
 				sx={{
-					borderRadius: 3,
+					borderRadius: 4,
 					overflow: 'hidden',
 					maxWidth: 1200,
 					mx: 'auto',
 					bgcolor: theme.palette.background.paper,
-					boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.12)}`,
+					boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.15)}`,
 				}}
 			>
-				{/* Header section */}
+				{/* Заголовок */}
 				<Box
 					sx={{
-						bgcolor: alpha(theme.palette.primary.light, 0.1),
-						py: 2.5,
+						bgcolor: alpha(theme.palette.primary.light, 0.08),
+						py: 3,
 						px: 4,
 						borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
 					}}
 				>
-					<Typography variant='h5' fontWeight={600} gutterBottom>
+					<Typography variant='h5' fontWeight={700} gutterBottom>
 						Система согласования документов
 					</Typography>
-					<Typography variant='body1' color='text.secondary'>
-						Управление процессами согласования документов в вашей организации
-					</Typography>
-				</Box>
 
-				{/* Document list section */}
+				</Box>
+	
+				{/* Список документов */}
 				<Box sx={{ p: 4 }}>
 					{apiResponse.map((document: ApprovalResponse) => (
 						<Paper
 							key={document.approval_id}
 							elevation={1}
 							sx={{
-								mb: 2,
-								borderRadius: 2,
+								mb: 2.5,
+								borderRadius: 3,
 								overflow: 'hidden',
 								border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-								transition: 'all 0.2s ease',
+								transition: 'all 0.2s ease-in-out',
 								'&:hover': {
-									boxShadow: `0 4px 12px ${alpha(
-										theme.palette.primary.main,
-										0.08
-									)}`,
-									borderColor: alpha(theme.palette.primary.main, 0.2),
+									boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.12)}`,
+									borderColor: alpha(theme.palette.primary.main, 0.25),
 								},
 							}}
 						>
+							{/* Заголовок документа */}
 							<Box
 								sx={{
 									display: 'flex',
 									justifyContent: 'space-between',
 									alignItems: 'center',
 									px: 3,
-									py: 2,
-									borderBottom: `1px solid ${alpha(
-										theme.palette.divider,
-										0.1
-									)}`,
+									py: 2.5,
+									borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
 								}}
 							>
 								<Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-									<DescriptionOutlined color='primary' sx={{ opacity: 0.7 }} />
+									<DescriptionOutlined color='primary' sx={{ opacity: 0.8 }} />
 									<Typography variant='subtitle1' fontWeight={600}>
 										{document.file_name}
 									</Typography>
 								</Box>
-
-								{getStatusChip(
-									document.status,
-									document.workflow_order,
-									document.workflow_user_count
-								)}
+	
+								{getStatusChip(document.status, document.workflow_order, document.workflow_user_count)}
 							</Box>
-
+	
+							{/* Информация об этапе и действия */}
 							<Box
 								sx={{
 									display: 'flex',
@@ -393,10 +380,10 @@ export const ApprovalsPage = () => {
 										<strong>{document.workflow_user_count}</strong>
 									</Typography>
 								</Box>
-
+	
 								{isAdmin && (
-									<Box display='flex' gap={1}>
-										{/* Approve/Finalize button */}
+									<Box display='flex' gap={1.5}>
+										{/* Кнопка согласовать / финализировать */}
 										<Tooltip
 											title={
 												document.workflow_order === document.workflow_user_count
@@ -405,10 +392,9 @@ export const ApprovalsPage = () => {
 											}
 										>
 											<Button
-												variant='outlined'
+												variant='contained'
 												color={
-													document.workflow_order ===
-													document.workflow_user_count
+													document.workflow_order === document.workflow_user_count
 														? 'info'
 														: 'success'
 												}
@@ -416,19 +402,25 @@ export const ApprovalsPage = () => {
 												startIcon={<CheckCircleOutline />}
 												onClick={() => handleApproveOrFinalize(document)}
 												sx={{
-													borderRadius: 2,
+													borderRadius: 2.5,
 													textTransform: 'none',
-													fontWeight: 500,
+													fontWeight: 600,
+													boxShadow: 'none',
+													'&:hover': {
+														boxShadow: `0 4px 12px ${alpha(
+															theme.palette.primary.main,
+															0.2
+														)}`,
+													},
 												}}
 											>
-												{document.workflow_order ===
-												document.workflow_user_count
+												{document.workflow_order === document.workflow_user_count
 													? 'Финализировать'
 													: 'Согласовать'}
 											</Button>
 										</Tooltip>
-
-										{/* Annotate button */}
+	
+										{/* Кнопка на доработку */}
 										<Tooltip title='Отправить на доработку'>
 											<Button
 												variant='outlined'
@@ -436,15 +428,18 @@ export const ApprovalsPage = () => {
 												size='small'
 												startIcon={<CommentOutlinedIcon />}
 												onClick={() =>
-													handleAnnotateClick(
-														document.approval_id,
-														document.file_name
-													)
+													handleAnnotateClick(document.approval_id, document.file_name)
 												}
 												sx={{
-													borderRadius: 2,
+													borderRadius: 2.5,
 													textTransform: 'none',
-													fontWeight: 500,
+													fontWeight: 600,
+													borderColor: alpha(theme.palette.error.main, 0.4),
+													color: theme.palette.error.main,
+													'&:hover': {
+														backgroundColor: alpha(theme.palette.error.main, 0.08),
+														borderColor: theme.palette.error.main,
+													},
 												}}
 											>
 												На доработку
@@ -457,8 +452,8 @@ export const ApprovalsPage = () => {
 					))}
 				</Box>
 			</Paper>
-
-			{/* Snackbar notifications */}
+	
+			{/* Уведомления */}
 			<Snackbar
 				open={snackbarOpen}
 				autoHideDuration={4000}
@@ -471,14 +466,15 @@ export const ApprovalsPage = () => {
 					variant='filled'
 					sx={{
 						width: '100%',
-						borderRadius: 2,
+						borderRadius: 2.5,
+						fontWeight: 500,
 					}}
 				>
 					{snackbarMessage}
 				</Alert>
 			</Snackbar>
-
-			{/* Annotation dialog */}
+	
+			{/* Диалог отправки на доработку */}
 			<Dialog
 				open={isAnnotationModalOpen}
 				onClose={() => setIsAnnotationModalOpen(false)}
@@ -486,8 +482,9 @@ export const ApprovalsPage = () => {
 				maxWidth='sm'
 				PaperProps={{
 					sx: {
-						borderRadius: 3,
-						boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.15)}`,
+						borderRadius: 4,
+						boxShadow: `0 12px 40px ${alpha(theme.palette.primary.main, 0.2)}`,
+						p: 2,
 					},
 				}}
 			>
@@ -497,32 +494,31 @@ export const ApprovalsPage = () => {
 						alignItems: 'center',
 						justifyContent: 'space-between',
 						borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-						pb: 2,
+						py: 2,
+						px: 3,
 					}}
 				>
 					<Box display='flex' alignItems='center' gap={1}>
 						<CommentOutlinedIcon color='error' />
-						<Typography variant='h6' fontWeight={600}>
+						<Typography variant='h6' fontWeight={700}>
 							Отправка документа на доработку
 						</Typography>
 					</Box>
 					<IconButton
 						onClick={() => setIsAnnotationModalOpen(false)}
-						size='small'
 						sx={{ color: theme.palette.text.secondary }}
 					>
-						<CloseIcon fontSize='small' />
+						<CloseIcon />
 					</IconButton>
 				</DialogTitle>
-
-				<DialogContent sx={{ pt: 3, pb: 1 }}>
+	
+				<DialogContent sx={{ pt: 3, pb: 2 }}>
 					<Typography variant='subtitle2' gutterBottom>
 						Документ: <strong>{selectedFileName}</strong>
 					</Typography>
 					<Divider sx={{ my: 2 }} />
 					<Typography variant='body2' color='text.secondary' paragraph>
-						Укажите причину возврата документа на доработку. Ваш комментарий
-						будет отправлен ответственному сотруднику.
+						Укажите причину возврата документа на доработку. Ваш комментарий будет отправлен ответственному сотруднику.
 					</Typography>
 					<TextField
 						autoFocus
@@ -532,18 +528,17 @@ export const ApprovalsPage = () => {
 						multiline
 						rows={4}
 						value={annotationMessage}
-						onChange={e => setAnnotationMessage(e.target.value)}
+						onChange={(e) => setAnnotationMessage(e.target.value)}
 						variant='outlined'
 						placeholder='Опишите необходимые изменения...'
 						sx={{
-							mt: 1,
 							'& .MuiOutlinedInput-root': {
-								borderRadius: 2,
+								borderRadius: 2.5,
 							},
 						}}
 					/>
 				</DialogContent>
-
+	
 				<DialogActions
 					sx={{
 						px: 3,
@@ -555,9 +550,10 @@ export const ApprovalsPage = () => {
 						onClick={() => setIsAnnotationModalOpen(false)}
 						variant='outlined'
 						sx={{
-							borderRadius: 2,
-							px: 3,
+							borderRadius: 2.5,
 							textTransform: 'none',
+							fontWeight: 600,
+							px: 3,
 						}}
 					>
 						Отмена
@@ -568,11 +564,14 @@ export const ApprovalsPage = () => {
 						variant='contained'
 						color='error'
 						sx={{
-							borderRadius: 2,
-							px: 3,
+							borderRadius: 2.5,
 							textTransform: 'none',
-							ml: 1,
+							fontWeight: 600,
+							px: 3,
 							boxShadow: `0 4px 12px ${alpha(theme.palette.error.main, 0.3)}`,
+							'&:hover': {
+								boxShadow: `0 6px 16px ${alpha(theme.palette.error.dark, 0.4)}`,
+							},
 						}}
 					>
 						Отправить на доработку
